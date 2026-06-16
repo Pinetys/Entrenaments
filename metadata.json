@@ -1,0 +1,6 @@
+{
+  "name": "Planificador de Baloncesto Junior A",
+  "description": "Herramienta para planificar entrenamientos de 1h 15m para baloncesto Junior, categoría Nivel A, con pizarra táctica y modo móvil para la pista.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
