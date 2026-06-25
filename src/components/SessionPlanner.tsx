@@ -46,7 +46,7 @@ export function getEnhancedSessionDrills(
       ...sd,
       id: `${sd.drillId}-${index}`,
       title: originalDrill?.title || 'Ejercicio No Encontrado',
-      category: originalDrill?.category || 'Técnica',
+      category: originalDrill?.category || 'Atac',
       concept: originalDrill?.concept,
       setupInstructions: originalDrill?.setupInstructions || '',
       description: originalDrill?.description || '',
@@ -222,7 +222,7 @@ export default function SessionPlanner({
       ...sd,
       // Fallbacks if drill was deleted from db
       title: originalDrill?.title || 'Ejercicio No Encontrado',
-      category: originalDrill?.category || 'Técnica',
+      category: originalDrill?.category || 'Atac',
       setupInstructions: originalDrill?.setupInstructions || '',
       originalDuration: originalDrill?.duration || 10
     };
@@ -346,7 +346,7 @@ export default function SessionPlanner({
       if (press) presetDrills.push({ drillId: press, duration: 15, notes: 'Romper sin botar las esquinas traseras. Posesiones cortas.' });
       if (shot) presetDrills.push({ drillId: shot, duration: 11, notes: 'Tiros libres de castigo al equipo perdedor.' });
       
-      const sys = drills.find(d => d.category === 'Sistemas')?.id;
+      const sys = drills.find(d => d.category === 'Atac')?.id;
       if (sys && sys !== press) {
         presetDrills.push({ drillId: sys, duration: 15, notes: 'Juego real 5v5 con arbitraje riguroso para meter presión de partido.' });
       } else {
@@ -629,7 +629,8 @@ export default function SessionPlanner({
             const categoryMinutes: Record<string, number> = {};
             enhancedDrillsInSession.forEach(item => {
               if (!item.isVirtual) {
-                const cat = item.category || 'Técnica';
+                const rawCat = item.category || 'Atac';
+                const cat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
                 categoryMinutes[cat] = (categoryMinutes[cat] || 0) + item.duration;
               }
             });
@@ -637,7 +638,7 @@ export default function SessionPlanner({
             
             if (totalMinExercise === 0) return null;
 
-            const categories = ['Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'];
+            const categories = ['Atac', 'Defensa', 'Escalfament'];
             const activeCategories = categories.filter(cat => (categoryMinutes[cat] || 0) > 0);
 
             return (
@@ -647,17 +648,13 @@ export default function SessionPlanner({
                   <span className="text-[8px] text-slate-400 font-mono font-medium">Distribució temporal</span>
                 </div>
                 
-                {/* Single multi-colored stacked progress bar - Ultra-thin (3px) to be elegant */}
+                {/* Single multi-colored stacked progress bar */}
                 <div className="w-full bg-slate-150 h-1 rounded-full overflow-hidden flex border border-slate-200">
                   {activeCategories.map(cat => {
                     const mins = categoryMinutes[cat] || 0;
                     const pct = (mins / totalMinExercise) * 100;
-                    const colorClass = cat === 'Transición' ? 'bg-orange-500' :
-                                       cat === 'Táctica' ? 'bg-indigo-500' :
-                                       cat === 'Tiro' ? 'bg-emerald-500' :
-                                       cat === 'Físico' ? 'bg-red-500' :
-                                       cat === 'Defensa' ? 'bg-rose-500' :
-                                       cat === 'Sistemas' ? 'bg-purple-500' : 'bg-cyan-500';
+                    const colorClass = cat === 'Atac' ? 'bg-orange-500' :
+                                       cat === 'Defensa' ? 'bg-rose-500' : 'bg-emerald-500';
 
                     return (
                       <div 
@@ -674,13 +671,9 @@ export default function SessionPlanner({
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[8.5px] text-slate-500 font-semibold uppercase tracking-wider">
                   {activeCategories.map(cat => {
                     const mins = categoryMinutes[cat] || 0;
-                    const labelCatalan = cat === 'Técnica' ? 'Tècnica' : cat === 'Táctica' ? 'Tàctica' : cat === 'Tiro' ? 'Tir' : cat === 'Físico' ? 'Físic' : cat === 'Sistemas' ? 'Sistemes' : cat === 'Defensa' ? 'Defensa' : 'Transició';
-                    const colorDotClass = cat === 'Transición' ? 'bg-orange-500' :
-                                          cat === 'Táctica' ? 'bg-indigo-500' :
-                                          cat === 'Tiro' ? 'bg-emerald-500' :
-                                          cat === 'Físico' ? 'bg-red-505' :
-                                          cat === 'Defensa' ? 'bg-rose-500' :
-                                          cat === 'Sistemas' ? 'bg-purple-500' : 'bg-cyan-500';
+                    const labelCatalan = cat === 'Atac' ? 'Atac' : cat === 'Defensa' ? 'Defensa' : 'Escalfament';
+                    const colorDotClass = cat === 'Atac' ? 'bg-orange-500' :
+                                          cat === 'Defensa' ? 'bg-rose-500' : 'bg-emerald-500';
 
                     return (
                       <span key={cat} className="flex items-center gap-1">
@@ -1305,10 +1298,10 @@ export default function SessionPlanner({
                   return favoriteDrillIds.includes(drill.id);
                 }
                 if (plannerCategoryFilter === 'Escalfament') {
-                  return ['Técnica', 'Físico'].includes(drill.category);
+                  return ['Técnica', 'Físico', 'Escalfament'].includes(drill.category);
                 }
                 if (plannerCategoryFilter === 'Atac') {
-                  return ['Táctica', 'Sistemas', 'Tiro', 'Transición'].includes(drill.category);
+                  return ['Táctica', 'Sistemas', 'Tiro', 'Transición', 'Atac'].includes(drill.category);
                 }
                 if (plannerCategoryFilter === 'Defensa') {
                   return ['Defensa'].includes(drill.category);
@@ -1700,16 +1693,20 @@ export default function SessionPlanner({
               {/* Category Distribution chart or blocks */}
               <div className="space-y-3">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-450 border-b border-slate-100 pb-1.5">Equilibri de Treball de la Sessió</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                  {['Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'].map(cat => {
+                <div className="grid grid-cols-3 gap-2">
+                  {['Atac', 'Defensa', 'Escalfament'].map(cat => {
                     let catMin = 0;
                     enhancedDrillsInSession.forEach(item => {
-                      if (!item.isVirtual && item.category === cat) {
-                        catMin += item.duration;
+                      if (!item.isVirtual) {
+                        const rawCat = item.category || 'Atac';
+                        const normalizedCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+                        if (normalizedCat === cat) {
+                          catMin += item.duration;
+                        }
                       }
                     });
                     if (catMin === 0) return null;
-                    const labelCatalan = cat === 'Técnica' ? 'TÈCNICA' : cat === 'Táctica' ? 'TÀCTICA' : cat === 'Tiro' ? 'TIR' : cat === 'Físico' ? 'FÍSIC' : cat === 'Sistemas' ? 'SISTEMES' : cat === 'Defensa' ? 'DEFENSA' : 'TRANSICIÓ';
+                    const labelCatalan = cat === 'Atac' ? 'ATAC' : cat === 'Defensa' ? 'DEFENSA' : 'ESCALFAMENT';
                     return (
                       <div key={cat} className="bg-slate-50 border border-slate-200 rounded p-2 text-center flex flex-col justify-between print:bg-white print:border-slate-300">
                         <span className="text-[8px] text-slate-505 font-black tracking-wider uppercase block truncate">{labelCatalan}</span>
@@ -1726,7 +1723,9 @@ export default function SessionPlanner({
                 
                 <div className="space-y-8">
                   {enhancedDrillsInSession.map((item, idx) => {
-                    const labelCatalan = item.category === 'Técnica' ? 'TÈCNICA' : item.category === 'Táctica' ? 'TÀCTICA' : item.category === 'Tiro' ? 'TIR' : item.category === 'Físico' ? 'FÍSIC' : item.category === 'Sistemas' ? 'SISTEMES' : item.category === 'Defensa' ? 'DEFENSA' : 'TRANSICIÓ';
+                    const rawCat = item.category || 'Atac';
+                    const normalizedCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+                    const labelCatalan = normalizedCat === 'Atac' ? 'ATAC' : normalizedCat === 'Defensa' ? 'DEFENSA' : 'ESCALFAMENT';
                     const hasBoardState = item.boardState && (item.boardState.pins.length > 0 || item.boardState.paths.length > 0);
                     
                     return (

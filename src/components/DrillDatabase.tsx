@@ -32,7 +32,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-rueda-11',
     title: "Roda d'11 FCBQ de Contraatac Continuat",
-    category: 'Transición',
+    category: 'Atac',
     concept: 'Contraatac Ràpid',
     duration: 12,
     objectives: [
@@ -61,7 +61,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-pnr-def',
     title: 'Defensa de Bloqueig Directe (Pick & Roll) Central Drop',
-    category: 'Táctica',
+    category: 'Defensa',
     concept: 'Pick & Roll',
     duration: 15,
     objectives: [
@@ -92,11 +92,11 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-press-break',
     title: 'Sortida de Pressió 1-3-1 amb Connexió Vertical',
-    category: 'Sistemas',
+    category: 'Atac',
     concept: 'Sortida de Pressió',
     duration: 15,
     objectives: [
-      "Evitar rebre l'embolcall doble de la defensa (Traps) a les cantonades fatídiques del camp.",
+      "Evitar rebre l'embolcall doble de la defense (Traps) a les cantonades fatídiques del camp.",
       "Exigir el 'tercer home' al mig del camp per canviar l'eix de visió de la línia de pressió bàsica.",
       "Assegurar una recepció en moviment llançant passades diagonals de seguretat de dalt a baix."
     ],
@@ -123,7 +123,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-rueda-tiro-competitiva',
     title: 'Roda de Tir Tecnificació FCBQ - Sortida d’Indirecte',
-    category: 'Tiro',
+    category: 'Atac',
     concept: 'Bloqueig Indirecte',
     duration: 10,
     objectives: [
@@ -151,7 +151,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-junior-transicion-3x2',
     title: '3x2 Continu amb Retorn en 2x1 (Transició d’Alt Nivell)',
-    category: 'Transición',
+    category: 'Atac',
     concept: 'Superioritat 3x2 / 2x1',
     duration: 15,
     objectives: [
@@ -182,7 +182,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-spacing-junior-spacing',
     title: 'Espaiat de Joc Dinàmic (Spacing) i Reemplaçaments Extra Passe',
-    category: 'Táctica',
+    category: 'Atac',
     concept: 'Espaiat i Extra Passe',
     duration: 12,
     objectives: [
@@ -245,7 +245,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-dejan-cikic-decisions',
     title: "Roda de Decisions i Passades de Dejan Cikic",
-    category: 'Técnica',
+    category: 'Escalfament',
     concept: 'Presa de Decisions',
     duration: 15,
     objectives: [
@@ -253,7 +253,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
       "Forçar la presa de decisions instantània davant el moviment defensiu de contenció.",
       "Entrenar la reubicació espacial directa ocupant cantonades i prolongació de lliures."
     ],
-    description: "Exercici extret directament dels populars manuals de Dejan Cikic, reconegut coordinador de formació en el bàsquet eslovè. Circuit dinàmic a 2 pilotes de passada contínua on el jugador de l'eix central ha de reaccionar i decidir ràpidament si realitza una penetració explosiva, un passe lateral addicional o un tir en suspensió immediat, tot en funció de l'estímul defensiu fictici o senyal acústic.",
+    description: "Exercici extret directament dels populars manuals de Dejan Cikic, reconegut coordinator de formació en el bàsquet eslovè. Circuit dinàmic a 2 pilotes de passada contínua on el jugador de l'eix central ha de reaccionar i decidir ràpidament si realitza una penetració explosiva, un passe lateral addicional o un tir en suspensió immediat, tot en funció de l'estímul defensiu fictici o senyal acústic.",
     setupInstructions: "Dividir els jugadors en quatre cantonades de la mitja pista i un pivot de recolzament dinàmic a la línia de tirs lliures per forçar l'extrapasse ràpid.",
     playersNeeded: 10,
     materials: ['Pilotes de bàsquet (S7)', 'Cons de color d’alt contrast'],
@@ -274,7 +274,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-dejan-cikic-spacing',
     title: "Spacing Actiu 3x0 i Reemplaçaments de Fons d’en Dejan Cikic",
-    category: 'Táctica',
+    category: 'Atac',
     concept: 'Espaiat Actiu 3x0',
     duration: 12,
     objectives: [
@@ -282,7 +282,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
       "Dominar els talls d'esquena (backdoor cuts) davant de situacions negatives de pressió agressiva.",
       "Optimitzar el sincronisme de passada generant angles d'anotació molt més nets."
     ],
-    description: "Syllabus de formació d'elit dissenyat per Dejan Cikic per a categories Júnior i Cadet. L'exercici educa la sincronia de moviments sense pilota de tres atacants exteriors. Quan un company inicia una penetració forçada fins a línia de fons, la resta reacciona a velocitat de partit per reajustar l'espaiat, oferint línies de passada curtes (safety passes) i extrapasses a l'extrem contrari.",
+    description: "Syllabus de formació d'elit dissenyat per Dejan Cikic per a categories Júnior i Cadet. L'exercici educa la sincronia de moviments sin pilota de tres atacants exteriors. Quan un company inicia una penetració forçada fins a línia de fons, la resta reacciona a velocitat de partit per reajustar l'espaiat, oferint línies de passada curtes (safety passes) i extrapasses a l'extrem contrari.",
     setupInstructions: "Tres línies situades a fons oposat, ala dreta de 45 graus, i un organitzador al cap de l'àrea. Moviments ràpids i constants de rotació circular consecutiva.",
     playersNeeded: 9,
     materials: ['Pilotes de joc', 'Cons de marcatge espacial'],
@@ -302,7 +302,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-bojan-cikic-motion',
     title: "Tallades i Reaccions de Tall d'en Bojan Cikic (Motion)",
-    category: 'Táctica',
+    category: 'Atac',
     concept: 'Tallades i Motion',
     duration: 15,
     objectives: [
@@ -448,7 +448,7 @@ export default function DrillDatabase({
 
   // Form states
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<DrillCategory>('Técnica');
+  const [category, setCategory] = useState<DrillCategory>('Atac');
   const [concept, setConcept] = useState('');
   const [duration, setDuration] = useState(15);
   const [objectivesString, setObjectivesString] = useState('');
@@ -491,7 +491,7 @@ export default function DrillDatabase({
       const data = await res.json();
       if (data.drill) {
         setTitle(data.drill.title || '');
-        setCategory(data.drill.category || 'Técnica');
+        setCategory(data.drill.category || 'Atac');
         setConcept(data.drill.concept || '');
         setDuration(data.drill.duration || 15);
         setObjectivesString(Array.isArray(data.drill.objectives) ? data.drill.objectives.join('\n') : '');
@@ -541,7 +541,7 @@ export default function DrillDatabase({
               }
               // Set state fields directly
               setTitle(data.drill.title || '');
-              setCategory(data.drill.category || 'Técnica');
+              setCategory(data.drill.category || 'Atac');
               setConcept(data.drill.concept || '');
               setDuration(data.drill.duration || 15);
               setObjectivesString(Array.isArray(data.drill.objectives) ? data.drill.objectives.join('\n') : '');
@@ -612,7 +612,7 @@ export default function DrillDatabase({
 
   const resetForm = () => {
     setTitle('');
-    setCategory('Técnica');
+    setCategory('Atac');
     setConcept('');
     setDuration(15);
     setObjectivesString('');
@@ -700,10 +700,10 @@ export default function DrillDatabase({
       return matchesSearch && d.category === 'Defensa';
     }
     if (selectedCategory === 'Escalfament') {
-      return matchesSearch && (d.category === 'Físico' || d.category === 'Técnica');
+      return matchesSearch && d.category === 'Escalfament';
     }
     if (selectedCategory === 'Atac') {
-      return matchesSearch && (d.category === 'Táctica' || d.category === 'Tiro' || d.category === 'Transición' || d.category === 'Sistemas');
+      return matchesSearch && d.category === 'Atac';
     }
     return matchesSearch; // 'Todos'
   });
@@ -767,13 +767,9 @@ export default function DrillDatabase({
                 onChange={(e) => setCategory(e.target.value as DrillCategory)}
                 className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition bg-white font-medium"
               >
-                <option value="Técnica">Tècnica Individual</option>
-                <option value="Táctica">Tàctica Col·lectiva</option>
-                <option value="Tiro">Roda de Tir</option>
-                <option value="Físico">Preparació Física</option>
-                <option value="Transición">Transició / Contraatac</option>
-                <option value="Sistemas">Sistemes / Tàctica</option>
+                <option value="Atac">Atac</option>
                 <option value="Defensa">Defensa</option>
+                <option value="Escalfament">Escalfament</option>
               </select>
             </div>
             <div>
@@ -1105,12 +1101,8 @@ export default function DrillDatabase({
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${
-                          drill.category === 'Transición' ? 'bg-orange-100 text-orange-850' :
-                          drill.category === 'Táctica' ? 'bg-indigo-100 text-indigo-850' :
-                          drill.category === 'Tiro' ? 'bg-emerald-100 text-emerald-850' :
-                          drill.category === 'Físico' ? 'bg-red-100 text-red-850' :
-                          drill.category === 'Defensa' ? 'bg-rose-100 text-rose-850' :
-                          drill.category === 'Sistemas' ? 'bg-purple-100 text-purple-850' : 'bg-cyan-100 text-cyan-850'
+                          drill.category === 'Atac' ? 'bg-orange-100 text-orange-850' :
+                          drill.category === 'Defensa' ? 'bg-rose-100 text-rose-850' : 'bg-emerald-100 text-emerald-850'
                         }`}>
                           {drill.category}
                         </span>

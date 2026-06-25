@@ -1,4 +1,4 @@
-export type DrillCategory = 'Técnica' | 'Táctica' | 'Tiro' | 'Físico' | 'Transición' | 'Sistemas' | 'Defensa';
+export type DrillCategory = 'Defensa' | 'Atac' | 'Escalfament';
 
 export interface BoardPath {
   id: string;

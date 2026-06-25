@@ -79,7 +79,7 @@ export default function DrillManualBooklet({ drill, onClose }: DrillManualBookle
             {/* Textbook Page Header details */}
             <div className="flex items-center justify-between border-b-2 border-dashed border-[#e6d8c0] pb-3">
               <span className="text-[11px] font-black uppercase tracking-wider text-amber-900/60 font-mono">
-                PARTE {drill.category === 'Transición' ? '1: RITME' : drill.category === 'Táctica' ? '2: DIRECTRIU' : '3: EXECUCIÓ'}
+                PARTE {drill.category === 'Atac' ? '1: RITME' : drill.category === 'Defensa' ? '2: DIRECTRIU' : '3: EXECUCIÓ'}
               </span>
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900/60 font-mono">
                 <BookOpen size={11} />

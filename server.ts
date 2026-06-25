@@ -49,7 +49,7 @@ Pautes crítiques d'extracció i millorament de qualitat:
 3. ÉS REQUERIT I MANDATORI QUE SEMPRE ENVIÏS UN DIBUIX DE COORDINADES ('boardState' I 'boardStates' AMB ARRAYS DE 'pins' I 'paths' NO BUITS). Encara que la imatge tingui un dibuix borrós, oblic, o fins i tot si només té text, DISSENYA I CONSTRUEIX SINTÈTICAMENT de manera lògica els xips o fitxes (pins) i trajectòries (paths). És a dir, col·loca sempre mínim 4-6 pins (jugadors d'atac/defensa, con de sortida, pilota 🏀) i de 2 o 3 fletxes de trajectòria (paths) per a representar esportivament l'exercici sobre la pista táctica. Mai deixis el 'boardState' buit ni sense línies gràfiques!
 4. Els xips ('pins') han d'estar perfectament distribuïts per ressaltar l'exercici de forma pulcra dins la pista (coordenades x: 5% a 95%, y: 5% a 95%) amb labels i id clars (id únics com 'att1', 'def1', 'cone1', 'ball'). El pin de la pilota (id: 'ball', label: '🏀', type: 'ball') s'ha d'ubicar inicialment on comença la jugada o l'atacant amb pilota.
 5. Els traçats ('paths') han d'usar obligatòriament colors hex adients: #eab308 o #f97316 per trajectòries d'atac (solid o zigzag), #0ea5e9 per passades de pilota (dashed), #ef4444 per desplaçament defensiu (dotted). Cada path ha de contenir com a mínim un punt inicial i un punt final directament orientats cap a la cistella.
-6. Assegura't que la Categoria de l'exercici estigui estrictament restringida a un d'aquests valors: 'Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'.
+6. Assegura't que la Categoria de l'exercici estigui estrictament restringida a un d'aquests valors: 'Defensa', 'Atac', 'Escalfament'.
 7. REQUISIT CRÍTIC DE GRAFISME: El valor de retornar 'boardState' i 'boardStates' ha de contenir la representació gràfica completa del flux de l'exercici. És completament obligatori que dibuixis el tatami/pista sobre el full de dades estructurades per representar visualment la mecànica de l'exercici.
 Tots els teus comentaris, instruccions i dades de retorn han d'estar redactats íntegrament en un català correcte, tècnic i formal. Els títols i instruccions han de ser eloqüents.`;
 
@@ -74,7 +74,7 @@ Tots els teus comentaris, instruccions i dades de retorn han d'estar redactats �
             title: { type: Type.STRING, description: "Nom o Títol de l'exercici de bàsquet en català." },
             category: { 
               type: Type.STRING, 
-              description: "Categoria de l'exercici. Valors vàlids: Técnica, Táctica, Tiro, Físico, Transición, Sistemas, Defensa." 
+              description: "Categoria de l'exercici. Valors vàlids: Defensa, Atac, Escalfament." 
             },
             duration: { type: Type.INTEGER, description: "Duració ideal estimada en minuts (enter)." },
             objectives: {

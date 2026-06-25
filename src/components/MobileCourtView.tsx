@@ -1068,10 +1068,10 @@ export default function MobileCourtView({
 
                     // Apply active category filter partition
                     if (addCategoryFilter === 'Escalfament') {
-                      return ['Técnica', 'Físico', 'Transición'].includes(d.category);
+                      return ['Técnica', 'Físico', 'Escalfament'].includes(d.category);
                     }
                     if (addCategoryFilter === 'Atac') {
-                      return ['Táctica', 'Sistemas', 'Tiro'].includes(d.category);
+                      return ['Táctica', 'Sistemas', 'Tiro', 'Transición', 'Atac'].includes(d.category);
                     }
                     if (addCategoryFilter === 'Defensa') {
                       return ['Defensa'].includes(d.category);
