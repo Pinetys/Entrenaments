@@ -19,7 +19,9 @@ import {
   Upload,
   Check,
   Camera,
-  RefreshCw
+  RefreshCw,
+  Cloud,
+  Database
 } from 'lucide-react';
 import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion } from './types';
 import SessionPlanner from './components/SessionPlanner';
@@ -27,6 +29,7 @@ import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase'
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import MobileUploadPortal from './components/MobileUploadPortal';
+import { generateSyncCode, saveToCloud, loadFromCloud } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
 
@@ -82,6 +85,19 @@ export default function App() {
     }
     return PRE_POPULATED_DRILLS;
   });
+
+  const [syncCode, setSyncCode] = useState<string>(() => {
+    try {
+      const savedCode = localStorage.getItem('basket_planner_sync_code');
+      if (savedCode) return savedCode;
+    } catch (e) {}
+    return '';
+  });
+
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [showSyncModal, setShowSyncModal] = useState<boolean>(false);
+  const [inputSyncCode, setInputSyncCode] = useState<string>('');
 
   const [weeklyPlans, setWeeklyPlans] = useState<WeeklyPlan[]>(() => {
     try {
@@ -305,6 +321,107 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(current => current === msg ? null : current);
     }, 4500);
+  };
+
+  // Load from cloud on startup if saved sync code exists
+  useEffect(() => {
+    const savedCode = localStorage.getItem('basket_planner_sync_code');
+    if (savedCode) {
+      setIsSyncing(true);
+      loadFromCloud(savedCode)
+        .then(cloudData => {
+          if (cloudData) {
+            if (cloudData.drills && cloudData.drills.length > 0) setDrills(cloudData.drills);
+            if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
+            if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
+            if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
+            if (cloudData.completions) setCompletions(cloudData.completions);
+            if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
+            
+            if (cloudData.updatedAt) {
+              setLastSynced(new Date(cloudData.updatedAt));
+            } else {
+              setLastSynced(new Date());
+            }
+            triggerToast('🔄 Dades sincronitzades automàticament des de Firestore!');
+          }
+        })
+        .catch(err => {
+          console.warn('Could not auto-load from cloud on startup:', err);
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
+    }
+  }, []);
+
+  // Auto-generate sync code and auto-save changes
+  useEffect(() => {
+    if (!syncCode) {
+      const newCode = generateSyncCode();
+      setSyncCode(newCode);
+      localStorage.setItem('basket_planner_sync_code', newCode);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSyncing(true);
+      try {
+        await saveToCloud(syncCode, {
+          drills,
+          weeklyPlans,
+          selectedWeeklyPlanId,
+          selectedSessionId,
+          completions,
+          favoriteDrillIds
+        });
+        setLastSynced(new Date());
+      } catch (e) {
+        console.warn('Auto-save to cloud failed:', e);
+      } finally {
+        setIsSyncing(false);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, syncCode]);
+
+  // Handler to load cloud data from entering a sync code manually
+  const handleLoadCloudData = async (codeToLoad: string) => {
+    const trimmed = codeToLoad.trim().toUpperCase();
+    if (!trimmed) {
+      triggerToast('⚠️ Introdueix un codi vàlid per sincronitzar.');
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const cloudData = await loadFromCloud(trimmed);
+      if (cloudData) {
+        if (cloudData.drills && cloudData.drills.length > 0) setDrills(cloudData.drills);
+        if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
+        if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
+        if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
+        if (cloudData.completions) setCompletions(cloudData.completions);
+        if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
+        
+        setSyncCode(trimmed);
+        localStorage.setItem('basket_planner_sync_code', trimmed);
+        if (cloudData.updatedAt) {
+          setLastSynced(new Date(cloudData.updatedAt));
+        } else {
+          setLastSynced(new Date());
+        }
+        setShowSyncModal(false);
+        triggerToast('🔄 Sincronització completada amb èxit! Dades recuperades.');
+      } else {
+        triggerToast('⚠️ No s’han trobat dades vinculades a aquest codi.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast('❌ Error en descarregar les dades del núvol.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // URL Hash checks for both shared microcycles AND mobile photo upload links
@@ -735,6 +852,20 @@ export default function App() {
             </button>
 
             <button
+              id="btn-header-sync"
+              onClick={() => {
+                setInputSyncCode('');
+                setShowSyncModal(true);
+              }}
+              title="Sincronització automàtica Firestore"
+              className="py-1.5 md:py-2 px-3.5 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
+            >
+              <Cloud size={13} className={isSyncing ? "animate-pulse" : ""} />
+              <span className="hidden sm:inline">Núvol Sync</span>
+              <span className="sm:hidden">Sync</span>
+            </button>
+
+            <button
               id="btn-header-export"
               onClick={handleExportJson}
               title="Descarregar còpia del pla"
@@ -1097,6 +1228,75 @@ export default function App() {
                 ⚠️ Abre el enlace en tu móvil. Se abrirá directamente en "Modo Pista" con el cronómetro de 75'.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING CLOUD SYNC POPUP (FIRESTORE) */}
+      {showSyncModal && (
+        <div id="sync-modal-backdrop" className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50 backdrop-blur-xs select-none">
+          <div className="bg-white border border-slate-100 rounded-3xl shadow-2xl p-6 max-w-md w-full relative space-y-4 animate-in fade-in zoom-in duration-200">
+            
+            <button
+              id="btn-close-sync-modal"
+              onClick={() => setShowSyncModal(false)}
+              className="absolute right-4 top-4 p-2 rounded-full hover:bg-slate-100 transition text-slate-400 hover:text-slate-700 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="text-center space-y-1.5">
+              <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                <Cloud size={24} className={isSyncing ? "animate-bounce" : ""} />
+              </div>
+              <h3 className="text-base font-bold text-slate-800">Sincronització al Núvol (Firestore)</h3>
+              <p className="text-xs text-slate-450 leading-relaxed font-sans">
+                Els teus exercicis creats, planificacions de temporada i històric es desen automàticament perquè no els perdis mai, fins i tot si l'aplicació entra en repòs.
+              </p>
+            </div>
+
+            <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 text-center space-y-2">
+              <span className="text-[10px] text-amber-700 font-extrabold uppercase tracking-widest font-mono">El teu codi de sincronització</span>
+              <div className="text-2xl font-black text-amber-950 tracking-wider font-mono select-all">
+                {syncCode}
+              </div>
+              <p className="text-[10px] text-slate-500">
+                Guarda aquest codi per enllaçar altres mòbils, tauletes o ordinadors i tenir totes les dades en temps real.
+              </p>
+              {lastSynced && (
+                <div className="text-[9px] text-emerald-600 font-semibold flex items-center justify-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Desat darrer cop: {lastSynced.toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-105 pt-4 space-y-3">
+              <h4 className="text-xs font-bold text-slate-700">Enllaçar un altre dispositiu o recuperar dades</h4>
+              <p className="text-[10px] text-slate-450">
+                Escriu el codi de sincronització de l'altre dispositiu per descarregar i carregar tota la informació:
+              </p>
+              
+              <div className="flex gap-2">
+                <input
+                  id="input-sync-code"
+                  type="text"
+                  placeholder="Ex: PINETY-ABCD"
+                  value={inputSyncCode}
+                  onChange={(e) => setInputSyncCode(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono flex-1 focus:outline-none focus:ring-1 focus:ring-amber-500 uppercase"
+                />
+                <button
+                  id="btn-sync-submit"
+                  onClick={() => handleLoadCloudData(inputSyncCode)}
+                  disabled={isSyncing}
+                  className="px-4 bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-amber-700 transition active:scale-95 flex items-center justify-center cursor-pointer py-2 shrink-0 disabled:opacity-50"
+                >
+                  {isSyncing ? 'Sincronitzant...' : 'Enllaçar'}
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
