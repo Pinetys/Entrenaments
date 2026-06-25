@@ -13,21 +13,30 @@ import {
   CalendarDays,
   FileCheck2,
   ListRestart,
-  GripVertical
+  GripVertical,
+  X,
+  Search,
+  Filter
 } from 'lucide-react';
-import { Drill, TrainingSession, DrillCategory } from '../types';
+import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan } from '../types';
+import TacticalBoard from './TacticalBoard';
 
 export function getEnhancedSessionDrills(
   sessionDrills: { drillId: string; duration: number; notes?: string }[],
   allDrills: Drill[]
 ) {
-  return sessionDrills.map((sd, index) => {
+  const result: any[] = [];
+  let elapsedSinceLastHydration = 0;
+
+  sessionDrills.forEach((sd, index) => {
+    let enhanced: any;
     if (sd.drillId === 'virtual-hydration' || sd.drillId.startsWith('virtual-hydration')) {
-      return {
+      enhanced = {
         id: `hydration-${index}`,
         drillId: sd.drillId,
         title: 'Descans d’Hidratació i Recuperació',
         category: 'Físico' as DrillCategory,
+        concept: undefined as string | undefined,
         duration: sd.duration || 3,
         setupInstructions: 'Tot l’equip corre a banquetes. Hidratació ràpida (90 segons) i retorn d’explicació per part del coach.',
         description: 'Pausa necessària a meitat d’entrenament per garantir la recuperació física i hidratació òptima.',
@@ -38,13 +47,15 @@ export function getEnhancedSessionDrills(
         virtualType: 'hydration' as const,
         realIndex: index
       };
-    }
-    if (sd.drillId === 'virtual-freethrows' || sd.drillId.startsWith('virtual-freethrows')) {
-      return {
+      // Reset elapsed active time since manual hydration block occurs
+      elapsedSinceLastHydration = 0;
+    } else if (sd.drillId === 'virtual-freethrows' || sd.drillId.startsWith('virtual-freethrows')) {
+      enhanced = {
         id: `freethrows-${index}`,
         drillId: sd.drillId,
         title: 'Tirs Lliures de Recuperació Activa',
         category: 'Tiro' as DrillCategory,
+        concept: undefined as string | undefined,
         duration: sd.duration || 4,
         setupInstructions: 'Llançaments de lliures per l’equip (parelles, 10 tirs cadascun). Cal registrar els encerts en parelles.',
         description: 'Treball de tir lliure en condicions de fatiga simulada. Es canvia de llançador cada 2 tirs.',
@@ -55,24 +66,56 @@ export function getEnhancedSessionDrills(
         virtualType: 'freethrows' as const,
         realIndex: index
       };
+    } else {
+      const originalDrill = allDrills.find(d => d.id === sd.drillId);
+      const drillDuration = sd.duration || originalDrill?.duration || 10;
+      enhanced = {
+        ...sd,
+        id: `${sd.drillId}-${index}`,
+        title: originalDrill?.title || 'Ejercicio No Encontrado',
+        category: originalDrill?.category || 'Técnica',
+        concept: originalDrill?.concept,
+        setupInstructions: originalDrill?.setupInstructions || '',
+        description: originalDrill?.description || '',
+        objectives: originalDrill?.objectives || [],
+        playersNeeded: originalDrill?.playersNeeded || 0,
+        boardState: originalDrill?.boardState || { paths: [], pins: [] },
+        originalDuration: originalDrill?.duration || 10,
+        duration: drillDuration,
+        isVirtual: false,
+        realIndex: index
+      };
+      elapsedSinceLastHydration += drillDuration;
     }
 
-    const originalDrill = allDrills.find(d => d.id === sd.drillId);
-    return {
-      ...sd,
-      id: `${sd.drillId}-${index}`,
-      title: originalDrill?.title || 'Ejercicio No Encontrado',
-      category: originalDrill?.category || 'Técnica',
-      setupInstructions: originalDrill?.setupInstructions || '',
-      description: originalDrill?.description || '',
-      objectives: originalDrill?.objectives || [],
-      playersNeeded: originalDrill?.playersNeeded || 0,
-      boardState: originalDrill?.boardState || { paths: [], pins: [] },
-      originalDuration: originalDrill?.duration || 10,
-      isVirtual: false,
-      realIndex: index
-    };
+    result.push(enhanced);
+
+    // If accumulated active training time reaches or passes 20 minutes since the last hydration break,
+    // and there is at least one more drill after this, we auto-insert a 2-minute safety hydration.
+    const isLastDrill = index === sessionDrills.length - 1;
+    if (elapsedSinceLastHydration >= 20 && !isLastDrill) {
+      result.push({
+        id: `auto-hydration-${index}`,
+        drillId: 'virtual-hydration-auto',
+        title: 'Descans d’Hidratació (Auto)',
+        category: 'Físico' as DrillCategory,
+        concept: 'AUTO',
+        duration: 2,
+        setupInstructions: 'Pausa automàtica recomanada cada 20 minuts de treball intensiu. Tot l’equip beu aigua.',
+        description: 'Recordatori de seguretat per prevenir rampes i fatiga acumulada durant la sessió.',
+        notes: '',
+        boardState: { paths: [], pins: [] },
+        objectives: ['Hidratació', 'Recuperació cardíaca'],
+        isVirtual: true,
+        virtualType: 'hydration' as const,
+        isAutoHydration: true,
+        realIndex: index
+      });
+      elapsedSinceLastHydration = 0;
+    }
   });
+
+  return result;
 }
 
 interface SessionPlannerProps {
@@ -81,13 +124,58 @@ interface SessionPlannerProps {
   onChangeSession: (updatedSession: TrainingSession) => void;
   onNavigateToMobile: () => void;
   onPreviewDrill: (drill: Drill) => void;
+  completions: SessionCompletion[];
+  activePlan: WeeklyPlan;
+  onToggleCompleteSession: (sessionId: string) => void;
+  onAddRepetition: (sessionId: string) => void;
+  onRemoveRepetition: (completionId: string) => void;
+  onClearRepetitions: (sessionId: string) => void;
+  onDuplicateSession: (sourceSessionId: string, targetSessionId: string) => void;
+  allSessions?: Record<string, TrainingSession>;
 }
 
-export default function SessionPlanner({ session, drills, onChangeSession, onNavigateToMobile, onPreviewDrill }: SessionPlannerProps) {
+export default function SessionPlanner({ 
+  session, 
+  drills, 
+  onChangeSession, 
+  onNavigateToMobile, 
+  onPreviewDrill,
+  completions,
+  activePlan,
+  onToggleCompleteSession,
+  onAddRepetition,
+  onRemoveRepetition,
+  onClearRepetitions,
+  onDuplicateSession,
+  allSessions
+}: SessionPlannerProps) {
   const [sessionNotes, setSessionNotes] = useState<string>('');
   const [activeNoteEditId, setActiveNoteEditId] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [plannerCategoryFilter, setPlannerCategoryFilter] = useState<string>('Tots');
+  const [plannerSearchQuery, setPlannerSearchQuery] = useState<string>('');
+  const [drillQuickNotes, setDrillQuickNotes] = useState<Record<string, string>>({});
+  const [showDuplicateDropdown, setShowDuplicateDropdown] = useState(false);
+
+  // State for show print preview mode
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+
+  // Discreet state to show category distribution graph (defaults to false for 100% "disimulado" look)
+  const [showCategoryChart, setShowCategoryChart] = useState(false);
+
+  // Completion calculation helpers
+  const completedSessionIds = completions
+    .filter(c => c.planId === activePlan.id)
+    .map(c => c.sessionId);
+
+  const getSessionCompletionsCount = (sessId: string) => {
+    return completions.filter(c => c.planId === activePlan.id && c.sessionId === sessId).length;
+  };
+
+  const isCurrentSessionCompleted = completedSessionIds.includes(session.id);
+  const currentSessionRepetitions = getSessionCompletionsCount(session.id);
+  const cycleTotalPracticeCount = completions.filter(c => c.planId === activePlan.id).length;
 
   const activeDrillsInSession = session.drills.map(sd => {
     const originalDrill = drills.find(d => d.id === sd.drillId);
@@ -106,14 +194,14 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
   const TIME_LIMIT = 75; // 1 hour 15 minutes = 75 minutes
 
   // Handle adding drill to active session
-  const handleAddDrillToSession = (drillId: string) => {
+  const handleAddDrillToSession = (drillId: string, customNotes?: string) => {
     const originalDrill = drills.find(d => d.id === drillId);
     if (!originalDrill) return;
 
     const newDrillRef = {
       drillId,
       duration: originalDrill.duration,
-      notes: ''
+      notes: customNotes || ''
     };
 
     const updatedDrills = [...session.drills, newDrillRef];
@@ -283,18 +371,35 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-slate-200 pb-4 relative z-10">
-            <div>
+            <div className="flex-1 group min-w-0">
               <div className="flex items-center gap-1.5 text-xs text-orange-600 font-bold uppercase tracking-widest">
                 <CalendarDays size={13} className="text-orange-500" />
                 Planificació Real de Temporada
               </div>
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 mt-1 uppercase italic tracking-tight">
-                {session.name}
-              </h2>
+              <div className="flex items-center gap-2 mt-1 max-w-full">
+                <input
+                  id="session-name-editor-input"
+                  type="text"
+                  value={session.name}
+                  onChange={(e) => {
+                    onChangeSession({
+                      ...session,
+                      name: e.target.value
+                    });
+                  }}
+                  className="text-lg md:text-xl font-black text-slate-900 uppercase italic tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-orange-500 focus:bg-slate-50 px-1 py-0.5 rounded-sm focus:outline-none transition-all duration-155 flex-1 min-w-0 font-sans cursor-text"
+                  title="Fes clic per reanomenar la sessió"
+                />
+                <span className="text-slate-400 group-hover:text-orange-550 transition-colors pointer-events-none shrink-0" title="Editar nom de la sessió">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </span>
+              </div>
             </div>
 
             {/* Quick Presets Dropdown or list - Geometric Balance crisp tags */}
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 relative">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block md:inline mr-1">Pre-dissenyats:</span>
               <button
                 id="btn-preset-balanced"
@@ -320,59 +425,217 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
               >
                 Pre-Partit
               </button>
+
+              <div className="relative">
+                <button
+                  id="btn-duplicate-session"
+                  type="button"
+                  onClick={() => setShowDuplicateDropdown(!showDuplicateDropdown)}
+                  className={`px-2.5 py-1.5 border active:scale-95 rounded-sm text-[10px] font-black tracking-wider uppercase flex items-center gap-1 cursor-pointer transition-all duration-150 shadow-xs ${
+                    showDuplicateDropdown 
+                      ? 'bg-orange-500 text-white border-orange-600' 
+                      : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'
+                  }`}
+                  title="Copiar tots els exercicis d'aquesta sessió a una altra d'un clic"
+                >
+                  <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                  </svg>
+                  Duplicar
+                </button>
+
+                {showDuplicateDropdown && (
+                  <div id="duplicate-session-dropdown" className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-md shadow-lg p-3.5 z-[100] animate-fadeIn">
+                    <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100">
+                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">Duplicar Sessió Activa</span>
+                      <button 
+                        onClick={() => setShowDuplicateDropdown(false)}
+                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
+                      Copiar els exercicis, durades i observacions de <strong className="text-slate-700">Sessió {session.id.replace('dia', '')}</strong> a una altra sessió del microcicle:
+                    </p>
+                    
+                    <div className="space-y-1 max-h-52 overflow-y-auto pr-0.5 no-scrollbar">
+                      {[
+                        { id: 'dia1', num: 1 },
+                        { id: 'dia2', num: 2 },
+                        { id: 'dia3', num: 3 },
+                        { id: 'dia4', num: 4 },
+                        { id: 'dia5', num: 5 },
+                        { id: 'dia6', num: 6 },
+                        { id: 'dia7', num: 7 },
+                        { id: 'dia8', num: 8 }
+                      ]
+                      .filter(s => s.id !== session.id)
+                      .map(target => {
+                        const destSession = allSessions ? allSessions[target.id] : (activePlan[target.id as keyof WeeklyPlan] as TrainingSession | undefined);
+                        const drillsCount = destSession?.drills?.length || 0;
+                        return (
+                          <button
+                            key={target.id}
+                            onClick={() => {
+                              if (drillsCount > 0) {
+                                if (!confirm(`S'eliminaran els ${drillsCount} exercicis actuals de la "Sessió ${target.num}". Vols prosseguir?`)) {
+                                  return;
+                                }
+                              }
+                              onDuplicateSession(session.id, target.id);
+                              setShowDuplicateDropdown(false);
+                            }}
+                            className="w-full text-left px-2 py-1 bg-white hover:bg-orange-50 font-medium text-slate-700 border border-slate-100 hover:border-orange-100 flex items-center justify-between text-xs transition cursor-pointer rounded"
+                          >
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="w-5 h-5 flex items-center justify-center bg-orange-100 text-orange-850 rounded-sm text-[9px] font-black uppercase shrink-0">
+                                S{target.num}
+                              </span>
+                              <span className="truncate font-semibold text-slate-700">
+                                {destSession?.name ? destSession.name : `Sessió ${target.num}`}
+                              </span>
+                            </div>
+                            <span className="text-[8px] font-mono text-slate-400 uppercase font-black shrink-0 ml-1">
+                              {drillsCount > 0 ? `${drillsCount} ex.` : 'Buda'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Time speed/gauge calculation panel */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center relative z-10">
-            <div className="md:col-span-4 flex items-center gap-4">
-              <div className="p-4 bg-slate-50 rounded-sm border border-slate-200 text-center w-full shadow-inner">
-                <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest block">Minuts Planificats</span>
-                <span className={`text-5xl font-black block my-1 font-mono tracking-tighter ${
-                  totalTime === TIME_LIMIT ? 'text-emerald-600' : totalTime > TIME_LIMIT ? 'text-red-600 animate-pulse' : 'text-slate-800'
-                }`}>
-                  {totalTime}′
-                </span>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Límit real de pista (75′)</span>
-              </div>
+          {/* Time speed/gauge calculation panel (Discreet minimalist compact version) */}
+          <div className="bg-slate-50/70 border border-slate-200 rounded-lg p-2.5 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs w-full">
+            <div className="flex items-center gap-2 shrink-0 select-none">
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Temps Planificat:</span>
+              <span className={`text-sm font-black font-mono tracking-tight px-2 py-0.5 rounded ${
+                totalTime === TIME_LIMIT 
+                  ? 'bg-emerald-100 text-emerald-700' 
+                  : totalTime > TIME_LIMIT 
+                    ? 'bg-red-100 text-red-700 animate-pulse' 
+                    : 'bg-slate-200 text-slate-800'
+              }`}>
+                {totalTime}′ <span className="text-[10px] opacity-75 font-sans font-semibold">/ 75′</span>
+              </span>
             </div>
 
-            <div className="md:col-span-8 space-y-3">
-              <div>
-                <div className="flex justify-between text-[11px] text-slate-500 mb-1 font-bold uppercase tracking-wider">
-                  <span>Progrés temporal del microcicle</span>
-                  <span>{totalTime} / 75 min</span>
-                </div>
-                {/* Visual indicator bar */}
-                <div className="h-4 bg-slate-150 rounded-sm overflow-hidden border border-slate-200 flex relative">
-                  <div 
-                    className={`h-full bg-gradient-to-r transition-all duration-300 rounded-sm ${getGuageColor()}`}
-                    style={{ width: `${Math.min(100, (totalTime / TIME_LIMIT) * 100)}%` }}
-                  />
-                  {/* Mark at 75m */}
-                  <div className="absolute right-[0%] top-0 bottom-0 w-0.5 bg-red-400 opacity-60" />
-                </div>
+            {/* Subtle, thin visual progress meter */}
+            <div className="flex-1 w-full flex items-center gap-3">
+              <div className="flex-grow h-2 bg-slate-200/80 rounded-full overflow-hidden relative border border-slate-250 flex">
+                <div 
+                  className={`h-full transition-all duration-300 rounded-full ${getGuageColor()}`}
+                  style={{ width: `${Math.min(100, (totalTime / TIME_LIMIT) * 100)}%` }}
+                />
               </div>
 
-              {/* Status Alert Context Box */}
-              {totalTime === TIME_LIMIT ? (
-                <div className="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 px-3 py-2 rounded-sm text-xs flex items-center gap-2">
-                  <FileCheck2 size={15} className="shrink-0 text-emerald-600 font-bold" />
-                  <span><strong>Planificació Perfecta:</strong> Has cobert exactament els 75' réglementaris d'un entrenament FCBQ.</span>
-                </div>
-              ) : totalTime > TIME_LIMIT ? (
-                <div className="bg-red-50 border-l-4 border-red-500 text-red-900 px-3 py-2 rounded-sm text-xs flex items-center gap-2">
-                  <ShieldAlert size={15} className="shrink-0 text-red-500 animate-bounce" />
-                  <span><strong>Sessió sobrecarregada:</strong> Sobren <strong>{totalTime - TIME_LIMIT} minuts</strong>. Pots ajustar els valors inferiors.</span>
-                </div>
-              ) : (
-                <div className="bg-slate-50 border-l-4 border-slate-400 text-slate-700 px-3 py-2 rounded-sm text-xs flex items-center gap-2">
-                  <Clock size={15} className="shrink-0 text-slate-500" />
-                  <span>Queden <strong>{TIME_LIMIT - totalTime} minuts</strong> lliures. Afegeix exercicis de tir o tàctica per completar-ho.</span>
-                </div>
-              )}
+              {/* Ultra-compact alert feedback summary */}
+              <div className="shrink-0 font-bold flex items-center gap-2">
+                {totalTime === TIME_LIMIT ? (
+                  <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 uppercase tracking-wider">
+                    <FileCheck2 size={12} className="shrink-0 text-emerald-500 font-bold" /> Perfecte
+                  </span>
+                ) : totalTime > TIME_LIMIT ? (
+                  <span className="text-[10px] text-red-650 font-black flex items-center gap-1 uppercase tracking-wider animate-pulse">
+                    <ShieldAlert size={12} className="shrink-0 text-red-500" /> +{totalTime - TIME_LIMIT}′
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1 uppercase tracking-wider">
+                    <Clock size={12} className="shrink-0 text-slate-450" /> -{TIME_LIMIT - totalTime}′
+                  </span>
+                )}
+
+                {/* Micro Toggle to see details - 100% "disimulado"! */}
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryChart(!showCategoryChart)}
+                  className={`px-1.5 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider transition-colors cursor-pointer select-none shrink-0 ${
+                    showCategoryChart
+                      ? 'bg-slate-300 text-slate-800'
+                      : 'bg-orange-100 hover:bg-orange-200 text-orange-850 border border-orange-200'
+                  }`}
+                  title="Fes clic per veure/ocultar el gràfic de distribució de continguts"
+                >
+                  {showCategoryChart ? 'Tancar gràfic ✕' : 'Distribució 📊'}
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* CATEGORY DISTRIBUTION STATS BAR (Sleek stacked minimalist row - 100% "disimulado") */}
+          {showCategoryChart && (() => {
+            const categoryMinutes: Record<string, number> = {};
+            enhancedDrillsInSession.forEach(item => {
+              if (!item.isVirtual) {
+                const cat = item.category || 'Técnica';
+                categoryMinutes[cat] = (categoryMinutes[cat] || 0) + item.duration;
+              }
+            });
+            const totalMinExercise = Object.values(categoryMinutes).reduce((acc, v) => acc + v, 0);
+            
+            if (totalMinExercise === 0) return null;
+
+            const categories = ['Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'];
+            const activeCategories = categories.filter(cat => (categoryMinutes[cat] || 0) > 0);
+
+            return (
+              <div className="mt-2 text-left pt-2 border-t border-slate-150 relative z-10 w-full animate-fadeIn select-none">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">Equilibri de Treball de la Sessió</span>
+                  <span className="text-[8px] text-slate-400 font-mono font-medium">Distribució temporal</span>
+                </div>
+                
+                {/* Single multi-colored stacked progress bar - Ultra-thin (3px) to be elegant */}
+                <div className="w-full bg-slate-150 h-1 rounded-full overflow-hidden flex border border-slate-200">
+                  {activeCategories.map(cat => {
+                    const mins = categoryMinutes[cat] || 0;
+                    const pct = (mins / totalMinExercise) * 100;
+                    const colorClass = cat === 'Transición' ? 'bg-orange-500' :
+                                       cat === 'Táctica' ? 'bg-indigo-500' :
+                                       cat === 'Tiro' ? 'bg-emerald-500' :
+                                       cat === 'Físico' ? 'bg-red-500' :
+                                       cat === 'Defensa' ? 'bg-rose-500' :
+                                       cat === 'Sistemas' ? 'bg-purple-500' : 'bg-cyan-500';
+
+                    return (
+                      <div 
+                        key={cat} 
+                        className={`${colorClass} h-full transition-all duration-300`} 
+                        style={{ width: `${pct}%` }}
+                        title={`${cat}: ${mins}′ (${Math.round(pct)}%)`}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Micro legend row */}
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[8.5px] text-slate-500 font-semibold uppercase tracking-wider">
+                  {activeCategories.map(cat => {
+                    const mins = categoryMinutes[cat] || 0;
+                    const labelCatalan = cat === 'Técnica' ? 'Tècnica' : cat === 'Táctica' ? 'Tàctica' : cat === 'Tiro' ? 'Tir' : cat === 'Físico' ? 'Físic' : cat === 'Sistemas' ? 'Sistemes' : cat === 'Defensa' ? 'Defensa' : 'Transició';
+                    const colorDotClass = cat === 'Transición' ? 'bg-orange-500' :
+                                          cat === 'Táctica' ? 'bg-indigo-500' :
+                                          cat === 'Tiro' ? 'bg-emerald-500' :
+                                          cat === 'Físico' ? 'bg-red-505' :
+                                          cat === 'Defensa' ? 'bg-rose-500' :
+                                          cat === 'Sistemas' ? 'bg-purple-500' : 'bg-cyan-500';
+
+                    return (
+                      <span key={cat} className="flex items-center gap-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${colorDotClass}`} />
+                        <span className="text-slate-600">{labelCatalan}</span>
+                        <strong className="text-slate-900 font-mono font-bold text-[9px]">{mins}′</strong>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Exercises list selected in trainer session */}
@@ -380,7 +643,7 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
               <NotebookPen size={16} className="text-orange-500" />
-              Secuencia de Ejercicios en Pista
+              Seqüència d'Exercicis a Pista
             </h3>
             {activeDrillsInSession.length > 0 && (
               <button
@@ -388,7 +651,7 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                 onClick={clearSession}
                 className="text-xs text-red-500 hover:text-red-700 font-semibold cursor-pointer py-1 px-2.5 rounded-lg hover:bg-red-50 transition flex items-center gap-1"
               >
-                <ListRestart size={13} /> Limpiar Todo
+                <ListRestart size={13} /> Netejar Tot
               </button>
             )}
           </div>
@@ -407,12 +670,13 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                 if (sd.isVirtual) {
                   const isHydration = sd.virtualType === 'hydration';
                   const realIdx = sd.realIndex;
+                  const isAuto = !!sd.isAutoHydration;
                   return (
                     <div
                       id={sd.id}
                       key={`${sd.drillId}-${realIdx}`}
-                      draggable
-                      onDragStart={(e) => {
+                      draggable={!isAuto}
+                      onDragStart={isAuto ? undefined : (e) => {
                         e.dataTransfer.setData('text/plain', String(realIdx));
                         e.dataTransfer.effectAllowed = 'move';
                         setDraggedIndex(realIdx);
@@ -420,14 +684,14 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                       onDragOver={(e) => {
                         e.preventDefault();
                       }}
-                      onDragEnter={() => {
+                      onDragEnter={isAuto ? undefined : () => {
                         setDragOverIndex(realIdx);
                       }}
-                      onDragEnd={() => {
+                      onDragEnd={isAuto ? undefined : () => {
                         setDraggedIndex(null);
                         setDragOverIndex(null);
                       }}
-                      onDrop={(e) => {
+                      onDrop={isAuto ? undefined : (e) => {
                         e.preventDefault();
                         if (draggedIndex !== null && draggedIndex !== realIdx) {
                           handleDragReorder(draggedIndex, realIdx);
@@ -435,45 +699,72 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                         setDraggedIndex(null);
                         setDragOverIndex(null);
                       }}
-                      className={`border border-l-4 rounded-md p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 transition shadow-xs group cursor-grab active:cursor-grabbing ${
-                        isHydration ? 'border-l-cyan-500' : 'border-l-emerald-500'
+                      className={`border border-l-4 rounded-md p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 transition shadow-xs group ${
+                        isAuto ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
                       } ${
-                        draggedIndex === realIdx 
+                        isAuto 
+                          ? 'border-l-blue-500 bg-blue-50/25' 
+                          : isHydration 
+                            ? 'border-l-cyan-500 bg-slate-50' 
+                            : 'border-l-emerald-500 bg-slate-50'
+                      } ${
+                        !isAuto && draggedIndex === realIdx 
                           ? 'opacity-40 border-slate-300 border-dashed bg-slate-50' 
-                          : dragOverIndex === realIdx 
+                          : !isAuto && dragOverIndex === realIdx 
                             ? 'border-orange-500 scale-[1.01] bg-orange-50/40' 
                             : 'bg-slate-50 border-slate-200 hover:border-orange-400'
                       }`}
                     >
                       <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 flex-1 min-w-0">
                         {/* Drag Grip Handle */}
-                        <div 
-                          title="Arrastra per reordenar"
-                          className="flex items-center text-slate-400 hover:text-orange-600 bg-slate-100 p-1.5 rounded transition cursor-grab active:cursor-grabbing shrink-0"
-                        >
-                          <GripVertical size={15} />
-                        </div>
+                        {!isAuto ? (
+                          <div 
+                            title="Arrastra per reordenar"
+                            className="flex items-center text-slate-400 hover:text-orange-600 bg-slate-100 p-1.5 rounded transition cursor-grab active:cursor-grabbing shrink-0"
+                          >
+                            <GripVertical size={15} />
+                          </div>
+                        ) : (
+                          <div 
+                            title="Descanse de seguretat obligatori"
+                            className="flex items-center text-blue-500 bg-blue-50/50 p-1.5 rounded shrink-0 shadow-xs"
+                          >
+                            <span role="img" aria-label="Aigua" className="text-xs">💧</span>
+                          </div>
+                        )}
 
                         {/* Minutes tag */}
                         <div className="w-full md:w-24 text-center border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4 shrink-0 flex md:flex-col items-center justify-between md:justify-center">
                           <span className={`block text-2xl font-black tracking-tight font-mono ${
-                            isHydration ? 'text-cyan-600' : 'text-emerald-600'
+                            isAuto ? 'text-blue-600' : isHydration ? 'text-cyan-600' : 'text-emerald-600'
                           }`}>{sd.duration}′</span>
-                          <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Durada</span>
+                          <span className="text-[9px] uppercase font-bold text-slate-450 tracking-wider">Durada</span>
                         </div>
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
                             <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${
-                              isHydration ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' : 'bg-emerald-100 text-emerald-850 border border-emerald-200'
+                              isAuto 
+                                ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                                : isHydration 
+                                  ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' 
+                                  : 'bg-emerald-100 text-emerald-850 border border-emerald-200'
                             }`}>
-                              {isHydration ? 'Descans fìsic' : 'Tir lliure'}
+                              {isAuto ? 'SISTEMA AUTOMÀTIC' : isHydration ? 'Descans fìsic' : 'Tir lliure'}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono font-bold">Ordre #{realIdx + 1}</span>
+                            {isAuto ? (
+                              <span className="text-[9px] px-1.5 py-0.2 bg-blue-50/50 text-blue-600 border border-blue-200/55 rounded font-black uppercase tracking-wider">
+                                Mínim de Seguretat Recomanat
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-mono font-bold">Ordre #{realIdx + 1}</span>
+                            )}
                           </div>
                           
-                          <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-1.5">
-                            {isHydration ? '💧' : '🏀'} {sd.title}
+                          <h4 className={`text-sm font-black uppercase tracking-tight flex items-center gap-1.5 ${
+                            isAuto ? 'text-blue-900' : 'text-slate-900'
+                          }`}>
+                            {isAuto ? '💧' : isHydration ? '💧' : '🏀'} {sd.title}
                           </h4>
                           
                           {sd.notes ? (
@@ -488,106 +779,112 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                         </div>
                       </div>
 
-                      <div 
-                        onDragStart={(e) => e.stopPropagation()} 
-                        draggable={false}
-                        className="flex items-center gap-4 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 border-slate-100 pt-3 md:pt-0"
-                      >
-                        {/* Timing controls */}
-                        <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-100">
-                          <span className="text-[11px] font-bold text-slate-400 mr-1 font-mono uppercase">Mins:</span>
-                          <input
-                            id={`input-dur-change-${realIdx}`}
-                            type="number"
-                            min="1"
-                            max="75"
-                            value={sd.duration}
-                            draggable={false}
-                            onDragStart={(e) => e.stopPropagation()}
-                            onChange={(e) => handleDurationChange(realIdx, Number(e.target.value))}
-                            className="w-10 bg-white border border-slate-200 rounded text-center text-xs font-bold font-mono py-0.5 text-slate-700"
-                          />
-                          <span className="text-slate-400 text-xs font-mono">′</span>
+                      {isAuto ? (
+                        <div className="flex items-center text-[10px] uppercase font-bold bg-blue-105 text-blue-800 px-3 py-1.5 rounded-md border border-blue-200 gap-1.5 tracking-wider select-none shrink-0">
+                          <span>💧 Hidratació Auto</span>
                         </div>
-
-                        {/* Ordering buttons */}
-                        <div className="flex items-center gap-0.5">
-                          <button
-                            id={`btn-move-up-${realIdx}`}
-                            onClick={() => moveDrill(realIdx, 'up')}
-                            disabled={realIdx === 0}
-                            draggable={false}
-                            onDragStart={(e) => e.stopPropagation()}
-                            title="Subir de orden"
-                            className="p-1 px-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-50 rounded bg-white border border-slate-200 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
-                          >
-                            <ChevronUp size={14} />
-                          </button>
-                          <button
-                            id={`btn-move-down-${realIdx}`}
-                            onClick={() => moveDrill(realIdx, 'down')}
-                            disabled={realIdx === session.drills.length - 1}
-                            draggable={false}
-                            onDragStart={(e) => e.stopPropagation()}
-                            title="Bajar de orden"
-                            className="p-1 px-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-50 rounded bg-white border border-slate-200 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
-                          >
-                            <ChevronDown size={14} />
-                          </button>
-                        </div>
-
-                        {/* Drill session custom note editor */}
-                        <div className="relative">
-                          {activeNoteEditId === `${sd.drillId}-${realIdx}` ? (
-                            <div className="absolute right-0 bottom-full mb-2 bg-white border border-slate-250 rounded-xl shadow-lg p-3 z-30 w-64 space-y-2">
-                              <label className="text-[10px] uppercase font-bold text-slate-400 block">Observación para este ejercicio:</label>
-                              <input
-                                id={`note-input-${realIdx}`}
-                                type="text"
-                                defaultValue={sd.notes || ''}
-                                draggable={false}
-                                onDragStart={(e) => e.stopPropagation()}
-                                placeholder="Ej. Excluir botes innecesarios"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleNoteSave(realIdx, (e.target as HTMLInputElement).value);
-                                  }
-                                }}
-                                className="w-full text-xs p-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
-                                autoFocus
-                              />
-                              <p className="text-[9px] text-slate-400">Pulsa Intro para guardar la anotación táctica.</p>
-                            </div>
-                          ) : (
-                            <button
-                              id={`btn-toggle-note-${realIdx}`}
-                              onClick={() => setActiveNoteEditId(`${sd.drillId}-${realIdx}`)}
+                      ) : (
+                        <div 
+                          onDragStart={(e) => e.stopPropagation()} 
+                          draggable={false}
+                          className="flex items-center gap-4 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 border-slate-100 pt-3 md:pt-0"
+                        >
+                          {/* Timing controls */}
+                          <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-100">
+                            <span className="text-[11px] font-bold text-slate-400 mr-1 font-mono uppercase">Mins:</span>
+                            <input
+                              id={`input-dur-change-${realIdx}`}
+                              type="number"
+                              min="1"
+                              max="75"
+                              value={sd.duration}
                               draggable={false}
                               onDragStart={(e) => e.stopPropagation()}
-                              title="Añadir nota táctica específica para hoy"
-                              className={`p-1.5 rounded-lg border transition cursor-pointer ${
-                                sd.notes 
-                                  ? 'bg-rose-50 border-rose-200 text-rose-500 hover:bg-rose-100' 
-                                  : 'bg-white border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-slate-50'
-                              }`}
-                            >
-                              <NotebookPen size={14} />
-                            </button>
-                          )}
-                        </div>
+                              onChange={(e) => handleDurationChange(realIdx, Number(e.target.value))}
+                              className="w-10 bg-white border border-slate-200 rounded text-center text-xs font-bold font-mono py-0.5 text-slate-700"
+                            />
+                            <span className="text-slate-400 text-xs font-mono">′</span>
+                          </div>
 
-                        {/* Delete drill from session */}
-                        <button
-                          id={`btn-remove-session-drill-${realIdx}`}
-                          onClick={() => handleRemoveDrill(realIdx)}
-                          draggable={false}
-                          onDragStart={(e) => e.stopPropagation()}
-                          title="Quitar de esta sesión"
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition border border-dashed border-slate-200 hover:border-red-200 cursor-pointer"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                          {/* Ordering buttons */}
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              id={`btn-move-up-${realIdx}`}
+                              onClick={() => moveDrill(realIdx, 'up')}
+                              disabled={realIdx === 0}
+                              draggable={false}
+                              onDragStart={(e) => e.stopPropagation()}
+                              title="Pujar d'ordre"
+                              className="p-1 px-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-50 rounded bg-white border border-slate-200 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
+                            >
+                              <ChevronUp size={14} />
+                            </button>
+                            <button
+                              id={`btn-move-down-${realIdx}`}
+                              onClick={() => moveDrill(realIdx, 'down')}
+                              disabled={realIdx === session.drills.length - 1}
+                              draggable={false}
+                              onDragStart={(e) => e.stopPropagation()}
+                              title="Baixar d'ordre"
+                              className="p-1 px-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-50 rounded bg-white border border-slate-200 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
+                            >
+                              <ChevronDown size={14} />
+                            </button>
+                          </div>
+
+                          {/* Drill session custom note editor */}
+                          <div className="relative">
+                            {activeNoteEditId === `${sd.drillId}-${realIdx}` ? (
+                              <div className="absolute right-0 bottom-full mb-2 bg-white border border-slate-250 rounded-xl shadow-lg p-3 z-30 w-64 space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 block">Observació per a aquest exercici:</label>
+                                <input
+                                  id={`note-input-${realIdx}`}
+                                  type="text"
+                                  defaultValue={sd.notes || ''}
+                                  draggable={false}
+                                  onDragStart={(e) => e.stopPropagation()}
+                                  placeholder="P. ex. Excloure bots innecessaris"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleNoteSave(realIdx, (e.target as HTMLInputElement).value);
+                                    }
+                                  }}
+                                  className="w-full text-xs p-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                  autoFocus
+                                />
+                                <p className="text-[9px] text-slate-400">Prem Intro per desar l'anotació tàctica.</p>
+                              </div>
+                            ) : (
+                              <button
+                                id={`btn-toggle-note-${realIdx}`}
+                                onClick={() => setActiveNoteEditId(`${sd.drillId}-${realIdx}`)}
+                                draggable={false}
+                                onDragStart={(e) => e.stopPropagation()}
+                                title="Afegir nota tàctica específica per avui"
+                                className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                                  sd.notes 
+                                    ? 'bg-rose-50 border-rose-200 text-rose-500 hover:bg-rose-100' 
+                                    : 'bg-white border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-slate-50'
+                                }`}
+                              >
+                                <NotebookPen size={14} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Delete drill from session */}
+                          <button
+                            id={`btn-remove-session-drill-${realIdx}`}
+                            onClick={() => handleRemoveDrill(realIdx)}
+                            draggable={false}
+                            onDragStart={(e) => e.stopPropagation()}
+                            title="Treure d'aquesta sessió"
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition border border-dashed border-slate-200 hover:border-red-200 cursor-pointer"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -645,6 +942,18 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                         <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Durada</span>
                       </div>
 
+                      {/* Tactical Board Preview Thumbnail */}
+                      <div 
+                        onClick={() => {
+                          const orig = drills.find(d => d.id === sd.drillId);
+                          if (orig) onPreviewDrill(orig);
+                        }}
+                        title="Clica per veure en gran"
+                        className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 mx-auto md:mx-0 p-0.5 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.02] transition"
+                      >
+                        <TacticalBoard boardState={sd.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                      </div>
+
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
                           <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${
@@ -657,6 +966,11 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                           }`}>
                             {sd.category}
                           </span>
+                          {sd.concept && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-black uppercase tracking-wider animate-fadeIn">
+                              {sd.concept}
+                            </span>
+                          )}
                           <span className="text-[10px] text-slate-400 font-mono font-bold">Ordre #{realIdx + 1}</span>
                         </div>
                         
@@ -712,7 +1026,7 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                           disabled={realIdx === 0}
                           draggable={false}
                           onDragStart={(e) => e.stopPropagation()}
-                          title="Subir de orden"
+                          title="Pujar d'ordre"
                           className="p-1 px-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-50 rounded bg-white border border-slate-200 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
                         >
                           <ChevronUp size={14} />
@@ -723,7 +1037,7 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                           disabled={realIdx === session.drills.length - 1}
                           draggable={false}
                           onDragStart={(e) => e.stopPropagation()}
-                          title="Bajar de orden"
+                          title="Baixar d'ordre"
                           className="p-1 px-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-50 rounded bg-white border border-slate-200 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
                         >
                           <ChevronDown size={14} />
@@ -734,14 +1048,14 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                       <div className="relative">
                         {activeNoteEditId === `${sd.drillId}-${realIdx}` ? (
                           <div className="absolute right-0 bottom-full mb-2 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-30 w-64 space-y-2">
-                            <label className="text-[10px] uppercase font-bold text-slate-400 block">Observación para este ejercicio:</label>
+                            <label className="text-[10px] uppercase font-bold text-slate-400 block">Observació per a aquest exercici:</label>
                             <input
                               id={`note-input-${realIdx}`}
                               type="text"
                               defaultValue={sd.notes || ''}
                               draggable={false}
                               onDragStart={(e) => e.stopPropagation()}
-                              placeholder="Ej. Excluir botes innecesarios"
+                              placeholder="P. ex. Excloure bots innecessaris"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   handleNoteSave(realIdx, (e.target as HTMLInputElement).value);
@@ -750,7 +1064,7 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                               className="w-full text-xs p-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                               autoFocus
                             />
-                            <p className="text-[9px] text-slate-400">Pulsa Intro para guardar la anotación táctica.</p>
+                            <p className="text-[9px] text-slate-400">Prem Intro per desar l'anotació tàctica.</p>
                           </div>
                         ) : (
                           <button
@@ -758,7 +1072,7 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                             onClick={() => setActiveNoteEditId(`${sd.drillId}-${realIdx}`)}
                             draggable={false}
                             onDragStart={(e) => e.stopPropagation()}
-                            title="Añadir nota táctica específica para hoy"
+                            title="Afegir nota tàctica específica per avui"
                             className={`p-1.5 rounded-lg border transition cursor-pointer ${
                               sd.notes 
                                 ? 'bg-rose-50 border-rose-200 text-rose-500 hover:bg-rose-100' 
@@ -774,7 +1088,7 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                       <button
                         id={`btn-remove-session-drill-${realIdx}`}
                         onClick={() => handleRemoveDrill(realIdx)}
-                        title="Quitar de esta sesión"
+                        title="Treure d'aquesta sessió"
                         className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition border border-dashed border-slate-200 hover:border-red-200 cursor-pointer"
                       >
                         <Trash2 size={14} />
@@ -795,109 +1109,624 @@ export default function SessionPlanner({ session, drills, onChangeSession, onNav
                 className="py-3 px-6 bg-slate-900 hover:bg-slate-850 text-white font-bold rounded-sm text-xs uppercase tracking-widest shadow-md inline-flex items-center gap-2 cursor-pointer transition active:scale-95 border-none"
               >
                 <Smartphone className="text-orange-400 shrink-0" size={15} />
-                Llevar al Móvil (Modo Pista)
+                Obrir Modo Pista (Mòbil) ⚡
               </button>
             </div>
           )}
         </div>
-      </div>
 
-      {/* RIGHT: Quick-add Library Drills selector Panel (4 columns) */}
-      <div id="quick-add-panel" className="xl:col-span-4 bg-white border border-slate-200 rounded-sm p-6 space-y-5 shadow-xs">
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Exercicis Disponibles</h3>
-          <p className="text-xs text-slate-500">Afegeix-los de forma instantània prement el botó.</p>
-        </div>
+        {/* RIGHT NOW SITUATED IN THE MAIN COLUMN: Quick-add Library Drills selector Panel (raised up to left column!) */}
+        <div id="quick-add-panel" className="bg-white border border-slate-200 rounded-md p-6 space-y-5 shadow-sm mt-6">
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Exercicis Disponibles</h3>
+            <p className="text-xs text-slate-500 font-medium">Afegeix-los de forma instantània prement el botó.</p>
+          </div>
 
-        {/* Dynamic Hydration and Free Throws Creator Buttons */}
-        <div className="bg-slate-50 border border-slate-200 rounded-sm p-3.5 space-y-2">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">💧 Pauses i Tir de Recuperació</span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              id="btn-add-hydration-custom"
-              type="button"
-              onClick={() => {
-                const newDrillRef = {
-                  drillId: 'virtual-hydration',
-                  duration: 3,
-                  notes: ''
-                };
-                const updatedDrills = [...session.drills, newDrillRef];
-                onChangeSession({
-                  ...session,
-                  drills: updatedDrills,
-                  totalDuration: updatedDrills.reduce((acc, curr) => acc + curr.duration, 0)
-                });
-              }}
-              className="px-2 py-2 bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-400 text-cyan-700 rounded-sm text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
-            >
-              💧 + Hidratació (3′)
-            </button>
-            <button
-              id="btn-add-freethrows-custom"
-              type="button"
-              onClick={() => {
-                const newDrillRef = {
-                  drillId: 'virtual-freethrows',
-                  duration: 4,
-                  notes: ''
-                };
-                const updatedDrills = [...session.drills, newDrillRef];
-                onChangeSession({
-                  ...session,
-                  drills: updatedDrills,
-                  totalDuration: updatedDrills.reduce((acc, curr) => acc + curr.duration, 0)
-                });
-              }}
-              className="px-2 py-2 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 text-emerald-700 rounded-sm text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
-            >
-              🏀 + Tirs Lliures (4′)
-            </button>
+          {/* Dynamic Hydration and Free Throws Creator Buttons */}
+          <div className="bg-slate-50 border border-slate-200 rounded-sm p-3.5 space-y-2">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">💧 Pauses i Tir de Recuperació</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                id="btn-add-hydration-custom"
+                type="button"
+                onClick={() => {
+                  const newDrillRef = {
+                    drillId: 'virtual-hydration',
+                    duration: 3,
+                    notes: ''
+                  };
+                  const updatedDrills = [...session.drills, newDrillRef];
+                  onChangeSession({
+                    ...session,
+                    drills: updatedDrills,
+                    totalDuration: updatedDrills.reduce((acc, curr) => acc + curr.duration, 0)
+                  });
+                }}
+                className="px-2 py-2 bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-400 text-cyan-700 rounded-sm text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
+              >
+                💧 + Hidratació (3′)
+              </button>
+              <button
+                id="btn-add-freethrows-custom"
+                type="button"
+                onClick={() => {
+                  const newDrillRef = {
+                    drillId: 'virtual-freethrows',
+                    duration: 4,
+                    notes: ''
+                  };
+                  const updatedDrills = [...session.drills, newDrillRef];
+                  onChangeSession({
+                    ...session,
+                    drills: updatedDrills,
+                    totalDuration: updatedDrills.reduce((acc, curr) => acc + curr.duration, 0)
+                  });
+                }}
+                className="px-2 py-2 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 text-emerald-700 rounded-sm text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
+              >
+                🏀 + Tirs Lliures (4′)
+              </button>
+            </div>
+          </div>
+
+          {/* Search bar and Category filters for Available Drills */}
+          <div className="space-y-3 bg-slate-50 border border-slate-200 rounded-sm p-3 shadow-xs">
+            {/* Search Input */}
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400">
+                <Search size={13} />
+              </span>
+              <input
+                id="input-planner-drill-search"
+                type="text"
+                placeholder="Cerca exercicis..."
+                value={plannerSearchQuery}
+                onChange={(e) => setPlannerSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-[11px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-orange-500 bg-white font-medium"
+              />
+              {plannerSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setPlannerSearchQuery('')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-2 text-slate-400 hover:text-slate-600"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Category Filter Chips */}
+            <div className="flex flex-col gap-1.5 select-none">
+              <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-1">
+                <Filter size={9} />
+                Filtrar per Categoria:
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {[
+                  { id: 'Tots', label: 'Tots' },
+                  { id: 'Escalfament', label: 'Escalfament' },
+                  { id: 'Atac', label: 'Atac' },
+                  { id: 'Defensa', label: 'Defensa' }
+                ].map((item) => {
+                  const isActive = plannerCategoryFilter === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setPlannerCategoryFilter(item.id)}
+                      className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition border cursor-pointer ${
+                        isActive
+                          ? 'bg-orange-500 text-white border-orange-500 shadow-xs'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div id="quick-drills-list" className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-1">
+            {drills
+              .filter((drill) => {
+                // Apply Search Query first
+                if (plannerSearchQuery) {
+                  const query = plannerSearchQuery.toLowerCase();
+                  const matchesTitle = drill.title.toLowerCase().includes(query);
+                  const matchesDesc = drill.description.toLowerCase().includes(query);
+                  const matchesConcept = drill.concept?.toLowerCase().includes(query) || false;
+                  if (!matchesTitle && !matchesDesc && !matchesConcept) return false;
+                }
+
+                // Apply Category Filter
+                if (plannerCategoryFilter === 'Tots') return true;
+                if (plannerCategoryFilter === 'Escalfament') {
+                  return ['Técnica', 'Físico'].includes(drill.category);
+                }
+                if (plannerCategoryFilter === 'Atac') {
+                  return ['Táctica', 'Sistemas', 'Tiro', 'Transición'].includes(drill.category);
+                }
+                if (plannerCategoryFilter === 'Defensa') {
+                  return ['Defensa'].includes(drill.category);
+                }
+                return true;
+              })
+              .map((drill) => {
+              const isAlreadyIn = session.drills.some(sd => sd.drillId === drill.id);
+              return (
+                <div
+                  id={`quick-drill-item-${drill.id}`}
+                  key={drill.id}
+                  className="p-3 border border-slate-250 rounded bg-white hover:border-orange-450 transition flex flex-col justify-between gap-2.5 group shadow-xs hover:shadow-2xs"
+                >
+                  <div className="flex items-start gap-3 w-full">
+                    {/* Tactical Board Miniature Preview Graphic */}
+                    <div 
+                      onClick={() => onPreviewDrill(drill)}
+                      title="Clica per veure en gran el manual tàctic"
+                      className="w-14 h-14 bg-white border border-slate-200 rounded overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5"
+                    >
+                      <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                    </div>
+
+                    {/* Primary labels & titles */}
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="flex flex-wrap items-center gap-1 mb-1">
+                        <span className="px-1.5 py-0.5 rounded text-[8px] bg-slate-100 font-extrabold text-slate-650 uppercase tracking-widest border border-slate-200/60">
+                          {drill.category}
+                        </span>
+                        {drill.concept && (
+                          <span className="px-1 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-black uppercase tracking-wider">
+                            {drill.concept}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 ml-auto">
+                          <Clock size={10} className="text-slate-400" />
+                          {drill.duration}′
+                        </span>
+                      </div>
+                      <h4 
+                        onClick={() => onPreviewDrill(drill)}
+                        title="Clica per veure el manual tàctic"
+                        className="text-xs font-black text-slate-800 uppercase tracking-tight leading-snug group-hover:text-orange-600 hover:underline cursor-pointer transition-colors truncate"
+                      >
+                        {drill.title}
+                      </h4>
+                    </div>
+
+                    <button
+                      id={`btn-quick-add-${drill.id}`}
+                      onClick={() => {
+                        handleAddDrillToSession(drill.id, drillQuickNotes[drill.id]);
+                        // Clear the input after adding
+                        setDrillQuickNotes(prev => {
+                          const copy = { ...prev };
+                          copy[drill.id] = '';
+                          return copy;
+                        });
+                      }}
+                      type="button"
+                      className="px-2.5 py-1.5 rounded bg-orange-500 hover:bg-orange-600 transition text-[9px] font-black uppercase text-white flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+                    >
+                      <Plus size={10} strokeWidth={3} />
+                      {isAlreadyIn ? 'Afegir+' : 'Afegir'}
+                    </button>
+                  </div>
+
+                  {/* Optional Note / Custom written note beside tag info */}
+                  <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded border border-slate-150">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider shrink-0 font-mono">Anotació:</span>
+                    <input
+                      type="text"
+                      placeholder="Escriu un escrit/observació per a l'exercici..."
+                      value={drillQuickNotes[drill.id] || ''}
+                      onChange={(e) => setDrillQuickNotes({
+                        ...drillQuickNotes,
+                        [drill.id]: e.target.value
+                      })}
+                      className="flex-1 text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-400 font-medium"
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
+      </div>
 
-        <div id="quick-drills-list" className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-          {drills.map((drill) => {
-            const isAlreadyIn = session.drills.some(sd => sd.drillId === drill.id);
-            return (
-              <div
-                id={`quick-drill-item-${drill.id}`}
-                key={drill.id}
-                className="p-3 border border-slate-250 rounded-sm bg-white hover:border-orange-450 transition flex items-center justify-between gap-3 group"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                    <span className="px-1.5 py-0.5 rounded-sm lg:rounded-none text-[8px] bg-slate-100 font-extrabold text-slate-600 uppercase tracking-wider">
-                      {drill.category}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 pl-1">
-                      <Clock size={10} />
-                      {drill.duration}′
-                    </span>
-                  </div>
-                  <h4 
-                    onClick={() => onPreviewDrill(drill)}
-                    title="Clica per veure el manual tàctic"
-                    className="text-xs font-black text-slate-800 uppercase tracking-tight truncate group-hover:text-orange-650 hover:underline cursor-pointer transition-colors"
-                  >
-                    {drill.title}
-                  </h4>
-                </div>
+      {/* RIGHT: Completions, Weekly registry, and PDF (4 columns) */}
+      <div id="execution-registry-panel" className="xl:col-span-4 bg-white border border-slate-200 rounded-md shadow-sm p-6 space-y-6">
+        <div className="flex flex-col gap-3.5 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Registre d'Execució i PDF</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">Gestió de sessions completades i exportació a PDF.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPrintPreview(true)}
+            className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white font-black rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition uppercase tracking-wider"
+          >
+            📄 PDF del Microcicle / Imprimir
+          </button>
+        </div>
 
+        <div className="space-y-6">
+          {/* Active session completion controls */}
+          <div className="space-y-3">
+            <span className="text-[10px] text-slate-450 font-black uppercase tracking-widest block text-left">Sessió Activa • Estat</span>
+            
+            <div className="p-3.5 bg-slate-50 rounded border border-slate-200 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-slate-700">Completada:</span>
                 <button
-                  id={`btn-quick-add-${drill.id}`}
-                  onClick={() => handleAddDrillToSession(drill.id)}
                   type="button"
-                  className="px-3 py-1.5 rounded-sm bg-orange-500 hover:bg-orange-600 transition text-[10px] font-black uppercase text-white flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+                  onClick={() => onToggleCompleteSession(session.id)}
+                  className={`px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition ${
+                    isCurrentSessionCompleted
+                      ? 'bg-emerald-500 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-707 hover:bg-slate-100'
+                  }`}
                 >
-                  <Plus size={11} strokeWidth={3} />
-                  Afegir
+                  {isCurrentSessionCompleted ? '✓ Sí' : '☐ No'}
                 </button>
               </div>
-            );
-          })}
+
+              <div className="flex flex-col gap-1.5 border-t border-slate-200 pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700">Repeticions:</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <button
+                      type="button"
+                      disabled={currentSessionRepetitions <= (isCurrentSessionCompleted ? 1 : 0)}
+                      onClick={() => {
+                        const record = [...completions]
+                          .reverse()
+                          .find(c => c.planId === activePlan.id && c.sessionId === session.id);
+                        if (record) onRemoveRepetition(record.id);
+                      }}
+                      className="w-6 h-6 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded font-black text-xs disabled:opacity-50 cursor-pointer flex items-center justify-center shadow-xs"
+                    >
+                      -
+                    </button>
+                    <span className="text-xs font-black font-mono w-5 text-center">{currentSessionRepetitions}</span>
+                    <button
+                      type="button"
+                      onClick={() => onAddRepetition(session.id)}
+                      className="w-6 h-6 bg-slate-900 hover:bg-slate-800 text-white rounded font-black text-xs cursor-pointer flex items-center justify-center shadow-xs"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => onClearRepetitions(session.id)}
+                    className="text-[9px] text-slate-450 hover:text-red-500 transition font-bold"
+                    title="Reiniciar repeticions"
+                  >
+                    Netejar comptador
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress of the 8 days weekly plan */}
+            <div className="pt-2">
+              <div className="flex justify-between text-[10px] text-slate-400 font-extrabold uppercase tracking-wide mb-1.5">
+                <span>Completades (Local)</span>
+                <span>{completedSessionIds.length} / 8</span>
+              </div>
+              
+              {/* 8 squares of active plan */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { id: 'dia1', num: 1 },
+                  { id: 'dia2', num: 2 },
+                  { id: 'dia3', num: 3 },
+                  { id: 'dia4', num: 4 },
+                  { id: 'dia5', num: 5 },
+                  { id: 'dia6', num: 6 },
+                  { id: 'dia7', num: 7 },
+                  { id: 'dia8', num: 8 },
+                ].map(day => {
+                  const count = getSessionCompletionsCount(day.id);
+                  const isSessCompleted = count > 0;
+                  return (
+                    <div
+                      key={day.id}
+                      className={`py-1.5 border text-center rounded flex flex-col justify-between ${
+                        isSessCompleted 
+                          ? count > 1 
+                            ? 'bg-orange-50 border-orange-300 text-orange-950 font-black'
+                            : 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold'
+                          : 'bg-slate-50 border-slate-200 text-slate-400'
+                      }`}
+                      title={`Sessió ${day.num}: ${count} repeticions.`}
+                    >
+                      <span className="text-[10px] font-mono leading-tight">S{day.num}</span>
+                      {count > 0 ? (
+                        <span className="text-[9px] font-mono font-black text-orange-655 block leading-tight mt-0.5">x{count}</span>
+                      ) : (
+                        <span className="text-[8px] opacity-40">☐</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-650 font-bold flex justify-between items-center">
+                <span>📈 Total Microcicle:</span>
+                <span className="font-black text-orange-700 font-mono">{cycleTotalPracticeCount}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Simple Completions history log list */}
+          <div className="space-y-2 border-t border-slate-100 pt-4">
+            <span className="text-[10.5px] text-slate-400 font-extrabold uppercase tracking-widest block text-left">Historial de Treball</span>
+            
+            <div className="border border-slate-200 rounded h-[180px] overflow-y-auto bg-slate-50 p-1.5 space-y-1 text-[11px]">
+              {completions.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 font-mono italic text-[10px]">
+                  No hi ha cap registre encara.
+                </div>
+              ) : (
+                [...completions].reverse().map(item => {
+                  const dateFormatted = new Date(item.completedAt).toLocaleDateString('ca-ES', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+                  
+                  let sessionNum = 0;
+                  if (item.sessionId === 'dia1') sessionNum = 1;
+                  else if (item.sessionId === 'dia2') sessionNum = 2;
+                  else if (item.sessionId === 'dia3') sessionNum = 3;
+                  else if (item.sessionId === 'dia4') sessionNum = 4;
+                  else if (item.sessionId === 'dia5') sessionNum = 5;
+                  else if (item.sessionId === 'dia6') sessionNum = 6;
+                  else if (item.sessionId === 'dia7') sessionNum = 7;
+                  else if (item.sessionId === 'dia8') sessionNum = 8;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white border border-slate-150 p-1.5 rounded-sm flex items-center justify-between gap-1.5 shadow-2xs hover:border-slate-300 transition"
+                    >
+                      <div className="min-w-0 flex-grow text-left">
+                        <div className="flex items-center gap-1">
+                          <span className="px-1 py-0.2 bg-orange-100 text-orange-950 font-black font-mono text-[8px] uppercase rounded">
+                            S{sessionNum}
+                          </span>
+                          <span className="text-[8.5px] text-slate-400 font-mono shrink-0">{dateFormatted}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-505 font-bold truncate mt-0.5">
+                          Plan: {activePlan.name}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveRepetition(item.id)}
+                        className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded shrink-0 transition"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* PRINT PREVIEW OVERLAY MODAL */}
+      {showPrintPreview && (
+        <div id="print-overlay" className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs select-none print:p-0 print:bg-white print:static print:inset-auto print:block">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col print:h-auto print:shadow-none print:border-none print:w-full">
+            
+            {/* HEADER CONTROLS (Hidden during printing!) */}
+            <div className="bg-slate-50 border-b border-slate-250 px-6 py-4 flex items-center justify-between shrink-0 print:hidden relative">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📄</span>
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-tight">Dossier de Preparació de la Sessió (PDF)</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Revisa la prèvia d'impressió abans de desar-lo o enviar i imprimir.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="py-1.5 px-3 bg-slate-905 hover:bg-slate-800 text-slate-800 font-black text-xs rounded-xl shadow-sm transition active:scale-95 cursor-pointer uppercase tracking-wider text-[10px]"
+                  title="Consell per desar en PDF"
+                  onClick={() => alert("💡 CONSELL PER GUARDAR EN PDF:\n\nAl menú de col·locació de la teva impressora de sistema, selecciona 'Anomena com a PDF' o 'Anomena en PDF' com a destí. Pots escollir format 'Sense Marges' o 'Escala 100%' per mantenir l'elegància del disseny adaptat.")}
+                >
+                  💡 Com desar?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.print();
+                  }}
+                  className="py-1.5 px-3.5 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs rounded-xl shadow-sm transition active:scale-95 cursor-pointer uppercase tracking-wider text-[10px]"
+                >
+                  Imprimir / Desar PDF 🖨️
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPrintPreview(false)}
+                  className="p-1.5 hover:bg-slate-200 rounded-full transition text-slate-500 hover:text-slate-950"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+
+            {/* ACTIVE DOCUMENT PREVIEW AREA (Prints directly!) */}
+            <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-8 print:p-0 print:overflow-visible text-slate-900 select-text">
+              
+              {/* Document Header */}
+              <div className="border-b-4 border-orange-500 pb-5 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div>
+                  <span className="text-[10px] font-black tracking-widest text-orange-600 uppercase font-mono bg-orange-50 border border-orange-100 px-2 py-0.5 rounded">
+                    FCBQ JÚNIOR MASCULÍ • NIVELL A STANDARDS
+                  </span>
+                  <h1 className="text-xl md:text-2xl font-black text-slate-900 mt-2 uppercase tracking-tight leading-none italic">
+                    DOSSIER TÀCTIC i ORGANITZATIU
+                  </h1>
+                  <p className="text-[10px] text-slate-500 mt-1 uppercase font-semibold tracking-wider">
+                    Microcicle d'Entrenament de Pista • {activePlan.name}
+                  </p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 p-3 text-right rounded-sm min-w-[180px] print:bg-white print:border-none print:p-0">
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block font-mono">Data del Dossier</span>
+                  <span className="text-xs font-black font-mono text-slate-800">{new Date().toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+              </div>
+
+              {/* Session Overview Block */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 print:bg-white print:border-slate-300">
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">Sessió de Pista</span>
+                  <h3 className="text-xs font-black text-slate-850 uppercase mt-1 leading-tight">{session.name}</h3>
+                  <p className="text-[10px] text-slate-505 mt-0.5">Sessió vigent d'aquest bloc planificat.</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 print:bg-white print:border-slate-300">
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">Durada de l'Entrenament</span>
+                  <h3 className="text-base font-black text-orange-600 font-mono mt-1">{totalTime} minuts</h3>
+                  <p className="text-[10px] text-slate-505 mt-0.5">Límit reglamentari d'ocupació de pista.</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 print:bg-white print:border-slate-300">
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">Nivell d'Exigència</span>
+                  <h3 className="text-xs font-black text-indigo-950 uppercase mt-1">Competició FCBQ A</h3>
+                  <p className="text-[10px] text-slate-505 mt-0.5">Planificació de màxima intensitat tàctica.</p>
+                </div>
+              </div>
+
+              {/* Category Distribution chart or blocks */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-450 border-b border-slate-100 pb-1.5">Equilibri de Treball de la Sessió</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {['Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'].map(cat => {
+                    let catMin = 0;
+                    enhancedDrillsInSession.forEach(item => {
+                      if (!item.isVirtual && item.category === cat) {
+                        catMin += item.duration;
+                      }
+                    });
+                    if (catMin === 0) return null;
+                    const labelCatalan = cat === 'Técnica' ? 'TÈCNICA' : cat === 'Táctica' ? 'TÀCTICA' : cat === 'Tiro' ? 'TIR' : cat === 'Físico' ? 'FÍSIC' : cat === 'Sistemas' ? 'SISTEMES' : cat === 'Defensa' ? 'DEFENSA' : 'TRANSICIÓ';
+                    return (
+                      <div key={cat} className="bg-slate-50 border border-slate-200 rounded p-2 text-center flex flex-col justify-between print:bg-white print:border-slate-300">
+                        <span className="text-[8px] text-slate-505 font-black tracking-wider uppercase block truncate">{labelCatalan}</span>
+                        <span className="text-xs font-black text-slate-800 font-mono block mt-1">{catMin}′</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Drills List Section */}
+              <div className="space-y-6">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-805 border-b-2 border-slate-200 pb-2">CRONOLOGIA DE L'ENTRENAMENT</h3>
+                
+                <div className="space-y-8">
+                  {enhancedDrillsInSession.map((item, idx) => {
+                    const labelCatalan = item.category === 'Técnica' ? 'TÈCNICA' : item.category === 'Táctica' ? 'TÀCTICA' : item.category === 'Tiro' ? 'TIR' : item.category === 'Físico' ? 'FÍSIC' : item.category === 'Sistemas' ? 'SISTEMES' : item.category === 'Defensa' ? 'DEFENSA' : 'TRANSICIÓ';
+                    const hasBoardState = item.boardState && (item.boardState.pins.length > 0 || item.boardState.paths.length > 0);
+                    
+                    return (
+                      <div key={item.id} className="border border-slate-200 rounded-xl p-5 bg-white space-y-4 shadow-2xs break-inside-avoid print:border-slate-300">
+                        
+                        {/* Header info of the exercise */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="w-5 h-5 bg-slate-900 text-white rounded-full flex items-center justify-center font-mono font-black text-[10px]">
+                              {idx + 1}
+                            </span>
+                            <h4 className="text-xs font-black text-slate-900 uppercase tracking-tight">
+                              {item.title}
+                            </h4>
+                            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-705 font-extrabold uppercase text-[7px] tracking-widest rounded-sm border border-slate-200">
+                              {labelCatalan}
+                            </span>
+                          </div>
+                          <span className="text-xs font-black font-mono text-orange-600 bg-orange-50 px-2.5 py-1 rounded">
+                            ⏱️ {item.duration} min
+                          </span>
+                        </div>
+
+                        {/* Details and drawing panel */}
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                          <div className="md:col-span-7 space-y-2.5 text-[11px] leading-relaxed">
+                            
+                            {item.objectives && item.objectives.length > 0 && (
+                              <div>
+                                <strong className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Objectius clau:</strong>
+                                <ul className="list-disc list-inside space-y-0.5 text-slate-700 font-bold">
+                                  {item.objectives.map((obj, oIdx) => <li key={oIdx}>{obj}</li>)}
+                                </ul>
+                              </div>
+                            )}
+
+                            <div>
+                              <strong className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Descripció:</strong>
+                              <p className="text-slate-600 font-semibold">{item.description}</p>
+                            </div>
+
+                            {item.setupInstructions && (
+                              <div>
+                                <strong className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Preparació:</strong>
+                                <p className="text-slate-650 italic font-medium">{item.setupInstructions}</p>
+                              </div>
+                            )}
+
+                            {item.notes && (
+                              <div className="bg-amber-50 border-l-2 border-amber-500 p-2 rounded-r print:bg-white print:border-l-4">
+                                <strong className="text-[9px] font-black text-amber-850 uppercase tracking-wider block">Nota del Coach:</strong>
+                                <p className="text-amber-900 font-bold">{item.notes}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="md:col-span-5 flex flex-col items-center">
+                            {hasBoardState ? (
+                              <div className="border border-slate-200 rounded-lg p-1.5 bg-slate-50 w-full max-w-[240px] aspect-square relative print:bg-white print:border-slate-350">
+                                <TacticalBoard 
+                                  boardState={item.boardState} 
+                                  onChange={() => {}} 
+                                  readOnly={true} 
+                                />
+                              </div>
+                            ) : (
+                              <div className="border border-dashed border-slate-250 rounded-lg p-5 bg-slate-50 flex flex-col items-center justify-center text-center w-full max-w-[240px] h-[180px] print:bg-white">
+                                <span className="text-lg">📋</span>
+                                <span className="text-[8px] text-slate-405 font-black uppercase tracking-wider mt-1 block">SENSE DIAGRAMA TÀCTIC</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Dossier footer notes */}
+              <div className="border-t border-slate-200 pt-5 flex justify-between items-center text-[9px] text-slate-450 font-mono">
+                <span>Generat automàticament per Coach Pinety Junior A</span>
+                <span>Federació Catalana de Basquetbol Standards</span>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

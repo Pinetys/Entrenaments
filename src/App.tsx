@@ -21,7 +21,7 @@ import {
   Camera,
   RefreshCw
 } from 'lucide-react';
-import { Drill, TrainingSession, AppState, WeeklyPlan } from './types';
+import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion } from './types';
 import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
 import MobileCourtView from './components/MobileCourtView';
@@ -31,8 +31,34 @@ import MobileUploadPortal from './components/MobileUploadPortal';
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
 
 const DEFAULT_SESSIONS = {
-  dia1: { id: 'dia1', name: 'Sessió 1: Dimarts Setmana 1 - Ritme de Transició', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia2: { id: 'dia2', name: 'Sessió 2: Dijous Setmana 1 - Defensa de l’1v1', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia1: { 
+    id: 'dia1', 
+    name: 'Sessió 1: Dimarts Setmana 1 - Ritme de Transició', 
+    dayOfWeek: 'Martes', 
+    totalDuration: 75, 
+    drills: [
+      { drillId: 'drill-rueda-11', duration: 15, notes: "Activa ritme de cames ràpides i passe fort de sortida." },
+      { drillId: 'virtual-hydration', duration: 3 },
+      { drillId: 'drill-junior-transicion-3x2', duration: 15, notes: "Balanç defensiu agressiu i comunicació de canvis." },
+      { drillId: 'virtual-freethrows', duration: 7 },
+      { drillId: 'drill-spacing-junior-spacing', duration: 15, notes: "Ocupació racional del perímetre de 4-oberts." },
+      { drillId: 'drill-rueda-tiro-competitiva', duration: 20, notes: "Consumir tir exterior per equips amb ritme alt." }
+    ] 
+  },
+  dia2: { 
+    id: 'dia2', 
+    name: 'Sessió 2: Dijous Setmana 1 - Defensa de l’1v1', 
+    dayOfWeek: 'Jueves', 
+    totalDuration: 75, 
+    drills: [
+      { drillId: 'drill-defensa-shell', duration: 20, notes: "Control d'ajuda i recuperació de línies de passe." },
+      { drillId: 'virtual-hydration', duration: 2 },
+      { drillId: 'drill-bojan-cikic-trap', duration: 18, notes: "Presionar la cantonada per forçar passe bombat." },
+      { drillId: 'virtual-freethrows', duration: 6 },
+      { drillId: 'drill-bojan-cikic-motion', duration: 19, notes: "Sincronització de bloquejos indirectes de l'anvers." },
+      { drillId: 'drill-dejan-cikic-decisions', duration: 10, notes: "Lectura ràpida de l'avantatge espacial en la trena." }
+    ] 
+  },
   dia3: { id: 'dia3', name: 'Sessió 3: Dimarts Setmana 2 - Transició i Joc Continu', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
   dia4: { id: 'dia4', name: 'Sessió 4: Dijous Setmana 2 - Pick & Roll Situacions', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
   dia5: { id: 'dia5', name: 'Sessió 5: Dimarts Setmana 3 - Construcció del Contraatac', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
@@ -116,17 +142,24 @@ export default function App() {
   // Calculate active weekly plan
   const activePlan = weeklyPlans.find(p => p.id === selectedWeeklyPlanId) || weeklyPlans[0];
 
-  // Derive sessions object elegantly with 8 days fallback compatibility
-  const sessions: Record<string, TrainingSession> = {
-    dia1: activePlan.dia1,
-    dia2: activePlan.dia2,
-    dia3: activePlan.dia3 || { id: 'dia3', name: 'Sessió 3: Dimarts Setmana 2 - Transició i Joc Continu', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-    dia4: activePlan.dia4 || { id: 'dia4', name: 'Sessió 4: Dijous Setmana 2 - Pick & Roll Situacions', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-    dia5: activePlan.dia5 || { id: 'dia5', name: 'Sessió 5: Dimarts Setmana 3 - Construcció del Contraatac', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-    dia6: activePlan.dia6 || { id: 'dia6', name: 'Sessió 6: Dijous Setmana 3 - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-    dia7: activePlan.dia7 || { id: 'dia7', name: 'Sessió 7: Dimarts Setmana 4 - Presió a Tot Camp', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-    dia8: activePlan.dia8 || { id: 'dia8', name: 'Sessió 8: Dijous Setmana 4 - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  };
+  // Wrap sessions derivation in React.useMemo to stabilize its reference completely.
+  // This completely stops writing to localStorage on every timer clock-second-tick in App.tsx!
+  const sessions = React.useMemo<Record<string, TrainingSession>>(() => {
+    const fallbackPlan = activePlan || (weeklyPlans && weeklyPlans[0]) || {
+      dia1: DEFAULT_SESSIONS.dia1,
+      dia2: DEFAULT_SESSIONS.dia2
+    };
+    return {
+      dia1: fallbackPlan.dia1 || DEFAULT_SESSIONS.dia1,
+      dia2: fallbackPlan.dia2 || DEFAULT_SESSIONS.dia2,
+      dia3: fallbackPlan.dia3 || { id: 'dia3', name: 'Sessió 3: Dimarts Setmana 2 - Transició i Joc Continu', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+      dia4: fallbackPlan.dia4 || { id: 'dia4', name: 'Sessió 4: Dijous Setmana 2 - Pick & Roll Situacions', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+      dia5: fallbackPlan.dia5 || { id: 'dia5', name: 'Sessió 5: Dimarts Setmana 3 - Construcció del Contraatac', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+      dia6: fallbackPlan.dia6 || { id: 'dia6', name: 'Sessió 6: Dijous Setmana 3 - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+      dia7: fallbackPlan.dia7 || { id: 'dia7', name: 'Sessió 7: Dimarts Setmana 4 - Presió a Tot Camp', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+      dia8: fallbackPlan.dia8 || { id: 'dia8', name: 'Sessió 8: Dijous Setmana 4 - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+    };
+  }, [activePlan, weeklyPlans]);
 
   // Custom setSessions wrapper that writes modifications directly into the active slice of weeklyPlans
   const setSessions = (newSessionsValOrFn: any) => {
@@ -162,16 +195,81 @@ export default function App() {
   };
 
   const [selectedSessionId, setSelectedSessionId] = useState<string>('dia1');
-  const [activeView, setActiveView] = useState<string>('planner');
+  const [activeView, setActiveView] = useState<string>(() => {
+    try {
+      // Direct mobile UA and size-responsive detection so phones load mobile views natively & quickly
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isSmallScreen = window.innerWidth < 768;
+      if (isMobileUA || isSmallScreen) {
+        return 'mobile';
+      }
+    } catch (e) {}
+    return 'planner';
+  });
   const [isSharedMobile, setIsSharedMobile] = useState<boolean>(false);
   const [shareUrl, setShareUrl] = useState<string>('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [previewDrill, setPreviewDrill] = useState<Drill | null>(null);
+
+  // Completions list with localStorage persistence
+  const [completions, setCompletions] = useState<SessionCompletion[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.completions) {
+          return parsed.completions;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading completions from localstorage', e);
+    }
+    return [];
+  });
+
+  const handleToggleCompleteSession = (planId: string, sessId: string) => {
+    const isCompleted = completions.some(c => c.planId === planId && c.sessionId === sessId);
+    if (isCompleted) {
+      setCompletions(current => current.filter(c => !(c.planId === planId && c.sessionId === sessId)));
+      triggerToast('Sessió desmarcada com a completada 🔄');
+    } else {
+      const newCompletion: SessionCompletion = {
+        id: `completion-${Date.now()}`,
+        planId,
+        sessionId: sessId,
+        completedAt: new Date().toISOString()
+      };
+      setCompletions(current => [...current, newCompletion]);
+      triggerToast('Sessió marcada com a completada! Enhorabona! 🎉');
+    }
+  };
+
+  const handleAddRepetition = (planId: string, sessId: string) => {
+    const newCompletion: SessionCompletion = {
+      id: `completion-${Date.now()}-${Math.random()}`,
+      planId,
+      sessionId: sessId,
+      completedAt: new Date().toISOString()
+    };
+    setCompletions(current => [...current, newCompletion]);
+    triggerToast('S’ha afegit una nova repetició d’entrenament! 📈');
+  };
+
+  const handleRemoveRepetition = (completionId: string) => {
+    setCompletions(current => current.filter(c => c.id !== completionId));
+    triggerToast('S’ha eliminat la repetició del registre.');
+  };
+
+  const handleClearCompletions = (planId: string, sessId: string) => {
+    setCompletions(current => current.filter(c => !(c.planId === planId && c.sessionId === sessId)));
+    triggerToast('S’ha reiniciat el registre de repeticions d’aquesta sessió.');
+  };
   
   // Mobile direct photo pairing code state
   const [mobilePairingCode, setMobilePairingCode] = useState<string | null>(null);
+  const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -229,6 +327,9 @@ export default function App() {
             }
           }
           if (hash.startsWith('#plan=')) {
+            // Instantly transition to the responsive, high-performance 'mobile' view.
+            // This prevents mobile browsers from showing slow/heavy desktop frames while the background request runs!
+            setActiveView('mobile');
             const codeOrBase64 = hash.substring(6);
             if (codeOrBase64.length < 15) {
               // Fetch short shared session from server
@@ -266,24 +367,28 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashRouter);
   }, []);
 
-  // Save changes to localStorage
+  // Save changes to localStorage (runs ONLY when actual configuration changes, NOT on every second stopwatch timer tick!)
   useEffect(() => {
-    const dataToSave = {
-      drills,
-      weeklyPlans,
-      selectedWeeklyPlanId,
-      sessions,
-      selectedSessionId
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, sessions, selectedSessionId]);
+    try {
+      const dataToSave = {
+        drills,
+        weeklyPlans,
+        selectedWeeklyPlanId,
+        selectedSessionId,
+        completions
+      };
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+    } catch (e) {
+      console.warn('Could not persist application configuration changes to localStorage. This is expected inside isolated mobile browsers/private sandbox frames:', e);
+    }
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions]);
 
   // Generate compact, un-bloated mobile link
   // Generate compact, un-bloated mobile link using the server-side short URL service (protects QR sizes!)
   const handleGenerateShareCode = async () => {
     try {
-      const activeSession = sessions[selectedSessionId];
-      const scheduledDrillIds = new Set(activeSession.drills.map(d => d.drillId));
+      const activeSession = sessions[selectedSessionId] || sessions['dia1'] || { drills: [] };
+      const scheduledDrillIds = new Set((activeSession.drills || []).map(d => d.drillId));
       
       // Keep only paths with coordinate points to avoid bloat, and only drills scheduled in activeSession
       const compactDrills = drills
@@ -341,8 +446,8 @@ export default function App() {
       console.warn('Could not store state in server, falling back to local base64 compression', e);
       // Fallback base64 link support (guarantees offline support!)
       try {
-        const activeSession = sessions[selectedSessionId];
-        const scheduledDrillIds = new Set(activeSession.drills.map(d => d.drillId));
+        const activeSession = sessions[selectedSessionId] || sessions['dia1'] || { drills: [] };
+        const scheduledDrillIds = new Set((activeSession.drills || []).map(d => d.drillId));
         const compactDrills = drills
           .filter(d => scheduledDrillIds.has(d.id))
           .map(d => ({
@@ -469,6 +574,38 @@ export default function App() {
     });
   };
 
+  const handleDuplicateSession = (sourceSessionId: string, targetSessionId: string) => {
+    const sourceSession = sessions[sourceSessionId];
+    const targetSession = sessions[targetSessionId];
+    if (!sourceSession || !targetSession) return;
+
+    // Use a regex/split to retain target prefix structural details but copy source's actual content topic
+    let sourceTopic = "Còpia";
+    const parts = sourceSession.name.split(' - ');
+    if (parts.length > 1) {
+      sourceTopic = parts[1];
+    }
+
+    const targetPrefix = targetSession.name.split(' - ')[0];
+    const newName = `${targetPrefix} - ${sourceTopic}`;
+
+    const duplicatedSession: TrainingSession = {
+      ...targetSession,
+      name: newName,
+      totalDuration: sourceSession.totalDuration,
+      drills: sourceSession.drills.map(d => ({ ...d }))
+    };
+
+    setSessions({
+      ...sessions,
+      [targetSessionId]: duplicatedSession
+    });
+
+    // Automatically navigate/select target session to give visual feedback
+    setSelectedSessionId(targetSessionId);
+    triggerToast(`🔄 Sessió duplicada correctament a la ${targetSession.name.split(':')[0]}!`);
+  };
+
   // Back up configuration package via local json download
   const handleExportJson = () => {
     try {
@@ -521,8 +658,8 @@ export default function App() {
     );
   }
 
-  const activeSession = sessions[selectedSessionId];
-  const timeScheduledObj = activeSession.drills.reduce((acc, d) => acc + d.duration, 0);
+  const activeSession = sessions[selectedSessionId] || sessions['dia1'] || { id: 'dia1', name: 'Sessió de Recuperació', dayOfWeek: 'Martes', totalDuration: 75, drills: [] };
+  const timeScheduledObj = (activeSession.drills || []).reduce((acc, d) => acc + d.duration, 0);
 
   return (
     <div id="app-workspace" className="min-h-screen bg-slate-150 text-slate-900 font-sans flex flex-col antialiased">
@@ -532,13 +669,19 @@ export default function App() {
         <header id="global-header" className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-8 shrink-0 relative z-10 select-none">
           
           {/* Logo brand & Catalan basket descriptors */}
-          <div className="flex items-center gap-4">
-            <div className="bg-orange-500 w-10 h-10 rounded-sm flex items-center justify-center text-white font-black text-xl shadow-xs">
-              J
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 w-11 h-11 rounded-xl flex items-center justify-center text-white relative shadow-md border border-orange-400/20 group">
+              <Dribbble strokeWidth={2.2} size={25} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] animate-[spin_12s_linear_infinite]" />
+              <div className="absolute -bottom-1 -right-1 bg-slate-950 text-white text-[8px] px-1 font-black rounded-full border border-orange-500 scale-90">
+                A
+              </div>
             </div>
             <div>
-              <h1 className="text-base md:text-lg font-black tracking-tight text-slate-900 leading-tight">COURT COMMANDER</h1>
-              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-semibold">Junior Masculí • Nivell A (FCBQ)</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base md:text-xl font-black tracking-tighter text-slate-900 leading-none">COACH PINETY</h1>
+                <span className="bg-orange-500/10 text-orange-600 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider hidden sm:inline-block">v1.2</span>
+              </div>
+              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5 leading-none">Junior Masculí • Nivell A (FCBQ)</p>
             </div>
           </div>
 
@@ -564,7 +707,7 @@ export default function App() {
             <button
               id="btn-header-export"
               onClick={handleExportJson}
-              title="Descarregar copia del plan"
+              title="Descarregar còpia del pla"
               className="p-1.5 md:p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-slate-600 hover:text-slate-900 cursor-pointer active:scale-95 transition shadow-xs"
             >
               <Download size={14} />
@@ -572,8 +715,8 @@ export default function App() {
 
             <label
               id="lbl-header-import-file"
-              title="Subir archivo de planificación guardado"
-              className="p-1.5 md:p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-slate-600 hover:text-slate-900 cursor-pointer active:scale-95 transition shadow-xs"
+              title="Pujar fitxer de planificació desat"
+              className="p-1.5 md:p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-slate-600 hover:text-slate-950 cursor-pointer active:scale-95 transition shadow-xs"
             >
               <Upload size={14} />
               <input
@@ -584,6 +727,28 @@ export default function App() {
                 className="hidden"
               />
             </label>
+
+            {/* User Profile Custom Avatar */}
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-2.5 md:pl-3.5">
+              <div className="relative group cursor-pointer">
+                <img
+                  src="/src/assets/images/coach_avatar_profile_1782414908020.jpg"
+                  alt="Coach Profile Avatar"
+                  referrerPolicy="no-referrer"
+                  className="w-9 h-9 rounded-full object-cover border-2 border-orange-500/80 shadow-xs hover:border-orange-600 transition duration-200"
+                />
+                <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                
+                {/* Profile dropdown tooltip on hover */}
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg py-2 px-3 hidden group-hover:block transition duration-250 z-50">
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Entrenador Actiu</p>
+                  <p className="text-xs font-bold text-slate-800 mt-0.5 truncate" title="dpinogay@gmail.com">David Pino</p>
+                  <p className="text-[9px] font-medium text-slate-500 mt-0.5 truncate">dpinogay@gmail.com</p>
+                  <div className="border-t border-slate-100 my-1.5" />
+                  <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded text-center">Júnior A • FCBQ</p>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
       )}
@@ -609,7 +774,7 @@ export default function App() {
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
             
             {/* Visual Tabs selector - Beautifully aligned geometric layout */}
-            <div className="flex items-center gap-1 p-1 bg-slate-200/60 rounded-md select-none self-start">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/60 rounded-md select-none self-start">
               <button
                 id="tab-planner"
                 onClick={() => setActiveView('planner')}
@@ -620,7 +785,7 @@ export default function App() {
                 }`}
               >
                 <Calendar size={14} className={activeView === 'planner' ? 'text-orange-500' : 'text-slate-500'} />
-                Planificar Sesions
+                Planificar Sessions
               </button>
 
               <button
@@ -634,6 +799,19 @@ export default function App() {
               >
                 <BookOpen size={14} className={activeView === 'database' ? 'text-orange-500' : 'text-slate-500'} />
                 Biblioteca d'Exercicis
+              </button>
+
+              <button
+                id="tab-court-mode"
+                onClick={() => setActiveView('mobile')}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-black uppercase tracking-wider transition-all duration-150 ${
+                  activeView === 'mobile' 
+                    ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
+                    : 'text-orange-600 hover:text-orange-850 hover:bg-orange-50'
+                }`}
+              >
+                <Smartphone size={14} className="text-orange-500 animate-bounce" />
+                ⚡ Modo Pista (Mòbil)
               </button>
             </div>
 
@@ -677,98 +855,116 @@ export default function App() {
           <div className="space-y-6">
             
             {/* INTERACTIVE BASKETBALL TRAINING CALENDAR */}
-            <div className="bg-white border border-slate-200 rounded p-5 shadow-xs space-y-4">
-              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">CALENDARI DE L'ENTRENAMENT DE JÚNIOR A</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Fes clic en dimarts o dijous per canviar de dia d'entrenament instantàniament.</p>
-                </div>
-                <span className="text-[10px] font-mono font-black text-orange-600 bg-orange-50 border border-orange-100 px-2.5 py-1 rounded">
-                  CALENDARI OFICIAL FCBQ
-                </span>
-              </div>
-
-              {/* Calendar Grid Container */}
-              <div className="grid grid-cols-7 gap-2">
-                {/* Header days */}
-                {['Dil', 'Dim', 'Dmc', 'Dij', 'Div', 'Dis', 'Diu'].map(dayName => (
-                  <div key={dayName} className="text-center py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 font-mono">
-                    {dayName}
+            <div className="bg-white border border-slate-200 rounded p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="bg-orange-500/10 text-orange-600 p-1.5 rounded-lg flex items-center justify-center">
+                    <Calendar size={15} />
                   </div>
-                ))}
-
-                 {/* 28 simulated calendar squares */}
-                {Array.from({ length: 28 }).map((_, i) => {
-                  const dayNum = i + 1;
-                  const dayOfWeekIndex = i % 7; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
-                  const weekIndex = Math.floor(i / 7);
-                  const isDay1 = dayOfWeekIndex === 1; // Tuesday
-                  const isDay2 = dayOfWeekIndex === 3; // Thursday
-                  const isWeekend = dayOfWeekIndex >= 5; // Saturday/Sunday
-
-                  let sessionCode = '';
-                  let sessionNum = 0;
-                  if (isDay1) {
-                    if (weekIndex === 0) { sessionCode = 'dia1'; sessionNum = 1; }
-                    else if (weekIndex === 1) { sessionCode = 'dia3'; sessionNum = 3; }
-                    else if (weekIndex === 2) { sessionCode = 'dia5'; sessionNum = 5; }
-                    else if (weekIndex === 3) { sessionCode = 'dia7'; sessionNum = 7; }
-                  } else if (isDay2) {
-                    if (weekIndex === 0) { sessionCode = 'dia2'; sessionNum = 2; }
-                    else if (weekIndex === 1) { sessionCode = 'dia4'; sessionNum = 4; }
-                    else if (weekIndex === 2) { sessionCode = 'dia6'; sessionNum = 6; }
-                    else if (weekIndex === 3) { sessionCode = 'dia8'; sessionNum = 8; }
-                  }
-
-                  let bgStyle = "bg-slate-50 text-slate-700 hover:bg-slate-100";
-                  let borderStyle = "border border-slate-200";
-                  let content = null;
-
-                  if (sessionCode) {
-                    const isActive = selectedSessionId === sessionCode;
-                    bgStyle = isActive 
-                      ? "bg-orange-500 text-white shadow-xs relative scale-[1.01] z-5" 
-                      : "bg-orange-50/70 text-slate-800 hover:bg-orange-100/95";
-                    borderStyle = isActive 
-                      ? "border border-orange-600 font-extrabold ring-2 ring-orange-200" 
-                      : "border border-dashed border-orange-300";
-                    content = (
-                      <div className="mt-1 flex flex-col items-center">
-                        <span className={`text-[8px] uppercase tracking-wide font-black truncate max-w-full px-1.5 py-0.5 rounded ${isActive ? 'bg-orange-750 text-white' : 'bg-orange-100 text-orange-850'}`}>
-                          🏀 Sessió {sessionNum}
-                        </span>
-                        <span className="text-[7px] block font-mono mt-0.5 truncate max-w-full leading-tight opacity-95">Setmana {weekIndex + 1} ({isDay1 ? 'Dim' : 'Dij'})</span>
-                      </div>
-                    );
-                  } else if (isWeekend) {
-                    bgStyle = "bg-slate-100 text-slate-400 font-medium";
-                    content = (
-                      <span className="text-[7px] uppercase font-bold text-slate-500 font-mono mt-2 block">
-                        Partit FCBQ 🏆
-                      </span>
-                    );
-                  } else {
-                    content = (
-                      <span className="text-[7px] font-mono text-slate-450 block mt-2 opacity-60">Lliure</span>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => {
-                        if (sessionCode) {
-                          setSelectedSessionId(sessionCode);
-                        }
-                      }}
-                      className={`p-2 min-h-[66px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
-                    >
-                      <span className="text-[10px] font-black font-mono self-start">{dayNum}</span>
-                      {content}
-                    </div>
-                  );
-                })}
+                  <div>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-slate-800">Calendari del Microcicle</h2>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Control de sessions de la temporada de Júnior A</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
+                    className="py-1 px-3 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <span>{isCalendarExpanded ? "▲ Amagar Calendari" : "▼ Mostrar Calendari"}</span>
+                  </button>
+                  <span className="text-[9px] font-mono font-black text-orange-600 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded hidden sm:inline-block">
+                    FCBQ STANDARD
+                  </span>
+                </div>
               </div>
+
+              {isCalendarExpanded && (
+                <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-200">
+                  <p className="text-[10px] text-slate-500 font-bold">Fes clic en un dimarts o dijous actius per canviar de dia d'entrenament a l'instant:</p>
+                  <div className="grid grid-cols-7 gap-1 md:gap-1.5">
+                    {/* Header days */}
+                    {['Dil', 'Dim', 'Dmc', 'Dij', 'Div', 'Dis', 'Diu'].map(dayName => (
+                      <div key={dayName} className="text-center py-1 text-[8px] font-black uppercase tracking-widest text-slate-400 font-mono">
+                        {dayName}
+                      </div>
+                    ))}
+
+                    {/* 28 simulated calendar squares */}
+                    {Array.from({ length: 28 }).map((_, i) => {
+                      const dayNum = i + 1;
+                      const dayOfWeekIndex = i % 7; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+                      const weekIndex = Math.floor(i / 7);
+                      const isDay1 = dayOfWeekIndex === 1; // Tuesday
+                      const isDay2 = dayOfWeekIndex === 3; // Thursday
+                      const isWeekend = dayOfWeekIndex >= 5; // Saturday/Sunday
+
+                      let sessionCode = '';
+                      let sessionNum = 0;
+                      if (isDay1) {
+                        if (weekIndex === 0) { sessionCode = 'dia1'; sessionNum = 1; }
+                        else if (weekIndex === 1) { sessionCode = 'dia3'; sessionNum = 3; }
+                        else if (weekIndex === 2) { sessionCode = 'dia5'; sessionNum = 5; }
+                        else if (weekIndex === 3) { sessionCode = 'dia7'; sessionNum = 7; }
+                      } else if (isDay2) {
+                        if (weekIndex === 0) { sessionCode = 'dia2'; sessionNum = 2; }
+                        else if (weekIndex === 1) { sessionCode = 'dia4'; sessionNum = 4; }
+                        else if (weekIndex === 2) { sessionCode = 'dia6'; sessionNum = 6; }
+                        else if (weekIndex === 3) { sessionCode = 'dia8'; sessionNum = 8; }
+                      }
+
+                      let bgStyle = "bg-slate-50 text-slate-700 hover:bg-slate-100";
+                      let borderStyle = "border border-slate-200";
+                      let content = null;
+
+                      if (sessionCode) {
+                        const isActive = selectedSessionId === sessionCode;
+                        bgStyle = isActive 
+                          ? "bg-orange-500 text-white shadow-xs relative scale-[1.01] z-5" 
+                          : "bg-orange-50/70 text-slate-800 hover:bg-orange-100/95";
+                        borderStyle = isActive 
+                          ? "border border-orange-600 font-extrabold ring-2 ring-orange-200" 
+                          : "border border-dashed border-orange-300";
+                        content = (
+                          <div className="mt-0.5 flex flex-col items-center">
+                            <span className={`text-[7px] uppercase tracking-tight font-black truncate max-w-full px-1 py-0.5 rounded ${isActive ? 'bg-orange-750 text-white' : 'bg-orange-100 text-orange-850'}`}>
+                              🏀 S{sessionNum}
+                            </span>
+                            <span className="text-[6px] block font-mono mt-0.5 truncate max-w-full leading-none opacity-90">Set. {weekIndex + 1}</span>
+                          </div>
+                        );
+                      } else if (isWeekend) {
+                        bgStyle = "bg-slate-100/70 text-slate-400 font-medium";
+                        content = (
+                          <span className="text-[6px] uppercase font-bold text-slate-500 font-mono mt-1 block leading-none">
+                            FCBQ 🏆
+                          </span>
+                        );
+                      } else {
+                        content = (
+                          <span className="text-[6px] font-mono text-slate-400 block mt-1 opacity-50 leading-none">Lliure</span>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            if (sessionCode) {
+                              setSelectedSessionId(sessionCode);
+                            }
+                          }}
+                          className={`p-1 min-h-[36px] sm:min-h-[40px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
+                        >
+                          <span className="text-[8px] font-black font-mono self-start">{dayNum}</span>
+                          {content}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <SessionPlanner
@@ -777,6 +973,14 @@ export default function App() {
               onChangeSession={handleUpdateSession}
               onNavigateToMobile={() => setActiveView('mobile')}
               onPreviewDrill={setPreviewDrill}
+              completions={completions}
+              activePlan={activePlan}
+              onToggleCompleteSession={(sessId) => handleToggleCompleteSession(activePlan.id, sessId)}
+              onAddRepetition={(sessId) => handleAddRepetition(activePlan.id, sessId)}
+              onRemoveRepetition={handleRemoveRepetition}
+              onClearRepetitions={(sessId) => handleClearCompletions(activePlan.id, sessId)}
+              onDuplicateSession={handleDuplicateSession}
+              allSessions={sessions}
             />
           </div>
         ) : activeView === 'database' ? (

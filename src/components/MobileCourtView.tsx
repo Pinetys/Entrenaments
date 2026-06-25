@@ -39,14 +39,23 @@ export default function MobileCourtView({
   const [activeDrillIndex, setActiveDrillIndex] = useState(0);
   const [isFullscreenBoard, setIsFullscreenBoard] = useState(false);
   const [showSessionEditor, setShowSessionEditor] = useState(false);
+  const [isMotionMode, setIsMotionMode] = useState(false);
   const [editorSearchText, setEditorSearchText] = useState('');
+  const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
 
   // Timer states
   const [timeLeft, setTimeLeft] = useState(0);
   const [sessionTimeLeft, setSessionTimeLeft] = useState(75 * 60); // 75 minutes of training remaining
   const [timerRunning, setTimerRunning] = useState(false);
+  const [sessionTimerRunning, setSessionTimerRunning] = useState(false);
   const [showFinishedToast, setShowFinishedToast] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Rest timer states
+  const [configuredRestTime, setConfiguredRestTime] = useState(60);
+  const [restTimeLeft, setRestTimeLeft] = useState(60);
+  const [restTimerRunning, setRestTimerRunning] = useState(false);
+  const [showRestFinishedToast, setShowRestFinishedToast] = useState(false);
 
   // Active diagram navigation inside exercises
   const [activeBoardIndex, setActiveBoardIndex] = useState(0);
@@ -80,14 +89,14 @@ export default function MobileCourtView({
     }
   }, [drillsInSession.length, activeDrillIndex]);
 
-  // Sync Timer when active drill changes
+  // Sync Timer when active drill changes (uses stable, primitive parameters to prevent timer reset glitches)
   useEffect(() => {
     if (activeDrill) {
       setTimeLeft(activeDrill.duration * 60);
       setTimerRunning(false);
       setShowFinishedToast(false);
     }
-  }, [safeActiveIndex, session.drills]);
+  }, [safeActiveIndex, activeDrill?.id]);
 
   // Audio Whistle synthesiser using Web Audio API (Zero-dependency, works 100% offline & instantly)
   const playSynthesizedWhistle = () => {
@@ -126,16 +135,27 @@ export default function MobileCourtView({
 
   // Timer tick runner
   useEffect(() => {
-    if (timerRunning) {
-      timerRef.current = setInterval(() => {
-        // Decrease overall session-wide stopwatch
+    const interval = setInterval(() => {
+      if (sessionTimerRunning) {
         setSessionTimeLeft((prevSess) => Math.max(0, prevSess - 1));
+      }
 
-        // Decrease active drill single timer
+      if (restTimerRunning) {
+        setRestTimeLeft((prevRest) => {
+          if (prevRest <= 1) {
+            setRestTimerRunning(false);
+            playSynthesizedWhistle();
+            setShowRestFinishedToast(true);
+            return 0;
+          }
+          return prevRest - 1;
+        });
+      }
+
+      if (timerRunning) {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setTimerRunning(false);
-            if (timerRef.current) clearInterval(timerRef.current);
             playSynthesizedWhistle();
             // Trigger custom visual flash toast state
             setShowFinishedToast(true);
@@ -143,30 +163,26 @@ export default function MobileCourtView({
           }
           return prev - 1;
         });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
+      }
+    }, 1000);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [timerRunning, activeDrillIndex]);
+    return () => clearInterval(interval);
+  }, [timerRunning, sessionTimerRunning, restTimerRunning, activeDrillIndex]);
 
   if (drillsInSession.length === 0) {
     return (
       <div id="empty-court-view" className="max-w-md mx-auto text-center py-20 px-5 bg-slate-900 text-white rounded-3xl border border-slate-800 space-y-4">
         <AlertOctagon size={44} className="text-orange-500 mx-auto animate-pulse" />
-        <h3 className="text-lg font-bold">Sin Entrenamientos Programados</h3>
+        <h3 className="text-lg font-bold">Sense Entrenaments Programats</h3>
         <p className="text-xs text-slate-400">
-          Debes añadir ejercicios al planificador semanal de hoy (Día 1 / Día 2) antes de abrir el Modo Móvil/Pista.
+          Has d'afegir exercicis al planificador de la sessió seleccionada abans d'obrir el Modo Pista (Mòbil).
         </p>
         <button
           id="btn-empty-back"
           onClick={onBackToPlanner}
           className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-xs font-bold uppercase rounded-xl transition cursor-pointer"
         >
-          Volver al Planificador
+          Tornar al Planificador
         </button>
       </div>
     );
@@ -221,81 +237,242 @@ export default function MobileCourtView({
         </button>
       </div>
 
-      {/* TIMING DOUBLE STOPWATCH UNIT */}
-      <div id="mobile-stopwatch-unit" className="px-5 py-3.5 bg-slate-900/40 border-b border-slate-800 shrink-0 grid grid-cols-12 gap-3 items-center">
-        {/* LEFT COLUMN: ACTIVE EXERCISE COOLDOWN (8 cols) */}
-        <div className="col-span-8 flex items-center justify-between border-r border-slate-800 pr-3">
-          <div>
-            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Crono Exercici Actiu</span>
-            <span className={`text-3xl font-extrabold font-mono tracking-tighter ${timerRunning ? 'text-green-400 animate-pulse' : 'text-slate-300'}`}>
-              {formatTime(timeLeft)}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              id="btn-toggle-timer"
-              type="button"
-              onClick={() => setTimerRunning(!timerRunning)}
-              className={`p-2.5 rounded-full font-bold shadow transition active:scale-95 cursor-pointer ${
-                timerRunning 
-                  ? 'bg-rose-600 text-white hover:bg-rose-700' 
-                  : 'bg-emerald-500 text-slate-950 hover:bg-emerald-600'
-              }`}
-            >
-              {timerRunning ? <Pause size={14} strokeWidth={3} /> : <Play size={14} strokeWidth={3} />}
-            </button>
+  {/* TIMING DOUBLE STOPWATCH UNIT */}
+      <div id="mobile-stopwatch-unit" className="px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0 flex flex-col gap-2">
+        {!isMotionMode ? (
+          <div className="grid grid-cols-2 gap-3">
             
-            <button
-              id="btn-reset-timer"
-              type="button"
-              onClick={() => {
-                setTimeLeft(activeDrill.duration * 60);
-                setTimerRunning(false);
-              }}
-              title="Reiniciar crono exercici"
-              className="p-2 bg-slate-800 text-slate-300 hover:text-white rounded-full hover:bg-slate-700 transition active:scale-95 cursor-pointer"
-            >
-              <RotateCcw size={12} />
-            </button>
-          </div>
-        </div>
+            {/* CARD 1: ACTIVE EXERCISE COOLDOWN */}
+            <div className="bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block text-left">Crono Exercici Actiu</span>
+              <div className="flex items-center justify-between mt-1">
+                <span className={`text-2xl font-extrabold font-mono tracking-tighter ${timerRunning ? 'text-green-400 animate-pulse' : 'text-slate-350'}`}>
+                  {formatTime(timeLeft)}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    id="btn-toggle-timer"
+                    type="button"
+                    onClick={() => setTimerRunning(!timerRunning)}
+                    title={timerRunning ? "Pausar exercici" : "Iniciar exercici"}
+                    className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center"
+                    style={{ minWidth: '34px', minHeight: '34px', backgroundColor: timerRunning ? '#e11d48' : '#10b981', color: timerRunning ? '#ffffff' : '#020617' }}
+                  >
+                    {timerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
+                  </button>
+                  <button
+                    id="btn-reset-timer"
+                    type="button"
+                    onClick={() => {
+                      setTimeLeft(activeDrill.duration * 60);
+                      setTimerRunning(false);
+                    }}
+                    title="Reiniciar crono exercici"
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
+                    style={{ minWidth: '34px', minHeight: '34px' }}
+                  >
+                    <RotateCcw size={12} />
+                  </button>
+                </div>
+              </div>
+              {/* Tiny background progress bar for active exercise */}
+              <div className="w-full bg-slate-850 h-1 rounded-full mt-2 overflow-hidden">
+                <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, (timeLeft / (activeDrill.duration * 60 || 1)) * 100))}%` }}></div>
+              </div>
+            </div>
 
-        {/* RIGHT COLUMN: TRAINING SESSION TOTAL LIMIT STOPWATCH (4 cols) */}
-        <div className="col-span-4 pl-1">
-          <span className="text-[9px] text-orange-400 font-bold uppercase tracking-wider block whitespace-nowrap">Temps Sessió (75′)</span>
-          <div className="flex items-center justify-between gap-1 mt-0.5">
-            <span className={`text-lg font-bold font-mono tracking-tighter ${timerRunning ? 'text-orange-500' : 'text-slate-400'}`}>
-              {formatTime(sessionTimeLeft)}
-            </span>
-            <button
-              id="btn-reset-session-timer"
-              type="button"
-              onClick={() => {
-                setSessionTimeLeft(75 * 60);
-              }}
-              title="Reiniciar crono de 75 minuts d'entrenament"
-              className="p-1 hover:bg-slate-800 text-slate-500 hover:text-slate-300 rounded transition cursor-pointer"
-            >
-              <RotateCcw size={10} />
-            </button>
+            {/* CARD 2: TOTAL SESSION STOPWATCH (75') */}
+            <div className="bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-orange-400 font-bold uppercase tracking-wider block text-left">Temps de Sessió</span>
+                <span className="text-[8px] px-1.5 py-0.5 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded font-mono font-bold leading-none">75′ Cap</span>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className={`text-2xl font-extrabold font-mono tracking-tighter ${sessionTimerRunning ? 'text-orange-450 animate-pulse' : 'text-slate-350'}`}>
+                  {formatTime(sessionTimeLeft)}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    id="btn-toggle-session-timer"
+                    type="button"
+                    onClick={() => setSessionTimerRunning(!sessionTimerRunning)}
+                    title={sessionTimerRunning ? "Pausar temps general" : "Reanudar temps general"}
+                    className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center"
+                    style={{ minWidth: '34px', minHeight: '34px', backgroundColor: sessionTimerRunning ? '#f59e0b' : '#3d82f6', color: '#ffffff' }}
+                  >
+                    {sessionTimerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
+                  </button>
+                  <button
+                    id="btn-reset-session-timer"
+                    type="button"
+                    onClick={() => {
+                      setSessionTimeLeft(75 * 60);
+                      setSessionTimerRunning(false);
+                    }}
+                    title="Reiniciar a 75′ d'entrenament"
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
+                    style={{ minWidth: '34px', minHeight: '34px' }}
+                  >
+                    <RotateCcw size={12} />
+                  </button>
+                </div>
+              </div>
+              {/* Visual colored remaining bar for the 75 minutes */}
+              <div className="w-full bg-slate-850 h-1 rounded-full mt-2 overflow-hidden">
+                <div className="h-full transition-all duration-300" style={{ width: `${(sessionTimeLeft / (75 * 60)) * 100}%`, backgroundColor: sessionTimeLeft < 15 * 60 ? '#f43f5e' : sessionTimeLeft < 30 * 60 ? '#f59e0b' : '#f97316' }}></div>
+              </div>
+            </div>
+
           </div>
-        </div>
+        ) : (
+          /* MAXIMALLY VIEWABLE LARGE TIMER FOR ON-THE-GO TRAINING */
+          <div className="bg-slate-950 border border-green-500/20 p-3.5 rounded-2xl flex items-center justify-between gap-4 relative overflow-hidden select-none">
+            <div className="min-w-0">
+              <span className="text-[9px] text-green-400 font-extrabold uppercase tracking-widest block text-left">Cronòmetre d'Exercici (LLETRES GRANS)</span>
+              <span className="text-xs text-slate-300 font-semibold truncate block mt-0.5">{activeDrill.title}</span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <span className={`text-4xl xs:text-5xl font-black font-mono tracking-tighter ${timerRunning ? 'text-green-400 animate-pulse' : 'text-slate-100'}`}>
+                {formatTime(timeLeft)}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  id="btn-toggle-timer"
+                  type="button"
+                  onClick={() => setTimerRunning(!timerRunning)}
+                  title={timerRunning ? "Pausar exercici" : "Iniciar exercici"}
+                  className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center h-11 w-11"
+                  style={{ backgroundColor: timerRunning ? '#e11d48' : '#10b981', color: '#ffffff' }}
+                >
+                  {timerRunning ? <Pause size={18} strokeWidth={3} /> : <Play size={18} strokeWidth={3} />}
+                </button>
+                <button
+                  id="btn-reset-timer"
+                  type="button"
+                  onClick={() => {
+                    setTimeLeft(activeDrill.duration * 60);
+                    setTimerRunning(false);
+                  }}
+                  title="Reiniciar"
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center h-11 w-11"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="absolute bottom-0 left-0 right-0 bg-slate-900 h-1.5 overflow-hidden">
+              <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, (timeLeft / (activeDrill.duration * 60 || 1)) * 100))}%` }}></div>
+            </div>
+          </div>
+        )}
+
+        {/* CONFIGURABLE REST TIMER BETWEEN DRILL BLOCKS (Hidden in motion mode) */}
+        {!isMotionMode && (
+          <div className="bg-slate-950/90 border border-amber-500/30 p-2 rounded-xl flex items-center justify-between gap-3 relative overflow-hidden">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-base text-amber-500 animate-pulse shrink-0">💤</span>
+              <div className="min-w-0">
+                <span className="text-[8px] text-amber-400 font-extrabold uppercase tracking-wider block leading-none">Descans Personalitzat</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={`text-sm font-black font-mono leading-none tracking-tight ${restTimerRunning ? 'text-amber-300 animate-pulse' : 'text-slate-400'}`}>
+                    {formatTime(restTimeLeft)}
+                  </span>
+                  
+                  {/* Duration dropdown selector */}
+                  <select
+                    disabled={restTimerRunning}
+                    value={configuredRestTime}
+                    onChange={(e) => {
+                      const secs = Number(e.target.value);
+                      setConfiguredRestTime(secs);
+                      setRestTimeLeft(secs);
+                    }}
+                    className="bg-slate-900 border border-slate-800 text-amber-400 rounded text-[9px] font-black px-1.5 py-0.5 ml-1 focus:outline-none focus:border-amber-500 cursor-pointer"
+                  >
+                    <option value={30}>30s</option>
+                    <option value={45}>45s</option>
+                    <option value={60}>1 min</option>
+                    <option value={90}>1:30 min</option>
+                    <option value={120}>2 min</option>
+                    <option value={180}>3 min</option>
+                    <option value={300}>5 min</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Mini progress bar */}
+            <div className="flex-1 bg-slate-850 h-1 rounded-full overflow-hidden mx-2 shrink opacity-60 hidden xs:block">
+              <div className="h-full bg-amber-400 transition-all duration-300" style={{ width: `${(restTimeLeft / configuredRestTime) * 100}%` }}></div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                id="btn-toggle-rest"
+                type="button"
+                onClick={() => {
+                  setRestTimerRunning(!restTimerRunning);
+                  if (!restTimerRunning) {
+                    setTimerRunning(false); // Stop active exercise automatically on rest toggle
+                  }
+                }}
+                className="px-2.5 py-1.5 text-[9px] font-black uppercase rounded transition active:scale-95 cursor-pointer font-sans"
+                style={{ backgroundColor: restTimerRunning ? '#f59e0b' : '#334155', color: restTimerRunning ? '#020617' : '#94a3b8' }}
+              >
+                {restTimerRunning ? 'Pausar' : `Iniciar`}
+              </button>
+              <button
+                id="btn-reset-rest"
+                type="button"
+                onClick={() => {
+                  setRestTimeLeft(configuredRestTime);
+                  setRestTimerRunning(false);
+                }}
+                title="Reiniciar descans"
+                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
+                style={{ minWidth: '28px', minHeight: '28px' }}
+              >
+                <RotateCcw size={11} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* QUICK SESSION ACTIONS BAR */}
       <div className="px-5 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span>Sessió activa</span>
+        <div className="flex items-center gap-1.5 text-slate-405 text-[11px] font-black">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-slate-200">{isMotionMode ? 'MODO MOVIMENT' : 'Sessió activa'}</span>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowSessionEditor(true)}
-          className="px-3 py-1.5 bg-orange-655 hover:bg-orange-700 active:scale-95 text-[10px] font-black uppercase tracking-wider text-white rounded bg-orange-600 transition flex items-center gap-1 cursor-pointer"
-        >
-          ✏️ Exercicis de la sessió
-        </button>
+        
+        <div className="flex items-center gap-1.5">
+          {/* Active Coach Motion Mode Toggle Button - High prominence */}
+          <button
+            type="button"
+            onClick={() => setIsMotionMode(!isMotionMode)}
+            className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded transition flex items-center gap-1 cursor-pointer active:scale-95 ${
+              isMotionMode 
+                ? 'bg-amber-500 hover:bg-amber-450 text-slate-950 shadow-md animate-pulse border border-amber-600' 
+                : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'
+            }`}
+            title="S'amplia la mida dels textos de descripció per a una fons gran ideal en moviment"
+          >
+            {isMotionMode ? '🏃‍♂️ Vista Normal' : '🏃‍♂️ Lletra Gran (Pista)'}
+          </button>
+
+          {!isMotionMode && (
+            <button
+              type="button"
+              onClick={() => setShowSessionEditor(true)}
+              className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-[10px] font-black uppercase tracking-wider text-white rounded transition flex items-center gap-1 cursor-pointer"
+            >
+              ✏️ Exercicis
+            </button>
+          )}
+        </div>
       </div>
 
       {/* CORE DISPLAY SWIPE BODY */}
@@ -303,23 +480,35 @@ export default function MobileCourtView({
         
         {/* TIME COMPLETE CUSTOM TOAST ALARM BANNER (Non-blocking) */}
         {showFinishedToast && (
-          <div className="bg-red-700 border border-red-500 rounded-sm p-4 text-white shadow-md flex flex-col gap-3 animate-pulse">
+          <div className="bg-red-750 border-2 border-red-500 rounded-2xl p-4 text-white shadow-lg flex flex-col gap-3 animate-pulse">
             <div className="flex items-start gap-2.5">
               <span className="text-2xl mt-0.5">⏱️</span>
               <div>
-                <h4 className="text-xs font-black uppercase tracking-widest text-red-200">TEMPS EXHAURIT!</h4>
+                <h4 className="text-xs font-black uppercase tracking-widest text-red-105">TEMPS EXHAURIT!</h4>
                 <p className="text-xs font-bold leading-normal mt-1">
                   S'ha completat el període planificat per a: <strong className="underline font-black">"{activeDrill.title}"</strong>.
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center gap-1.5 justify-end flex-wrap">
               <button
                 type="button"
                 onClick={() => setShowFinishedToast(false)}
-                className="px-3 py-1.5 bg-white text-slate-950 text-[9px] font-black uppercase tracking-wider rounded-none active:scale-95 transition"
+                className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-[9px] font-black uppercase tracking-wider rounded-lg active:scale-95 transition"
               >
                 Ignorar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFinishedToast(false);
+                  setRestTimeLeft(configuredRestTime);
+                  setRestTimerRunning(true);
+                  setTimerRunning(false);
+                }}
+                className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-[9px] font-black uppercase tracking-wider rounded-lg active:scale-95 transition"
+              >
+                💤 Descans de {formatTime(configuredRestTime)}
               </button>
               {safeActiveIndex < drillsInSession.length - 1 && (
                 <button
@@ -328,9 +517,45 @@ export default function MobileCourtView({
                     nextDrill();
                     setShowFinishedToast(false);
                   }}
-                  className="px-3 py-1.5 bg-red-950 text-white border border-red-500 text-[9px] font-black uppercase tracking-wider rounded-none active:scale-95 transition"
+                  className="px-2.5 py-1.5 bg-red-600 hover:bg-red-750 text-white text-[9px] font-black uppercase tracking-wider rounded-lg active:scale-95 transition"
                 >
                   Següent Exercici ➔
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* REST TIMER FINISHED TOAST BANNER */}
+        {showRestFinishedToast && (
+          <div className="bg-amber-600 border border-amber-400 text-slate-950 rounded-2xl p-4 shadow-xl flex flex-col gap-3 animate-bounce">
+            <div className="flex items-start gap-2.5">
+              <span className="text-2xl mt-0.5">💤</span>
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-950">DESCANS FINALITZAT!</h4>
+                <p className="text-xs font-bold leading-normal mt-1">
+                  El descans d’1 minut s’ha completat. És hora de tornar a la pista per al següent bloc d’exercici!
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowRestFinishedToast(false)}
+                className="px-3 py-1.5 bg-slate-950 text-white text-[9px] font-black uppercase tracking-wider rounded-lg active:scale-95 transition"
+              >
+                Tancar
+              </button>
+              {safeActiveIndex < drillsInSession.length - 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    nextDrill();
+                    setShowRestFinishedToast(false);
+                  }}
+                  className="px-3 py-1.5 bg-slate-900 border border-slate-700 text-slate-100 text-[9px] font-black uppercase tracking-wider rounded-lg active:scale-95 transition hover:bg-slate-800"
+                >
+                  Començar següent exercici ➔
                 </button>
               )}
             </div>
@@ -360,7 +585,7 @@ export default function MobileCourtView({
             <span className="text-[9px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-300 font-bold tracking-wider font-mono uppercase block w-max mx-auto mb-1 group-hover:bg-orange-600 group-hover:text-white transition-colors">
               Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′) • 📖 Ver manual
             </span>
-            <h3 className="text-sm font-extrabold text-white truncate underline group-hover:text-orange-400 decoration-dotted">{activeDrill.title}</h3>
+            <h3 className="text-sm font-black text-white leading-snug underline hover:text-orange-400 decoration-dotted break-all whitespace-normal">{activeDrill.title}</h3>
           </div>
 
           <button
@@ -402,7 +627,7 @@ export default function MobileCourtView({
           <div id="mobile-tactical-container" className="space-y-2 relative">
             <div className="flex items-center justify-between pl-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <span>Esquema del Ejercicio</span>
+                <span>Esquema de l'Exercici</span>
                 {activeBoardStates.length > 1 && (
                   <span className="text-[9px] bg-orange-650 text-white font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
                     Grafisme {activeBoardIndex + 1} de {activeBoardStates.length}
@@ -486,12 +711,21 @@ export default function MobileCourtView({
 
         {/* CUSTOM NOTES SPECIFIC FOR THE ACTIVE TRAINING DAY */}
         {activeDrill.notes && (
-          <div id="mobile-drill-quick-note" className="bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 px-4 py-3 rounded-2xl text-xs space-y-1">
-            <span className="font-extrabold uppercase tracking-widest text-[10px] text-amber-400 block flex items-center gap-1">
-              <Zap size={11} className="fill-amber-400 text-amber-400 animate-bounce" />
-              Observación de hoy (Junior A):
+          <div 
+            id="mobile-drill-quick-note" 
+            className={`transition-all duration-200 ${
+              isMotionMode 
+                ? 'bg-amber-500 text-slate-950 p-5 rounded-2xl border-2 border-amber-400 space-y-2 shadow-lg' 
+                : 'bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 px-4 py-3 rounded-2xl text-xs space-y-1'
+            }`}
+          >
+            <span className={`font-extrabold uppercase tracking-widest block flex items-center gap-1 ${
+              isMotionMode ? 'text-slate-950 text-xs font-black' : 'text-amber-400 text-[10px]'
+            }`}>
+              <Zap size={isMotionMode ? 14 : 11} className={`fill-amber-950 text-amber-950 ${isMotionMode ? 'animate-pulse' : 'animate-bounce'}`} />
+              Observació d'avui (Codi Pista):
             </span>
-            <p className="font-bold leading-relaxed">{activeDrill.notes}</p>
+            <p className={`font-extrabold leading-snug ${isMotionMode ? 'text-lg text-slate-900' : 'text-xs'}`}>{activeDrill.notes}</p>
           </div>
         )}
 
@@ -502,9 +736,11 @@ export default function MobileCourtView({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
             <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
               <Clipboard size={12} className="text-orange-400" />
-              Instrucciones y Dinámica (Paso a Paso)
+              Instruccions de l'Exercici
             </h4>
-            <p className="text-xs text-slate-200 leading-relaxed font-sans font-medium">
+            <p className={`leading-relaxed font-sans transition-all duration-200 ${
+              isMotionMode ? 'text-lg text-white font-black px-1 py-1' : 'text-xs text-slate-200 font-medium'
+            }`}>
               {activeDrill.description}
             </p>
           </div>
@@ -514,15 +750,19 @@ export default function MobileCourtView({
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
               <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
                 <Users size={12} className="text-sky-400" />
-                Puntos de Enfoque Junior Nivel A
+                Punts de Focus (Nivell A)
               </h4>
-              <ul className="space-y-2.5">
+              <ul className="space-y-3">
                 {activeDrill.objectives.map((obj, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-xs text-slate-100">
-                    <span className="w-5 h-5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  <li key={i} className="flex items-start gap-2.5 text-slate-100">
+                    <span className={`rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-bold flex items-center justify-center shrink-0 mt-0.5 ${
+                      isMotionMode ? 'w-6 h-6 text-xs' : 'w-5 h-5 text-[10px]'
+                    }`}>
                       {i + 1}
                     </span>
-                    <span className="font-medium leading-relaxed">{obj}</span>
+                    <span className={`leading-relaxed transition-all duration-200 ${
+                      isMotionMode ? 'text-base text-sky-200 font-black' : 'text-xs text-slate-100 font-medium'
+                    }`}>{obj}</span>
                   </li>
                 ))}
               </ul>
@@ -534,9 +774,11 @@ export default function MobileCourtView({
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-2 shadow-xs">
               <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
                 <NotebookText size={12} className="text-yellow-400" />
-                Reglas / Limitaciones de Pista
+                Normes o Restriccions de Pista
               </h4>
-              <p className="text-xs text-slate-300 leading-relaxed font-sans italic">
+              <p className={`leading-relaxed font-sans italic transition-all duration-200 ${
+                isMotionMode ? 'text-base font-black text-yellow-300' : 'text-xs text-slate-300'
+              }`}>
                 "{activeDrill.setupInstructions}"
               </p>
             </div>
@@ -544,19 +786,21 @@ export default function MobileCourtView({
         </div>
       </div>
 
-      {/* QUICK FOOTER DOTS TRACKER */}
-      <div id="mobile-dots-indicator" className="py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-1.5 shrink-0">
-        {drillsInSession.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveDrillIndex(i)}
-            type="button"
-            className={`w-2 h-2 rounded-full cursor-pointer transition ${
-              safeActiveIndex === i ? 'bg-orange-500 scale-125' : 'bg-slate-700 hover:bg-slate-600'
-            }`}
-          />
-        ))}
-      </div>
+      {/* QUICK FOOTER DOTS TRACKER (Hidden in Motion-Pista Mode for clutter-free scrolling) */}
+      {!isMotionMode && (
+        <div id="mobile-dots-indicator" className="py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-1.5 shrink-0">
+          {drillsInSession.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveDrillIndex(i)}
+              type="button"
+              className={`w-2 h-2 rounded-full cursor-pointer transition ${
+                safeActiveIndex === i ? 'bg-orange-500 scale-125' : 'bg-slate-700 hover:bg-slate-600'
+              }`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* SESSION EDITOR DRAWER IN MOBILE VIEW */}
       {showSessionEditor && (
@@ -579,35 +823,42 @@ export default function MobileCourtView({
             </button>
           </div>
 
-          {/* Drawer Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-5 text-left">
+          {/* Drawer Scrollable Content with spacious bottom padding so items can be fully scrolled above the footer */}
+          <div className="flex-1 overflow-y-auto p-5 pb-32 space-y-5 text-left">
             {/* CURRENT DRILLS IN SESSION */}
             <div className="space-y-2.5">
               <h5 className="text-[10px] font-black uppercase tracking-widest text-orange-400">Exercicis a l'Entrenament d'Avui</h5>
               
-              {session.drills.length === 0 ? (
+              {(!session.drills || session.drills.length === 0) ? (
                 <div className="p-4 rounded-xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
                   No hi ha exercicis en aquest entrenament. Afegeix-ne un a sota!
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {session.drills.map((sd, sIdx) => {
+                  {(session.drills || []).map((sd, sIdx) => {
                     const drillItem = drills.find(d => d.id === sd.drillId);
                     if (!drillItem) return null;
 
                     return (
-                      <div key={sIdx} className="bg-slate-900 border border-slate-800 p-3 rounded-lg flex items-center justify-between gap-3 shadow-xs">
+                      <div key={sIdx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-start gap-4 shadow-xs text-left">
+                        {/* Enlarged Tactical Board Preview */}
+                        <div className="w-24 h-24 rounded bg-white overflow-hidden shrink-0 border border-slate-800 p-1 shadow-inner">
+                          <TacticalBoard boardState={drillItem.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                        </div>
+
                         {/* Bullet & text */}
-                        <div className="min-w-0 flex-grow text-left">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono font-bold">
-                              # {sIdx + 1}
-                            </span>
-                            <span className="text-[8px] bg-orange-500/15 text-orange-400 px-1 rounded uppercase tracking-wider font-extrabold max-w-28 truncate">
-                              {drillItem.category}
-                            </span>
+                        <div className="min-w-0 flex-1 text-left flex flex-col justify-between min-h-24">
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-mono font-bold">
+                                # {sIdx + 1}
+                              </span>
+                              <span className="text-[8px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded uppercase tracking-wider font-extrabold">
+                                {drillItem.category}
+                              </span>
+                            </div>
+                            <h6 className="text-xs xs:text-sm font-black text-white mt-1.5 leading-snug whitespace-normal break-words">{drillItem.title}</h6>
                           </div>
-                          <h6 className="text-[11px] font-black text-white mt-1 truncate">{drillItem.title}</h6>
                           
                           {/* Duration adjustments */}
                           <div className="flex items-center gap-1.5 mt-2">
@@ -656,7 +907,7 @@ export default function MobileCourtView({
                         </div>
 
                         {/* Reordering & deleting actions */}
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex flex-col gap-1 items-end shrink-0">
                           {/* Move Up */}
                           <button
                             type="button"
@@ -726,7 +977,7 @@ export default function MobileCourtView({
             <div className="space-y-3 pt-4 border-t border-slate-800">
               <div className="space-y-1">
                 <h5 className="text-[10px] font-black uppercase tracking-widest text-sky-400">Afegir Exercicis de la Biblioteca</h5>
-                <p className="text-[9px] text-slate-400 font-sans">Cerca un exercici de la col·lecció per afegir-lo d'immediat.</p>
+                <p className="text-[9px] text-slate-400 font-sans">Cerca i selecciona un exercici ordenat per categoria de treball.</p>
               </div>
 
               {/* Search bar */}
@@ -738,50 +989,92 @@ export default function MobileCourtView({
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded text-xs text-slate-100 placeholder-slate-500 focus:outline-none"
               />
 
-              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1 text-left">
+              {/* Category Filter Tabs */}
+              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 select-none">
+                {(['Tots', 'Escalfament', 'Atac', 'Defensa'] as const).map((cat) => {
+                  const isActive = addCategoryFilter === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setAddCategoryFilter(cat)}
+                      className={`flex-1 py-1 px-1 rounded text-[9px] font-black uppercase tracking-wider transition cursor-pointer text-center ${
+                        isActive 
+                          ? 'bg-orange-500 text-white' 
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      {cat === 'Tots' ? 'Tots' : cat === 'Escalfament' ? 'Calentament' : cat === 'Atac' ? 'Atac' : 'Defensa'}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Removed fixed small container height to let drills render naturally and cleanly scroll within the drawer */}
+              <div className="space-y-2 text-left">
                 {drills
                   .filter(d => {
                     const matchesSearch = d.title.toLowerCase().includes(editorSearchText.toLowerCase()) || 
                                           d.description.toLowerCase().includes(editorSearchText.toLowerCase());
-                    return matchesSearch;
+                    
+                    if (!matchesSearch) return false;
+
+                    // Apply active category filter partition
+                    if (addCategoryFilter === 'Escalfament') {
+                      return ['Técnica', 'Físico', 'Transición'].includes(d.category);
+                    }
+                    if (addCategoryFilter === 'Atac') {
+                      return ['Táctica', 'Sistemas', 'Tiro'].includes(d.category);
+                    }
+                    if (addCategoryFilter === 'Defensa') {
+                      return ['Defensa'].includes(d.category);
+                    }
+                    return true;
                   })
                   .map(d => {
                     const isAlreadyAdded = session.drills.some(sd => sd.drillId === d.id);
 
                     return (
-                      <div key={d.id} className="bg-slate-950 border border-slate-900 p-2.5 rounded-lg flex items-center justify-between gap-3 text-left">
-                        <div className="min-w-0 flex-1">
-                          <span className="text-[7px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 uppercase font-black font-mono">
-                            {d.category}
-                          </span>
-                          <h6 className="text-[11px] font-extrabold text-slate-350 mt-0.5 truncate">{d.title}</h6>
-                          <p className="text-[9px] text-slate-450 font-mono">{d.duration} MIN</p>
+                      <div key={d.id} className="bg-slate-950 border border-slate-900 p-3 rounded-lg flex items-start gap-4 text-left">
+                        {/* Much larger Tactical Board Preview */}
+                        <div className="w-24 h-24 rounded bg-white overflow-hidden shrink-0 border border-slate-900 p-1">
+                          <TacticalBoard boardState={d.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                         </div>
-                        
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newDrillRef = {
-                              drillId: d.id,
-                              duration: d.duration,
-                              notes: "Afegit des de dispositiu mòbil"
-                            };
-                            const updatedDrills = [...session.drills, newDrillRef];
-                            const updatedSession = {
-                              ...session,
-                              drills: updatedDrills,
-                              totalDuration: updatedDrills.reduce((acc, c) => acc + c.duration, 0)
-                            };
-                            if (onUpdateSession) onUpdateSession(updatedSession);
-                          }}
-                          className={`px-2.5 py-1 rounded text-[8px] font-black uppercase tracking-wider transition shrink-0 cursor-pointer ${
-                            isAlreadyAdded
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-orange-500 hover:bg-orange-600 text-white'
-                          }`}
-                        >
-                          {isAlreadyAdded ? '+ Afegir' : '➕ Afegir'}
-                        </button>
+
+                        <div className="min-w-0 flex-1 flex flex-col justify-between min-h-24">
+                          <div>
+                            <span className="text-[8px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 uppercase font-black font-mono">
+                              {d.category}
+                            </span>
+                            <h6 className="text-xs xs:text-sm font-black text-slate-100 mt-1 leading-snug whitespace-normal break-words">{d.title}</h6>
+                            <p className="text-[9px] text-slate-450 font-mono mt-1">{d.duration} MIN</p>
+                          </div>
+                          
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newDrillRef = {
+                                drillId: d.id,
+                                duration: d.duration,
+                                notes: "Afegit des de dispositiu mòbil"
+                              };
+                              const updatedDrills = [...session.drills, newDrillRef];
+                              const updatedSession = {
+                                ...session,
+                                drills: updatedDrills,
+                                totalDuration: updatedDrills.reduce((acc, c) => acc + c.duration, 0)
+                              };
+                              if (onUpdateSession) onUpdateSession(updatedSession);
+                            }}
+                            className={`w-max px-3 py-1.5 rounded text-[8px] font-black uppercase tracking-wider transition shrink-0 cursor-pointer ${
+                              isAlreadyAdded
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-orange-500 hover:bg-orange-600 text-white'
+                            }`}
+                          >
+                            {isAlreadyAdded ? '✓ Afegit' : '➕ Afegir'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

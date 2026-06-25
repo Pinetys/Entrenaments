@@ -32,6 +32,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-rueda-11',
     title: "Roda d'11 FCBQ de Contraatac Continuat",
     category: 'Transición',
+    concept: 'Contraatac Ràpid',
     duration: 12,
     objectives: [
       "Desenvolupament del primer passe de sortida (outlet pass) en menys de 2 segons.",
@@ -60,13 +61,14 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-pnr-def',
     title: 'Defensa de Bloqueig Directe (Pick & Roll) Central Drop',
     category: 'Táctica',
+    concept: 'Pick & Roll',
     duration: 15,
     objectives: [
       "Negar el pas central al base contrari forçant-lo cap a la banda per reduir angle de decisió.",
       "Treballar la comunicació verbal ràpida del defensor de l'home gran ('Bloqueig!', 'Drop!').",
       "Assegurar l'ajuda de fons (costat feble) en la recuperació de la continuació (Roll)."
     ],
-    description: "Syllabus de Nivell A de la Federació Catalana. Treball defensiu de 3x3 de Pick & Roll central. Apliquem la defensa de contenció tipus 'Drop' (l'home de l'interior recula fins a línia de lliures per protegir la penetració) mentre que el defensor del base lluita per sobre de la pantalla atacant per darrere o recuperant l'eix d'ajudes.",
+    description: "Syllabus de Nivell A de la Federació Catalana. Treball defensiu de 3x3 de Pick & Roll central. Apliquem la defense de contenció tipus 'Drop' (l'home de l'interior recula fins a línia de lliures per protegir la penetració) mentre que el defensor del base lluita per sobre de la pantalla atacant per darrere o recuperant l'eix d'ajudes.",
     setupInstructions: "Situar un 3 contra 3 a mitja pista. Pilota en posició de base central. Ajustar el cos de fons defensant especialment les ajudes de segon esforç des de cantonades.",
     playersNeeded: 6,
     materials: ['Pilotes de joc', 'Petos de contrast'],
@@ -90,6 +92,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-press-break',
     title: 'Sortida de Pressió 1-3-1 amb Connexió Vertical',
     category: 'Sistemas',
+    concept: 'Sortida de Pressió',
     duration: 15,
     objectives: [
       "Evitar rebre l'embolcall doble de la defensa (Traps) a les cantonades fatídiques del camp.",
@@ -120,6 +123,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-rueda-tiro-competitiva',
     title: 'Roda de Tir Tecnificació FCBQ - Sortida d’Indirecte',
     category: 'Tiro',
+    concept: 'Bloqueig Indirecte',
     duration: 10,
     objectives: [
       "Polir la mecànica de preparació de peus ràpids per al llançament triple continuat de Nivel A.",
@@ -147,6 +151,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-junior-transicion-3x2',
     title: '3x2 Continu amb Retorn en 2x1 (Transició d’Alt Nivell)',
     category: 'Transición',
+    concept: 'Superioritat 3x2 / 2x1',
     duration: 15,
     objectives: [
       "Treballar la presa de decisions en superioritat numèrica ràpida (3x2 en transició).",
@@ -177,13 +182,14 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-spacing-junior-spacing',
     title: 'Espaiat de Joc Dinàmic (Spacing) i Reemplaçaments Extra Passe',
     category: 'Táctica',
+    concept: 'Espaiat i Extra Passe',
     duration: 12,
     objectives: [
       "Interioritzar la rotació de l'espaiat (spacing) d'atac de 4 oberts i 1 a dins (4 Out 1 In).",
       "Puntuar la velocitat del passe en l'extrapasse o inversió ràpida de pilota per desplaçar la defensa zonal.",
       "Exercitar les línies de penetració recta de fons i el reemplaçament dinàmic de línia de passada."
     ],
-    description: "Treball fonamental en categoria Júnior per polir el 'drive and kick' (penetrar i descarregar). Els jugadors se situen en posicions de base, ràfegues (wings) i cantonades. Quan un jugador d'un costat penetra per línia de fons o eix central, els altres tres han de rotar per oferir línies de passada de seguretat (Safety) i d'extrapasse, assegurant que mai hi ha dos jugadors col·locats en un mateix sector de la pista.",
+    description: "Treball fonamental en categoria Júnior per polir el 'drive and kick' (penetrar i descarregar). Jugadors se situen en posicions de base, ràfegues (wings) i cantonades. Quan un jugador d'un costat penetra per línia de fons o eix central, els altres tres han de rotar per oferir línies de passada de seguretat (Safety) i d'extrapasse, assegurant que mai hi ha dos jugadors col·locats en un mateix sector de la pista.",
     setupInstructions: "Col·locar 4 atacants a l'exterior de la línia de tres punts (posicions clares) i 1 defensor fictici que realitza ajudes intencionals sobre les penetracions.",
     playersNeeded: 8,
     materials: ['Pilotes de bàsquet', 'Cons baixos de referència espacial'],
@@ -206,6 +212,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-defensa-shell',
     title: 'Roda de Defensa Shell 4x4 (Alineació i Ajudes de la Línia de Passe)',
     category: 'Defensa',
+    concept: 'Defensa Shell',
     duration: 15,
     objectives: [
       "Alinear perfectament la defensa segons la posició de la pilota: Línia de Passe (Deny), Ajuda (Help) o Helpin' (pistola).",
@@ -238,6 +245,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-dejan-cikic-decisions',
     title: "Roda de Decisions i Passades de Dejan Cikic",
     category: 'Técnica',
+    concept: 'Presa de Decisions',
     duration: 15,
     objectives: [
       "Perfeccionar el passe de beisbol i la recepció en carrera amb pressió de llançament ràpid.",
@@ -266,6 +274,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-dejan-cikic-spacing',
     title: "Spacing Actiu 3x0 i Reemplaçaments de Fons d’en Dejan Cikic",
     category: 'Táctica',
+    concept: 'Espaiat Actiu 3x0',
     duration: 12,
     objectives: [
       "Aprendre a desplaçar-se segons el principi fonamental de 'Penetrar i Reemplaçar' de fons.",
@@ -293,6 +302,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
     id: 'drill-bojan-cikic-motion',
     title: "Tallades i Reaccions de Tall d'en Bojan Cikic (Motion)",
     category: 'Táctica',
+    concept: 'Tallades i Motion',
     duration: 15,
     objectives: [
       "Coordinar els talls de fons i vora de zona en situacions de 'Motion'.",
@@ -428,6 +438,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
   // Form states
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<DrillCategory>('Técnica');
+  const [concept, setConcept] = useState('');
   const [duration, setDuration] = useState(15);
   const [objectivesString, setObjectivesString] = useState('');
   const [description, setDescription] = useState('');
@@ -470,6 +481,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
       if (data.drill) {
         setTitle(data.drill.title || '');
         setCategory(data.drill.category || 'Técnica');
+        setConcept(data.drill.concept || '');
         setDuration(data.drill.duration || 15);
         setObjectivesString(Array.isArray(data.drill.objectives) ? data.drill.objectives.join('\n') : '');
         setDescription(data.drill.description || '');
@@ -519,6 +531,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
               // Set state fields directly
               setTitle(data.drill.title || '');
               setCategory(data.drill.category || 'Técnica');
+              setConcept(data.drill.concept || '');
               setDuration(data.drill.duration || 15);
               setObjectivesString(Array.isArray(data.drill.objectives) ? data.drill.objectives.join('\n') : '');
               setDescription(data.drill.description || '');
@@ -589,6 +602,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
   const resetForm = () => {
     setTitle('');
     setCategory('Técnica');
+    setConcept('');
     setDuration(15);
     setObjectivesString('');
     setDescription('');
@@ -607,6 +621,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
     setEditDrillId(drill.id);
     setTitle(drill.title);
     setCategory(drill.category);
+    setConcept(drill.concept || '');
     setDuration(drill.duration);
     setObjectivesString(drill.objectives.join('\n'));
     setDescription(drill.description);
@@ -642,6 +657,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
       id: editDrillId || `drill-${Date.now()}`,
       title,
       category,
+      concept: concept.trim() || undefined,
       duration: Number(duration),
       objectives: cleanObjectives.length > 0 ? cleanObjectives : ['Mejorar conceptos de baloncesto'],
       description,
@@ -700,8 +716,23 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Contraatac continu 3 contra 2"
-              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
+              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-bold"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
+              <span>Anotació Tàctica / Concepte</span>
+              <span className="text-[8px] text-slate-400 font-normal">Ex: Pick & Roll, Bloqueig Indirecte, Defensa Zonal, Atac 1x1...</span>
+            </label>
+            <input
+              id="form-drill-concept"
+              type="text"
+              value={concept}
+              onChange={(e) => setConcept(e.target.value)}
+              placeholder="Ex: Pick & Roll"
+              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-medium"
             />
           </div>
 
@@ -1034,10 +1065,10 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
               <div
                 id={`drill-card-${drill.id}`}
                 key={drill.id}
-                className="bg-white border border-slate-200 rounded-sm hover:border-orange-400 transition p-5 flex flex-col md:flex-row gap-5 group"
+                className="bg-white border border-slate-200 rounded-sm hover:border-orange-400 transition p-3 md:p-5 flex flex-row md:flex-row gap-3 md:gap-5 group items-start"
               >
                 {/* Micro diagram static render or thumbnail */}
-                <div className="w-full md:w-44 bg-white border border-slate-200 rounded shadow-sm overflow-hidden shrink-0 self-start p-1 relative hover:shadow-xs transition duration-150">
+                <div className="w-20 h-20 md:w-44 md:h-auto bg-white border border-slate-200 rounded shadow-sm overflow-hidden shrink-0 p-0.5 md:p-1 relative hover:shadow-xs transition duration-150">
                   <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                   {drill.boardStates && drill.boardStates.length > 1 && (
                     <div className="absolute bottom-1.5 right-1.5 bg-orange-600/90 text-[8px] text-white font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest font-mono">
@@ -1050,16 +1081,23 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
                 <div className="flex-1 space-y-2">
                   <div className="flex items-start justify-between gap-1">
                     <div>
-                      <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${
-                        drill.category === 'Transición' ? 'bg-orange-100 text-orange-850' :
-                        drill.category === 'Táctica' ? 'bg-indigo-100 text-indigo-850' :
-                        drill.category === 'Tiro' ? 'bg-emerald-100 text-emerald-850' :
-                        drill.category === 'Físico' ? 'bg-red-100 text-red-850' :
-                        drill.category === 'Defensa' ? 'bg-rose-100 text-rose-850' :
-                        drill.category === 'Sistemas' ? 'bg-purple-100 text-purple-850' : 'bg-cyan-100 text-cyan-850'
-                      }`}>
-                        {drill.category}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${
+                          drill.category === 'Transición' ? 'bg-orange-100 text-orange-850' :
+                          drill.category === 'Táctica' ? 'bg-indigo-100 text-indigo-850' :
+                          drill.category === 'Tiro' ? 'bg-emerald-100 text-emerald-850' :
+                          drill.category === 'Físico' ? 'bg-red-100 text-red-850' :
+                          drill.category === 'Defensa' ? 'bg-rose-100 text-rose-850' :
+                          drill.category === 'Sistemas' ? 'bg-purple-100 text-purple-850' : 'bg-cyan-100 text-cyan-850'
+                        }`}>
+                          {drill.category}
+                        </span>
+                        {drill.concept && (
+                          <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[8.5px] font-black uppercase tracking-wider">
+                            {drill.concept}
+                          </span>
+                        )}
+                      </div>
                       <h3 
                         onClick={() => setSelectedDrillForOverlay(drill)}
                         title="Clica per veure el gràfic tàctic ampliat"

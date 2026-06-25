@@ -7,19 +7,30 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 // Allow high limits for receipt of base64 images
 app.use(express.json({ limit: "15mb" }));
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
+let aiClient: GoogleGenAI | null = null;
+
+function getAIClient(): GoogleGenAI {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY environment variable is missing");
     }
+    aiClient = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
   }
-});
+  return aiClient;
+}
 
 // Endpoint to automatically analyze a blackboard training drill image and structure into JSON format
 app.post("/api/analyze-drill", async (req, res) => {
@@ -52,7 +63,7 @@ Tots els teus comentaris, instruccions i dades de retorn han d'estar redactats Ã
       text: promptString,
     };
 
-    const response = await ai.models.generateContent({
+    const response = await getAIClient().models.generateContent({
       model: "gemini-3.5-flash",
       contents: { parts: [imagePart, textPart] },
       config: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Upload, Check, RefreshCw, Sparkles, AlertCircle, Info, MapPin } from 'lucide-react';
+import { Camera, Upload, Check, RefreshCw, Sparkles, AlertCircle, Info, MapPin, Dribbble } from 'lucide-react';
 import TacticalBoard from './TacticalBoard';
 import { Drill } from '../types';
 
@@ -138,11 +138,11 @@ export default function MobileUploadPortal({ code, onBackToPC }: MobileUploadPor
       
       {/* Header Info */}
       <header className="text-center py-3 border-b border-slate-900 shrink-0">
-        <div className="w-10 h-10 bg-orange-500 rounded-sm flex items-center justify-center text-white font-black text-xl mx-auto shadow-md mb-1.5">
-          J
+        <div className="w-10 h-10 bg-orange-500 rounded-sm flex items-center justify-center text-white font-black text-xl mx-auto shadow-md mb-1.5 animate-pulse">
+          <Dribbble strokeWidth={2.5} size={22} className="text-white" />
         </div>
-        <h1 className="text-sm font-black uppercase tracking-wider text-orange-500">Court Commander Scanner</h1>
-        <p className="text-[10px] text-slate-400">Escaneja i grafia les pissarres táctiques amb Gemini Vision</p>
+        <h1 className="text-sm font-black uppercase tracking-wider text-orange-500">Coach Pinety Scanner</h1>
+        <p className="text-[10px] text-slate-400">Escaneja i grafia les pissarres tàctiques amb Gemini Vision</p>
       </header>
 
       {/* Main Content Area */}
@@ -354,7 +354,7 @@ export default function MobileUploadPortal({ code, onBackToPC }: MobileUploadPor
         >
           Anar al planificador (PC)
         </button>
-        <p className="text-[8px] text-slate-650 mt-1.5 opacity-60">© 2026 Court Commander Project. Tots els drets reservats.</p>
+        <p className="text-[8px] text-slate-650 mt-1.5 opacity-60">© 2026 Coach Pinety Project. Tots els drets reservats.</p>
       </footer>
     </div>
   );

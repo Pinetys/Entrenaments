@@ -26,6 +26,7 @@ export interface Drill {
   id: string;
   title: string;
   category: DrillCategory;
+  concept?: string; // Special focus or tactical concept (e.g. Pick and roll, bloqueo indirecto, defensa zonal)
   duration: number; // in minutes
   objectives: string[];
   description: string;
@@ -69,4 +70,11 @@ export interface AppState {
   selectedWeeklyPlanId: string;
   selectedSessionId: string;
   activeView: string;
+}
+
+export interface SessionCompletion {
+  id: string;
+  planId: string;
+  sessionId: string;
+  completedAt: string;
 }

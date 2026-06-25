@@ -23,3 +23,41 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* HIGH FIDELITY PRINT MEDIA OVERRIDES FOR CLEAN PDF GENERATION */
+@media print {
+  html, body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-overlay, #print-overlay * {
+    visibility: visible !important;
+  }
+
+  #print-overlay {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background-color: #ffffff !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  /* Prevent page-break inside drills cards compiled in PDF */
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
