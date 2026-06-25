@@ -11,6 +11,7 @@ import {
   NotebookText, 
   AlertOctagon,
   Volume2,
+  Megaphone,
   Expand,
   Minimize,
   X
@@ -133,6 +134,42 @@ export default function MobileCourtView({
     }
   };
 
+  // Audio Buzzer (Basketball Horn) synthesiser using Web Audio API (dissonant sawtooth waves)
+  const playSynthesizedBuzzer = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      
+      const duration = 1.6; // authentic basketball horn length
+      const baseFreq = 75; // low frequency bass of the horn
+      
+      // Detuned sawtooth harmonics for the raspy electric buzz of a basket horn
+      const frequencies = [baseFreq, baseFreq * 2, baseFreq * 3, baseFreq * 4, baseFreq * 5, baseFreq * 6];
+      
+      frequencies.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq + (idx * 0.4 - 1.0), ctx.currentTime);
+        
+        gainNode.gain.setValueAtTime(0, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3 / frequencies.length, ctx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.3 / frequencies.length, ctx.currentTime + duration - 0.2);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + duration);
+      });
+    } catch (e) {
+      console.warn("Audio Context blocked or not supported on this browser frame", e);
+    }
+  };
+
   // Timer tick runner
   useEffect(() => {
     const interval = setInterval(() => {
@@ -156,7 +193,7 @@ export default function MobileCourtView({
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setTimerRunning(false);
-            playSynthesizedWhistle();
+            playSynthesizedBuzzer();
             // Trigger custom visual flash toast state
             setShowFinishedToast(true);
             return 0;
@@ -227,14 +264,24 @@ export default function MobileCourtView({
           <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono">Modo Pista (Junior A)</span>
           <span className="text-xs font-semibold text-slate-200 truncate max-w-40 block">{session.name}</span>
         </div>
-        <button
-          id="btn-whistle-demo"
-          onClick={playSynthesizedWhistle}
-          title="Tocar silbato de prueba"
-          className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-orange-400 cursor-pointer active:scale-95 transition"
-        >
-          <Volume2 size={15} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            id="btn-whistle-demo"
+            onClick={playSynthesizedWhistle}
+            title="Tocar xiulet d’entrenador (Silbato)"
+            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-amber-400 cursor-pointer active:scale-95 transition"
+          >
+            <Volume2 size={14} />
+          </button>
+          <button
+            id="btn-buzzer-demo"
+            onClick={playSynthesizedBuzzer}
+            title="Tocar bocina de bàsquet (Buzzer)"
+            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-red-500 cursor-pointer active:scale-95 transition"
+          >
+            <Megaphone size={14} />
+          </button>
+        </div>
       </div>
 
   {/* TIMING DOUBLE STOPWATCH UNIT */}

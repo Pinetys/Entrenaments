@@ -437,7 +437,7 @@ export default function DrillDatabase({
   onToggleFavorite
 }: DrillDatabaseProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<DrillCategory | 'Todos' | 'Favoritos'>('Todos');
+  const [selectedCategory, setSelectedCategory] = useState<'Todos' | 'Favoritos' | 'Defensa' | 'Atac' | 'Escalfament'>('Todos');
   const [isEditing, setIsEditing] = useState(false);
   const [editDrillId, setEditDrillId] = useState<string | null>(null);
   const [drillToDelete, setDrillToDelete] = useState<Drill | null>(null);
@@ -696,8 +696,16 @@ export default function DrillDatabase({
     if (selectedCategory === 'Favoritos') {
       return matchesSearch && favoriteDrillIds.includes(d.id);
     }
-    const matchesCategory = selectedCategory === 'Todos' || d.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    if (selectedCategory === 'Defensa') {
+      return matchesSearch && d.category === 'Defensa';
+    }
+    if (selectedCategory === 'Escalfament') {
+      return matchesSearch && (d.category === 'Físico' || d.category === 'Técnica');
+    }
+    if (selectedCategory === 'Atac') {
+      return matchesSearch && (d.category === 'Táctica' || d.category === 'Tiro' || d.category === 'Transición' || d.category === 'Sistemas');
+    }
+    return matchesSearch; // 'Todos'
   });
 
   return (
@@ -1043,7 +1051,7 @@ export default function DrillDatabase({
               <Filter size={11} />
               Filtrar:
             </span>
-            {(['Todos', 'Favoritos', 'Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'] as const).map((cat) => (
+            {(['Todos', 'Favoritos', 'Defensa', 'Atac', 'Escalfament'] as const).map((cat) => (
               <button
                 id={`chip-${cat}`}
                 key={cat}
@@ -1055,7 +1063,7 @@ export default function DrillDatabase({
                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                {cat === 'Todos' ? 'TOTS' : cat === 'Favoritos' ? '⭐ FAVORITS' : cat === 'Técnica' ? 'TÈCNICA' : cat === 'Táctica' ? 'TÀCTICA' : cat === 'Tiro' ? 'TIR' : cat === 'Físico' ? 'FÍSIC' : cat === 'Sistemas' ? 'SISTEMES' : cat === 'Defensa' ? 'DEFENSA' : 'TRANSICIÓ'}
+                {cat === 'Todos' ? 'TOTS' : cat === 'Favoritos' ? '⭐ FAVORITS' : cat === 'Defensa' ? 'DEFENSA' : cat === 'Atac' ? 'ATAC' : 'ESCALFAMENT'}
               </button>
             ))}
           </div>
