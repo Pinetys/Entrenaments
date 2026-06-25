@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Clock, 
   Plus, 
@@ -16,7 +16,9 @@ import {
   GripVertical,
   X,
   Search,
-  Filter
+  Filter,
+  Printer,
+  Star
 } from 'lucide-react';
 import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan } from '../types';
 import TacticalBoard from './TacticalBoard';
@@ -25,93 +27,121 @@ export function getEnhancedSessionDrills(
   sessionDrills: { drillId: string; duration: number; notes?: string }[],
   allDrills: Drill[]
 ) {
-  const result: any[] = [];
-  let elapsedSinceLastHydration = 0;
+  // First, filter out any manual virtual breaks from the drill reference list so we don't double count
+  const realDrillsRef = sessionDrills.filter(sd => 
+    sd.drillId !== 'virtual-hydration' && 
+    !sd.drillId.startsWith('virtual-hydration') &&
+    sd.drillId !== 'virtual-freethrows' && 
+    !sd.drillId.startsWith('virtual-freethrows')
+  );
 
-  sessionDrills.forEach((sd, index) => {
-    let enhanced: any;
-    if (sd.drillId === 'virtual-hydration' || sd.drillId.startsWith('virtual-hydration')) {
-      enhanced = {
-        id: `hydration-${index}`,
-        drillId: sd.drillId,
-        title: 'Descans d’Hidratació i Recuperació',
-        category: 'Físico' as DrillCategory,
-        concept: undefined as string | undefined,
-        duration: sd.duration || 3,
-        setupInstructions: 'Tot l’equip corre a banquetes. Hidratació ràpida (90 segons) i retorn d’explicació per part del coach.',
-        description: 'Pausa necessària a meitat d’entrenament per garantir la recuperació física i hidratació òptima.',
-        notes: sd.notes || '',
-        boardState: { paths: [], pins: [] },
-        objectives: [],
-        isVirtual: true,
-        virtualType: 'hydration' as const,
-        realIndex: index
-      };
-      // Reset elapsed active time since manual hydration block occurs
-      elapsedSinceLastHydration = 0;
-    } else if (sd.drillId === 'virtual-freethrows' || sd.drillId.startsWith('virtual-freethrows')) {
-      enhanced = {
-        id: `freethrows-${index}`,
-        drillId: sd.drillId,
-        title: 'Tirs Lliures de Recuperació Activa',
-        category: 'Tiro' as DrillCategory,
-        concept: undefined as string | undefined,
-        duration: sd.duration || 4,
-        setupInstructions: 'Llançaments de lliures per l’equip (parelles, 10 tirs cadascun). Cal registrar els encerts en parelles.',
-        description: 'Treball de tir lliure en condicions de fatiga simulada. Es canvia de llançador cada 2 tirs.',
-        notes: sd.notes || '',
-        boardState: { paths: [], pins: [] },
-        objectives: [],
-        isVirtual: true,
-        virtualType: 'freethrows' as const,
-        realIndex: index
-      };
-    } else {
-      const originalDrill = allDrills.find(d => d.id === sd.drillId);
-      const drillDuration = sd.duration || originalDrill?.duration || 10;
-      enhanced = {
-        ...sd,
-        id: `${sd.drillId}-${index}`,
-        title: originalDrill?.title || 'Ejercicio No Encontrado',
-        category: originalDrill?.category || 'Técnica',
-        concept: originalDrill?.concept,
-        setupInstructions: originalDrill?.setupInstructions || '',
-        description: originalDrill?.description || '',
-        objectives: originalDrill?.objectives || [],
-        playersNeeded: originalDrill?.playersNeeded || 0,
-        boardState: originalDrill?.boardState || { paths: [], pins: [] },
-        originalDuration: originalDrill?.duration || 10,
-        duration: drillDuration,
-        isVirtual: false,
-        realIndex: index
-      };
-      elapsedSinceLastHydration += drillDuration;
+  const M = realDrillsRef.length;
+  if (M === 0) return [];
+
+  // Map each active real drill to its detailed form
+  const enhancedReal = realDrillsRef.map((sd, index) => {
+    const originalDrill = allDrills.find(d => d.id === sd.drillId);
+    const drillDuration = sd.duration || originalDrill?.duration || 10;
+    return {
+      ...sd,
+      id: `${sd.drillId}-${index}`,
+      title: originalDrill?.title || 'Ejercicio No Encontrado',
+      category: originalDrill?.category || 'Técnica',
+      concept: originalDrill?.concept,
+      setupInstructions: originalDrill?.setupInstructions || '',
+      description: originalDrill?.description || '',
+      objectives: originalDrill?.objectives || [],
+      playersNeeded: originalDrill?.playersNeeded || 0,
+      boardState: originalDrill?.boardState || { paths: [], pins: [] },
+      originalDuration: originalDrill?.duration || 10,
+      duration: drillDuration,
+      isVirtual: false,
+      realIndex: index
+    };
+  });
+
+  // Calculate the index positions (0-indexed relative to real drills list) where we should trigger hydration
+  let h1 = -1;
+  let h2 = -1;
+  if (M === 1) {
+    h1 = 0; // Trigger before/after as handled in loop
+  } else if (M === 2) {
+    h1 = 0;
+    h2 = 1;
+  } else {
+    h1 = Math.floor((M - 1) / 3);
+    h2 = Math.floor(2 * (M - 1) / 3);
+    if (h2 === h1) {
+      h2 = Math.min(M - 1, h1 + 1);
+    }
+  }
+
+  const result: any[] = [];
+
+  // Helper builder for automatic hydration breaks
+  const createHydrationBlock = (index: number, partLabel: string) => ({
+    id: `auto-hydration-${index}`,
+    drillId: 'virtual-hydration-auto',
+    title: `Descans d’Hidratació (${partLabel})`,
+    category: 'Físico' as DrillCategory,
+    concept: 'HIDRATACIÓ',
+    duration: 3,
+    setupInstructions: 'Tot l’equip corre a banquetes. Hidratació ràpida (90 segons) i retorn ràpid.',
+    description: 'Pausa automàtica de seguretat distribuïda per garantir la correcta hidratació durant la sessió.',
+    notes: '',
+    boardState: { paths: [], pins: [] },
+    objectives: ['Hidratació', 'Recuperació cardíaca'],
+    isVirtual: true,
+    virtualType: 'hydration' as const,
+    realIndex: index
+  });
+
+  // Helper builder for automatic active-recovery free throws
+  const createFreeThrowsBlock = (index: number) => ({
+    id: `auto-freethrows-${index}`,
+    drillId: 'virtual-freethrows-auto',
+    title: 'Tirs Lliures de Recuperació Activa',
+    category: 'Tiro' as DrillCategory,
+    concept: 'REC. ACTIVA',
+    duration: 4,
+    setupInstructions: 'Llançaments de lliures per l’equip (en parelles, 10 llançaments cadascun).',
+    description: 'Llançament de tirs lliures en condicions de fatiga acumulada simulada.',
+    notes: '',
+    boardState: { paths: [], pins: [] },
+    objectives: ['Sota fatiga extrema', 'Tècnica de tir lliure'],
+    isVirtual: true,
+    virtualType: 'freethrows' as const,
+    realIndex: index
+  });
+
+  // For M == 1, insert first hydration break at the start of the session
+  if (M === 1) {
+    result.push(createHydrationBlock(0, 'Inici'));
+  }
+
+  enhancedReal.forEach((drill, i) => {
+    result.push(drill);
+
+    // Free throws every 2 active exercises (after drill 2, 4, 6, etc.), but not at the very end of session
+    if ((i + 1) % 2 === 0 && i < M - 1) {
+      result.push(createFreeThrowsBlock(i));
     }
 
-    result.push(enhanced);
-
-    // If accumulated active training time reaches or passes 20 minutes since the last hydration break,
-    // and there is at least one more drill after this, we auto-insert a 2-minute safety hydration.
-    const isLastDrill = index === sessionDrills.length - 1;
-    if (elapsedSinceLastHydration >= 20 && !isLastDrill) {
-      result.push({
-        id: `auto-hydration-${index}`,
-        drillId: 'virtual-hydration-auto',
-        title: 'Descans d’Hidratació (Auto)',
-        category: 'Físico' as DrillCategory,
-        concept: 'AUTO',
-        duration: 2,
-        setupInstructions: 'Pausa automàtica recomanada cada 20 minuts de treball intensiu. Tot l’equip beu aigua.',
-        description: 'Recordatori de seguretat per prevenir rampes i fatiga acumulada durant la sessió.',
-        notes: '',
-        boardState: { paths: [], pins: [] },
-        objectives: ['Hidratació', 'Recuperació cardíaca'],
-        isVirtual: true,
-        virtualType: 'hydration' as const,
-        isAutoHydration: true,
-        realIndex: index
-      });
-      elapsedSinceLastHydration = 0;
+    // Hydration twice per session
+    if (M === 1) {
+      result.push(createHydrationBlock(0, 'Final'));
+    } else if (M === 2) {
+      if (i === 0) {
+        result.push(createHydrationBlock(0, 'Part 1'));
+      } else if (i === 1) {
+        result.push(createHydrationBlock(1, 'Part 2'));
+      }
+    } else {
+      if (i === h1) {
+        result.push(createHydrationBlock(i, 'Part 1'));
+      } else if (i === h2) {
+        result.push(createHydrationBlock(i, 'Part 2'));
+      }
     }
   });
 
@@ -132,6 +162,10 @@ interface SessionPlannerProps {
   onClearRepetitions: (sessionId: string) => void;
   onDuplicateSession: (sourceSessionId: string, targetSessionId: string) => void;
   allSessions?: Record<string, TrainingSession>;
+  onDeleteDrill?: (drillId: string) => void;
+  triggerToast?: (msg: string) => void;
+  favoriteDrillIds?: string[];
+  onToggleFavorite?: (drillId: string) => void;
 }
 
 export default function SessionPlanner({ 
@@ -147,7 +181,11 @@ export default function SessionPlanner({
   onRemoveRepetition,
   onClearRepetitions,
   onDuplicateSession,
-  allSessions
+  allSessions,
+  onDeleteDrill,
+  triggerToast,
+  favoriteDrillIds = [],
+  onToggleFavorite
 }: SessionPlannerProps) {
   const [sessionNotes, setSessionNotes] = useState<string>('');
   const [activeNoteEditId, setActiveNoteEditId] = useState<string | null>(null);
@@ -157,6 +195,7 @@ export default function SessionPlanner({
   const [plannerSearchQuery, setPlannerSearchQuery] = useState<string>('');
   const [drillQuickNotes, setDrillQuickNotes] = useState<Record<string, string>>({});
   const [showDuplicateDropdown, setShowDuplicateDropdown] = useState(false);
+  const [drillToDelete, setDrillToDelete] = useState<Drill | null>(null);
 
   // State for show print preview mode
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -192,6 +231,15 @@ export default function SessionPlanner({
   const enhancedDrillsInSession = getEnhancedSessionDrills(session.drills, drills);
   const totalTime = enhancedDrillsInSession.reduce((acc, curr) => acc + curr.duration, 0);
   const TIME_LIMIT = 75; // 1 hour 15 minutes = 75 minutes
+
+  // Trigger a visual warning (toast) when exactly 5 minutes are remaining (i.e., totalTime is exactly 70 minutes)
+  useEffect(() => {
+    if (totalTime === 70) {
+      if (triggerToast) {
+        triggerToast("⏳ Alerta: Falten només 5 minuts per arribar al límit de 75 minuts de la sessió! (Temps actual: 70 minuts)");
+      }
+    }
+  }, [totalTime, triggerToast]);
 
   // Handle adding drill to active session
   const handleAddDrillToSession = (drillId: string, customNotes?: string) => {
@@ -506,6 +554,16 @@ export default function SessionPlanner({
                   </div>
                 )}
               </div>
+
+              <button
+                id="btn-pdf-session-active"
+                type="button"
+                onClick={() => setShowPrintPreview(true)}
+                className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black rounded-sm text-[10px] tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition border border-transparent shadow-xs"
+                title="Generar un resum en format PDF de la sessió activa, incloent el cronograma, notes i descripcions dels exercicis."
+              >
+                <Printer size={12} /> Generar PDF / Imprimir 🖨️
+              </button>
             </div>
           </div>
 
@@ -1204,6 +1262,7 @@ export default function SessionPlanner({
               <div className="flex flex-wrap gap-1">
                 {[
                   { id: 'Tots', label: 'Tots' },
+                  { id: 'Favorits', label: '⭐ Favorits' },
                   { id: 'Escalfament', label: 'Escalfament' },
                   { id: 'Atac', label: 'Atac' },
                   { id: 'Defensa', label: 'Defensa' }
@@ -1242,6 +1301,9 @@ export default function SessionPlanner({
 
                 // Apply Category Filter
                 if (plannerCategoryFilter === 'Tots') return true;
+                if (plannerCategoryFilter === 'Favorits') {
+                  return favoriteDrillIds.includes(drill.id);
+                }
                 if (plannerCategoryFilter === 'Escalfament') {
                   return ['Técnica', 'Físico'].includes(drill.category);
                 }
@@ -1282,7 +1344,22 @@ export default function SessionPlanner({
                             {drill.concept}
                           </span>
                         )}
-                        <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 ml-auto">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onToggleFavorite) onToggleFavorite(drill.id);
+                          }}
+                          className={`p-1 rounded-full transition cursor-pointer border-none bg-transparent hover:scale-110 ml-auto flex items-center justify-center ${
+                            favoriteDrillIds.includes(drill.id)
+                              ? 'text-amber-500'
+                              : 'text-slate-300 hover:text-amber-400'
+                          }`}
+                          title={favoriteDrillIds.includes(drill.id) ? 'Treure de preferits' : 'Marcar com a preferit'}
+                        >
+                          <Star size={12} fill={favoriteDrillIds.includes(drill.id) ? 'currentColor' : 'none'} />
+                        </button>
+                        <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1">
                           <Clock size={10} className="text-slate-400" />
                           {drill.duration}′
                         </span>
@@ -1296,23 +1373,36 @@ export default function SessionPlanner({
                       </h4>
                     </div>
 
-                    <button
-                      id={`btn-quick-add-${drill.id}`}
-                      onClick={() => {
-                        handleAddDrillToSession(drill.id, drillQuickNotes[drill.id]);
-                        // Clear the input after adding
-                        setDrillQuickNotes(prev => {
-                          const copy = { ...prev };
-                          copy[drill.id] = '';
-                          return copy;
-                        });
-                      }}
-                      type="button"
-                      className="px-2.5 py-1.5 rounded bg-orange-500 hover:bg-orange-600 transition text-[9px] font-black uppercase text-white flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
-                    >
-                      <Plus size={10} strokeWidth={3} />
-                      {isAlreadyIn ? 'Afegir+' : 'Afegir'}
-                    </button>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        id={`btn-quick-add-${drill.id}`}
+                        onClick={() => {
+                          handleAddDrillToSession(drill.id, drillQuickNotes[drill.id]);
+                          // Clear the input after adding
+                          setDrillQuickNotes(prev => {
+                            const copy = { ...prev };
+                            copy[drill.id] = '';
+                            return copy;
+                          });
+                        }}
+                        type="button"
+                        className="px-2.5 py-1.5 rounded bg-orange-500 hover:bg-orange-600 transition text-[9px] font-black uppercase text-white flex items-center justify-center gap-1 cursor-pointer shadow-xs border-none"
+                      >
+                        <Plus size={10} strokeWidth={3} />
+                        {isAlreadyIn ? 'Afegir+' : 'Afegir'}
+                      </button>
+
+                      <button
+                        id={`btn-quick-delete-${drill.id}`}
+                        onClick={() => setDrillToDelete(drill)}
+                        type="button"
+                        title="Eliminar de la biblioteca de l'equip"
+                        className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/50 transition text-[8px] font-bold uppercase flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={10} />
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
 
                   {/* Optional Note / Custom written note beside tag info */}
@@ -1724,6 +1814,50 @@ export default function SessionPlanner({
 
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM CONFIRMATION DIALOG FOR DRILL DELETION */}
+      {drillToDelete && (
+        <div className="fixed inset-0 bg-slate-950/75 flex items-center justify-center p-4 z-50 backdrop-blur-xs select-none">
+          <div className="bg-white border border-slate-100 rounded-3xl shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Esborrar Exercici?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Estàs segur que vols eliminar permanentment l'exercici <strong className="text-slate-800">"{drillToDelete.title}"</strong> de la biblioteca de l'equip?
+              </p>
+              <div className="text-[10px] text-red-650 font-bold bg-amber-50/50 border border-amber-200 p-2.5 rounded-xl text-left">
+                ⚠️ Aquesta acció és irreversible i el traurà de qualsevol sessió d'entrenament on estigui programat.
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDeleteDrill) {
+                    onDeleteDrill(drillToDelete.id);
+                  }
+                  setDrillToDelete(null);
+                  if (triggerToast) {
+                    triggerToast(`🗑️ S'ha eliminat "${drillToDelete.title}" de la biblioteca.`);
+                  }
+                }}
+                className="flex-1 py-2.5 bg-red-650 hover:bg-red-750 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
+              >
+                Sí, esborrar
+              </button>
+              <button
+                type="button"
+                onClick={() => setDrillToDelete(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
+              >
+                Cancel·lar
+              </button>
+            </div>
           </div>
         </div>
       )}

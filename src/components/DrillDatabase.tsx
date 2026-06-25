@@ -20,7 +20,8 @@ import {
   Loader2,
   QrCode,
   Smartphone,
-  RefreshCw
+  RefreshCw,
+  Star
 } from 'lucide-react';
 import { Drill, DrillCategory, BoardState } from '../types';
 import TacticalBoard from './TacticalBoard';
@@ -422,11 +423,21 @@ interface DrillDatabaseProps {
   onEditDrill: (drill: Drill) => void;
   onDeleteDrill: (drillId: string) => void;
   triggerToast?: (msg: string) => void;
+  favoriteDrillIds?: string[];
+  onToggleFavorite?: (drillId: string) => void;
 }
 
-export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDeleteDrill, triggerToast }: DrillDatabaseProps) {
+export default function DrillDatabase({ 
+  drills, 
+  onAddDrill, 
+  onEditDrill, 
+  onDeleteDrill, 
+  triggerToast,
+  favoriteDrillIds = [],
+  onToggleFavorite
+}: DrillDatabaseProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<DrillCategory | 'Todos'>('Todos');
+  const [selectedCategory, setSelectedCategory] = useState<DrillCategory | 'Todos' | 'Favoritos'>('Todos');
   const [isEditing, setIsEditing] = useState(false);
   const [editDrillId, setEditDrillId] = useState<string | null>(null);
   const [drillToDelete, setDrillToDelete] = useState<Drill | null>(null);
@@ -682,6 +693,9 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
   const filteredDrills = drills.filter(d => {
     const matchesSearch = d.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           d.description.toLowerCase().includes(searchQuery.toLowerCase());
+    if (selectedCategory === 'Favoritos') {
+      return matchesSearch && favoriteDrillIds.includes(d.id);
+    }
     const matchesCategory = selectedCategory === 'Todos' || d.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -1029,7 +1043,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
               <Filter size={11} />
               Filtrar:
             </span>
-            {(['Todos', 'Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'] as const).map((cat) => (
+            {(['Todos', 'Favoritos', 'Técnica', 'Táctica', 'Tiro', 'Físico', 'Transición', 'Sistemas', 'Defensa'] as const).map((cat) => (
               <button
                 id={`chip-${cat}`}
                 key={cat}
@@ -1041,7 +1055,7 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                {cat === 'Todos' ? 'TOTS' : cat === 'Técnica' ? 'TÈCNICA' : cat === 'Táctica' ? 'TÀCTICA' : cat === 'Tiro' ? 'TIR' : cat === 'Físico' ? 'FÍSIC' : cat === 'Sistemas' ? 'SISTEMES' : cat === 'Defensa' ? 'DEFENSA' : 'TRANSICIÓ'}
+                {cat === 'Todos' ? 'TOTS' : cat === 'Favoritos' ? '⭐ FAVORITS' : cat === 'Técnica' ? 'TÈCNICA' : cat === 'Táctica' ? 'TÀCTICA' : cat === 'Tiro' ? 'TIR' : cat === 'Físico' ? 'FÍSIC' : cat === 'Sistemas' ? 'SISTEMES' : cat === 'Defensa' ? 'DEFENSA' : 'TRANSICIÓ'}
               </button>
             ))}
           </div>
@@ -1109,6 +1123,18 @@ export default function DrillDatabase({ drills, onAddDrill, onEditDrill, onDelet
 
                      {/* Card action controls */}
                     <div className="flex items-center gap-1.5 shrink-0 select-none">
+                      <button
+                        id={`btn-fav-drill-${drill.id}`}
+                        onClick={() => onToggleFavorite && onToggleFavorite(drill.id)}
+                        title={favoriteDrillIds.includes(drill.id) ? "Treure de preferits" : "Afegir a preferits"}
+                        className={`p-2 rounded-sm transition cursor-pointer border border-transparent ${
+                          favoriteDrillIds.includes(drill.id)
+                            ? 'bg-amber-50 text-amber-500 hover:text-amber-600 hover:bg-amber-100 border-amber-200'
+                            : 'hover:bg-amber-50 text-slate-400 hover:text-amber-500 hover:border-amber-200'
+                        }`}
+                      >
+                        <Star size={14} fill={favoriteDrillIds.includes(drill.id) ? "currentColor" : "none"} />
+                      </button>
                       <button
                         id={`btn-clone-drill-${drill.id}`}
                         onClick={() => handleCloneDrill(drill)}

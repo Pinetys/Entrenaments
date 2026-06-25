@@ -229,6 +229,35 @@ export default function App() {
     return [];
   });
 
+  // Favorite drills tracking state
+  const [favoriteDrillIds, setFavoriteDrillIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.favoriteDrillIds) {
+          return parsed.favoriteDrillIds as string[];
+        }
+      }
+    } catch (e) {
+      console.error('Error loading favoriteDrillIds from localstorage', e);
+    }
+    return [];
+  });
+
+  const handleToggleFavoriteDrill = (drillId: string) => {
+    setFavoriteDrillIds(prev => {
+      const isFav = prev.includes(drillId);
+      if (isFav) {
+        triggerToast('⭐ S’ha eliminat de preferits');
+        return prev.filter(id => id !== drillId);
+      } else {
+        triggerToast('⭐ Afegit als teus exercicis preferits!');
+        return [...prev, drillId];
+      }
+    });
+  };
+
   const handleToggleCompleteSession = (planId: string, sessId: string) => {
     const isCompleted = completions.some(c => c.planId === planId && c.sessionId === sessId);
     if (isCompleted) {
@@ -375,13 +404,14 @@ export default function App() {
         weeklyPlans,
         selectedWeeklyPlanId,
         selectedSessionId,
-        completions
+        completions,
+        favoriteDrillIds
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (e) {
       console.warn('Could not persist application configuration changes to localStorage. This is expected inside isolated mobile browsers/private sandbox frames:', e);
     }
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions]);
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds]);
 
   // Generate compact, un-bloated mobile link
   // Generate compact, un-bloated mobile link using the server-side short URL service (protects QR sizes!)
@@ -981,6 +1011,10 @@ export default function App() {
               onClearRepetitions={(sessId) => handleClearCompletions(activePlan.id, sessId)}
               onDuplicateSession={handleDuplicateSession}
               allSessions={sessions}
+              onDeleteDrill={handleDeleteDrillFromDatabase}
+              triggerToast={triggerToast}
+              favoriteDrillIds={favoriteDrillIds}
+              onToggleFavorite={handleToggleFavoriteDrill}
             />
           </div>
         ) : activeView === 'database' ? (
@@ -990,6 +1024,8 @@ export default function App() {
             onEditDrill={handleEditDrillInDatabase}
             onDeleteDrill={handleDeleteDrillFromDatabase}
             triggerToast={triggerToast}
+            favoriteDrillIds={favoriteDrillIds}
+            onToggleFavorite={handleToggleFavoriteDrill}
           />
         ) : (
           <div className={`${isSharedMobile ? 'p-0' : 'py-2'}`}>
