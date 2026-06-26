@@ -26,6 +26,7 @@ import {
 import { Drill, DrillCategory, BoardState } from '../types';
 import TacticalBoard from './TacticalBoard';
 import DrillManualBooklet from './DrillManualBooklet';
+import { compressAndResizeImage } from '../lib/imageCompressor';
 
 // Pre-populated High-Level Drills for Junior Nivel A Catalan Federation
 export const PRE_POPULATED_DRILLS: Drill[] = [
@@ -596,12 +597,11 @@ export default function DrillDatabase({
     if (!file) return;
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = (reader.result as string).split(',')[1];
-        await analyzeImageContent(base64String, file.type || 'image/jpeg');
-      };
-      reader.readAsDataURL(file);
+      if (triggerToast) {
+        triggerToast("⚡ Reduint mida de la imatge i optimitzant resolució...");
+      }
+      const { base64Data, mimeType } = await compressAndResizeImage(file, 1200);
+      await analyzeImageContent(base64Data, mimeType);
     } catch (err: any) {
       console.error(err);
       if (triggerToast) {

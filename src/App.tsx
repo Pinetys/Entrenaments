@@ -386,6 +386,59 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, syncCode]);
 
+  // Real HTML5 Notification Scheduler to alert the coach 10 minutes prior to training session start
+  useEffect(() => {
+    // 1. Request notifications permission gracefully on load
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('Notificacions d’entrenament activades pel sistema.');
+          }
+        });
+      }
+    }
+
+    // 2. Track already notified alert keys so we never spam the coach's device
+    const notifiedKeys = new Set<string>();
+
+    // 3. Polling check every 12 seconds
+    const interval = setInterval(() => {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      const now = new Date();
+
+      weeklyPlans.forEach(plan => {
+        const keys: (keyof WeeklyPlan)[] = ['dia1', 'dia2', 'dia3', 'dia4', 'dia5', 'dia6', 'dia7', 'dia8'];
+        keys.forEach(key => {
+          const session = plan[key] as TrainingSession | undefined;
+          if (session && session.scheduledTime) {
+            const schedDate = new Date(session.scheduledTime);
+            const diffMs = schedDate.getTime() - now.getTime();
+            const diffMins = diffMs / 1000 / 60;
+
+            // Trigger when exactly 9.5 to 10.5 minutes remain
+            const alertKey = `${plan.id}-${session.id}-${session.scheduledTime}`;
+            if (diffMins > 9.0 && diffMins <= 10.5 && !notifiedKeys.has(alertKey)) {
+              notifiedKeys.add(alertKey);
+
+              // Dispatch Native System Notification
+              new Notification("🏀 Alerta d'Entrenament (Júnior A)!", {
+                body: `Falten 10 minuts per a l'inici de la sessió programada: "${session.name}". En marxa!`,
+                requireInteraction: true,
+                tag: alertKey
+              });
+
+              triggerToast(`🔔 Notificació enviada: Falten 10 minuts per "${session.name}"!`);
+            }
+          }
+        });
+      });
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, [weeklyPlans]);
+
   // Handler to load cloud data from entering a sync code manually
   const handleLoadCloudData = async (codeToLoad: string) => {
     const trimmed = codeToLoad.trim().toUpperCase();
@@ -1168,6 +1221,9 @@ export default function App() {
               isSharedMobile={isSharedMobile}
               onUpdateSession={handleUpdateSession}
               onAddDrill={handleAddDrillToDatabase}
+              completions={completions}
+              onToggleCompleteSession={(sessId) => handleToggleCompleteSession(activePlan?.id || 'plan-default', sessId)}
+              activePlanId={activePlan?.id || 'plan-default'}
             />
           </div>
         )}

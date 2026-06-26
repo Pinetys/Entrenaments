@@ -103,6 +103,82 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   const [currentPath, setCurrentPath] = useState<BoardPath | null>(null);
   const [pathToDeleteId, setPathToDeleteId] = useState<string | null>(null);
 
+  // States for touch-based zoom & pan on mobile/desktop
+  const [zoom, setZoom] = useState<number>(1);
+  const [panX, setPanX] = useState<number>(0);
+  const [panY, setPanY] = useState<number>(0);
+
+  const touchStartRef = useRef<{
+    distance: number;
+    centerX: number;
+    centerY: number;
+    panX: number;
+    panY: number;
+    zoom: number;
+  } | null>(null);
+
+  const handleTouchStartCustom = (e: React.TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length === 2) {
+      e.stopPropagation();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const centerX = (t1.clientX + t2.clientX) / 2;
+      const centerY = (t1.clientY + t2.clientY) / 2;
+      
+      touchStartRef.current = {
+        distance: dist,
+        centerX,
+        centerY,
+        panX,
+        panY,
+        zoom
+      };
+    } else if (e.touches.length === 1 && zoom > 1 && mode === 'move' && !activePinId) {
+      const t = e.touches[0];
+      touchStartRef.current = {
+        distance: 0,
+        centerX: t.clientX,
+        centerY: t.clientY,
+        panX,
+        panY,
+        zoom
+      };
+    }
+  };
+
+  const handleTouchMoveCustom = (e: React.TouchEvent<SVGSVGElement> | TouchEvent) => {
+    const touches = 'touches' in e ? e.touches : [];
+    if (touches.length === 2 && touchStartRef.current) {
+      e.preventDefault();
+      const t1 = touches[0];
+      const t2 = touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const centerX = (t1.clientX + t2.clientX) / 2;
+      const centerY = (t1.clientY + t2.clientY) / 2;
+
+      const scaleChange = dist / touchStartRef.current.distance;
+      const newZoom = Math.max(1, Math.min(4, touchStartRef.current.zoom * scaleChange));
+      
+      const dx = centerX - touchStartRef.current.centerX;
+      const dy = centerY - touchStartRef.current.centerY;
+      
+      setZoom(newZoom);
+      const maxPan = 100 * (newZoom - 1);
+      setPanX(Math.max(-maxPan, Math.min(maxPan, touchStartRef.current.panX + dx)));
+      setPanY(Math.max(-maxPan, Math.min(maxPan, touchStartRef.current.panY + dy)));
+    } else if (touches.length === 1 && zoom > 1 && touchStartRef.current && mode === 'move' && !activePinId) {
+      e.preventDefault();
+      const t = touches[0];
+      const dx = t.clientX - touchStartRef.current.centerX;
+      const dy = t.clientY - touchStartRef.current.centerY;
+      
+      const maxPan = 100 * (zoom - 1);
+      setPanX(Math.max(-maxPan, Math.min(maxPan, touchStartRef.current.panX + dx)));
+      setPanY(Math.max(-maxPan, Math.min(maxPan, touchStartRef.current.panY + dy)));
+    }
+  };
+
   // Sync boardType with incoming boardState
   useEffect(() => {
     if (boardState?.courtType && boardState.courtType !== boardType) {
@@ -171,6 +247,17 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   // Handling drawing / dragging
   const handleStart = (e: React.MouseEvent<SVGSVGElement> | React.TouchEvent<SVGSVGElement>, targetPinId?: string) => {
     if (readOnly) return;
+    
+    // Guard against multiple touches (pinch to zoom)
+    if ('touches' in e && e.touches.length > 1) {
+      return;
+    }
+    
+    // Guard against single finger panning when zoomed in and not dragging a specific pin
+    if ('touches' in e && e.touches.length === 1 && zoom > 1 && mode === 'move' && !targetPinId) {
+      return;
+    }
+
     const coords = getCoordinates(e);
     if (!coords) return;
 
@@ -205,6 +292,16 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
   const handleMove = (e: React.MouseEvent<SVGSVGElement> | React.TouchEvent<SVGSVGElement> | MouseEvent | TouchEvent) => {
     if (readOnly) return;
+    
+    // Guard against multiple touches (pinch to zoom)
+    if ('touches' in e && e.touches.length > 1) {
+      return;
+    }
+    
+    // Guard against single finger panning when zoomed in and not dragging a pin
+    if ('touches' in e && e.touches.length === 1 && zoom > 1 && mode === 'move' && !activePinId) {
+      return;
+    }
     
     if (activePinId && mode === 'move') {
       const coords = getCoordinates(e);
@@ -526,9 +623,21 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           viewBox={boardType === 'full' ? "0 0 100 100" : "0 48 100 52"}
           preserveAspectRatio="xMidYMid meet"
           onMouseDown={(e) => handleStart(e)}
-          onTouchStart={(e) => handleStart(e)}
+          onTouchStart={(e) => {
+            handleTouchStartCustom(e);
+            handleStart(e);
+          }}
           onMouseMove={handleMove}
-          onTouchMove={handleMove}
+          onTouchMove={(e) => {
+            handleTouchMoveCustom(e);
+            handleMove(e);
+          }}
+          style={{
+            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            transformOrigin: 'center center',
+            transition: activePinId || currentPath ? 'none' : 'transform 0.15s ease-out',
+            touchAction: 'none'
+          }}
         >
           {/* DEFINITIONS FOR DYNAMIC ARROW MARKERS */}
           <defs>
@@ -789,18 +898,66 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             })}
         </svg>
 
+        {/* Floating Zoom and Pan HUD controls */}
+        <div className="absolute right-2 bottom-2 z-35 flex flex-col gap-1.5 bg-slate-950/85 p-1.5 rounded-lg border border-slate-800 backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => {
+              setZoom(z => Math.min(4, z + 0.25));
+            }}
+            className="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold text-base border border-slate-700 shadow-md cursor-pointer active:scale-90 transition-transform"
+            title="Lupa +"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setZoom(z => {
+                const nextZ = Math.max(1, z - 0.25);
+                if (nextZ === 1) {
+                  setPanX(0);
+                  setPanY(0);
+                }
+                return nextZ;
+              });
+            }}
+            className="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold text-base border border-slate-700 shadow-md cursor-pointer active:scale-90 transition-transform"
+            title="Lupa -"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setZoom(1);
+              setPanX(0);
+              setPanY(0);
+            }}
+            className="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center justify-center text-[9px] font-bold border border-slate-700 shadow-md cursor-pointer active:scale-90 transition-transform font-mono"
+            title="Restaurar escala"
+          >
+            1x
+          </button>
+          {zoom > 1 && (
+            <span className="text-[7px] text-orange-400 font-bold text-center font-mono select-none block leading-none">
+              {Math.round(zoom * 100)}%
+            </span>
+          )}
+        </div>
+
         {/* Quick Help Overlay Indicator for Touch devices */}
         {!readOnly && (
           <div className="absolute bottom-2 left-2 bg-slate-950/80 px-2 py-1 rounded text-[10px] text-slate-300 font-mono flex items-center gap-1 backdrop-blur-xs">
             {mode === 'move' ? (
               <>
                 <Move size={10} className="text-indigo-400" />
-                <span>Arrastra las fichas</span>
+                <span>{zoom > 1 ? 'Mueve con 1/2 dedos' : 'Arrastra las fichas'}</span>
               </>
             ) : (
               <>
                 <Brush size={10} className="text-yellow-400 animate-pulse" />
-                <span>Dibuja en la pantalla</span>
+                <span>{zoom > 1 ? 'Dibuja ampliado' : 'Dibuja en la pantalla'}</span>
               </>
             )}
           </div>

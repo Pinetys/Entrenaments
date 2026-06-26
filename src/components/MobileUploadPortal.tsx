@@ -3,6 +3,8 @@ import { Camera, Upload, Check, RefreshCw, Sparkles, AlertCircle, Info, MapPin, 
 import TacticalBoard from './TacticalBoard';
 import { Drill } from '../types';
 
+import { compressAndResizeImage, ImageAnalysisResult } from '../lib/imageCompressor';
+
 interface MobileUploadPortalProps {
   code: string;
   onBackToPC: () => void;
@@ -19,10 +21,12 @@ export default function MobileUploadPortal({ code, onBackToPC }: MobileUploadPor
   const [analyzing, setAnalyzing] = useState<boolean>(false);
   const [analyzedDrill, setAnalyzedDrill] = useState<Drill | null>(null);
   const [analysisStep, setAnalysisStep] = useState<string>('');
+  const [currentStepIdx, setCurrentStepIdx] = useState<number>(0);
+  const [qualityAnalysis, setQualityAnalysis] = useState<ImageAnalysisResult | null>(null);
 
   const loadingSteps = [
     "Iniciant motor de visió artificial de Gemini...",
-    "Escanejant línies de la pissarra táctica...",
+    "Escanejant línies de la pista de bàsquet...",
     "Identificant la distribució de cons i fitxes...",
     "Detecció de posicions de jugadors (atacants i defensors)...",
     "Calculant trajectòries i fletxes de passades...",
@@ -34,28 +38,38 @@ export default function MobileUploadPortal({ code, onBackToPC }: MobileUploadPor
     if (!analyzing) return;
     let stepIndex = 0;
     setAnalysisStep(loadingSteps[0]);
+    setCurrentStepIdx(0);
 
     const interval = setInterval(() => {
       stepIndex = (stepIndex + 1) % loadingSteps.length;
       setAnalysisStep(loadingSteps[stepIndex]);
+      setCurrentStepIdx(stepIndex);
     }, 2400);
 
     return () => clearInterval(interval);
   }, [analyzing]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setMimeType(file.type || 'image/jpeg');
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSelectedImage(reader.result as string);
-      setSuccess(false);
-      setAnalyzedDrill(null);
-      setErrorMsg(null);
-    };
-    reader.readAsDataURL(file);
+    setAnalyzing(true);
+    setSuccess(false);
+    setAnalyzedDrill(null);
+    setErrorMsg(null);
+    setQualityAnalysis(null);
+
+    try {
+      const result = await compressAndResizeImage(file, 1200);
+      setMimeType(result.mimeType);
+      setSelectedImage(`data:${result.mimeType};base64,${result.base64Data}`);
+      setQualityAnalysis(result);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg("No s'ha pogut processar o reduir la imatge seleccionada.");
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const handleAnalyzeWithGemini = async () => {
@@ -178,20 +192,54 @@ export default function MobileUploadPortal({ code, onBackToPC }: MobileUploadPor
               </button>
             </div>
           ) : analyzing ? (
-            <div className="text-center p-8 bg-slate-900/60 border border-orange-500/30 rounded-xl space-y-5 shadow-xl w-full flex flex-col items-center justify-center min-h-[300px]">
+            <div className="text-center p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-5 shadow-xl w-full flex flex-col items-center justify-center min-h-[350px]">
               <div className="relative flex items-center justify-center">
                 <div className="w-16 h-16 rounded-full border-4 border-dashed border-orange-500 animate-spin"></div>
                 <Sparkles size={24} className="text-orange-500 absolute animate-pulse" />
               </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-black uppercase text-orange-400 tracking-widest">Processament Intel·ligent</h4>
-                <p className="text-[11px] text-slate-300 font-medium h-8 flex items-center justify-center px-4 leading-normal transition duration-300">
-                  {analysisStep}
-                </p>
+              
+              <div className="space-y-2 w-full px-2">
+                <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-wider">
+                  <span className="text-orange-400 font-extrabold animate-pulse">ANALITZANT PISSARRA...</span>
+                  <span className="text-slate-400 font-bold">{Math.round(((currentStepIdx + 1) / loadingSteps.length) * 100)}%</span>
+                </div>
+                
+                {/* Visual Progress Bar */}
+                <div className="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800 p-[1px]">
+                  <div 
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${Math.round(((currentStepIdx + 1) / loadingSteps.length) * 100)}%` }}
+                  ></div>
+                </div>
+
+                <div className="bg-slate-950/60 p-2.5 rounded border border-slate-850 text-center min-h-[44px] flex items-center justify-center mt-2 shadow-inner">
+                  <p className="text-[11px] text-slate-200 font-semibold leading-snug">
+                    {analysisStep}
+                  </p>
+                </div>
               </div>
-              <p className="text-[9px] text-slate-500 max-w-xs uppercase tracking-wider">
-                Analitzant traços, fletxes i jugadors sobre el terreny de joc...
-              </p>
+
+              {/* Step Checklist */}
+              <div className="w-full space-y-1.5 text-left bg-slate-950/40 p-3.5 rounded-lg border border-slate-900 text-[10px] font-mono text-slate-500 max-h-[170px] overflow-y-auto">
+                <div className="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Fases de l'Escaneig Tàctic</div>
+                {loadingSteps.map((step, idx) => {
+                  const isCompleted = idx < currentStepIdx;
+                  const isCurrent = idx === currentStepIdx;
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`flex items-center gap-2 transition-all duration-300 ${
+                        isCurrent ? 'text-orange-400 font-bold' : isCompleted ? 'text-emerald-400 font-semibold' : 'text-slate-650'
+                      }`}
+                    >
+                      <span className="shrink-0 text-[11px] w-4 flex justify-center">
+                        {isCompleted ? '✓' : isCurrent ? '⚡' : '○'}
+                      </span>
+                      <span className="truncate">{step}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="w-full space-y-4">
@@ -220,7 +268,7 @@ export default function MobileUploadPortal({ code, onBackToPC }: MobileUploadPor
                   
                   {/* Photo Preview Thumbnail & Action buttons */}
                   {!analyzedDrill ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div className="relative bg-slate-950 rounded-lg overflow-hidden border border-slate-800 shadow-inner max-h-[220px] flex items-center justify-center">
                         <img
                           src={selectedImage}
@@ -229,11 +277,72 @@ export default function MobileUploadPortal({ code, onBackToPC }: MobileUploadPor
                         />
                         <button
                           onClick={() => setSelectedImage(null)}
-                          className="absolute top-2 right-2 bg-slate-900 text-slate-300 hover:bg-rose-950 hover:text-red-400 p-1 px-2.5 rounded text-[10px] font-bold transition shadow-md border border-slate-800"
+                          className="absolute top-2 right-2 bg-slate-900/90 text-slate-300 hover:bg-rose-950 hover:text-red-400 p-1 px-2.5 rounded text-[10px] font-bold transition shadow-md border border-slate-800 cursor-pointer"
                         >
                           Treure imatge
                         </button>
                       </div>
+
+                      {/* Live Quality / Focus indicator dashboard */}
+                      {qualityAnalysis && (
+                        <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-3 text-left shadow-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-mono font-black text-slate-400 uppercase tracking-widest">
+                              Anàlisi de Qualitat de Captura
+                            </span>
+                            <span className={`text-[8px] font-mono font-black uppercase px-2 py-0.5 rounded-full ${
+                              qualityAnalysis.qualityScore >= 90 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                              qualityAnalysis.qualityScore >= 70 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                              'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            }`}>
+                              {qualityAnalysis.qualityLabel} ({qualityAnalysis.qualityScore}%)
+                            </span>
+                          </div>
+
+                          {/* Visual score dial/bar */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[8px] text-slate-400 font-mono">
+                              <span>Nitidesa i contrast de línies</span>
+                              <span>{qualityAnalysis.qualityScore}/100</span>
+                            </div>
+                            <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-850">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  qualityAnalysis.qualityScore >= 90 ? 'bg-emerald-500' :
+                                  qualityAnalysis.qualityScore >= 70 ? 'bg-amber-500' :
+                                  'bg-rose-500'
+                                }`}
+                                style={{ width: `${qualityAnalysis.qualityScore}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Metadata list */}
+                          <div className="grid grid-cols-2 gap-2 text-[9px] font-mono bg-slate-950 p-2 rounded border border-slate-850 text-slate-400">
+                            <div>
+                              <span className="text-slate-500 block text-[7px] uppercase">Resolució de Sensor</span>
+                              <span className="font-bold text-slate-300">{qualityAnalysis.originalWidth}x{qualityAnalysis.originalHeight}px</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[7px] uppercase">Pes d'Enviament</span>
+                              <span className="font-bold text-slate-300">{qualityAnalysis.compressedSizeKb} KB</span>
+                            </div>
+                          </div>
+
+                          {/* Suggestion / Tips checklist */}
+                          <div className="space-y-1.5 border-t border-slate-800/60 pt-2.5">
+                            <span className="text-[8px] font-mono font-black text-orange-400 uppercase tracking-widest block mb-1">
+                              Recomanacions del Motor de Visió
+                            </span>
+                            {qualityAnalysis.suggestions.map((suggestion: string, idx: number) => (
+                              <p key={idx} className="text-[9px] text-slate-300 leading-normal flex items-start gap-1">
+                                <span className="text-orange-500 select-none shrink-0">•</span>
+                                <span>{suggestion}</span>
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="flex flex-col gap-2">
                         <button

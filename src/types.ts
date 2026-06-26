@@ -48,6 +48,7 @@ export interface TrainingSession {
     duration: number; // can override drill default duration
     notes?: string;
   }[];
+  scheduledTime?: string; // ISO string or YYYY-MM-DDTHH:MM
 }
 
 export interface WeeklyPlan {

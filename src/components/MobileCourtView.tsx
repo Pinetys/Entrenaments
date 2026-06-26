@@ -21,9 +21,10 @@ import {
   Check,
   RefreshCw
 } from 'lucide-react';
-import { Drill, TrainingSession, BoardState } from '../types';
+import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
 import { getEnhancedSessionDrills } from './SessionPlanner';
+import { compressAndResizeImage, ImageAnalysisResult } from '../lib/imageCompressor';
 
 interface MobileCourtViewProps {
   session: TrainingSession;
@@ -33,6 +34,9 @@ interface MobileCourtViewProps {
   isSharedMobile?: boolean;
   onUpdateSession?: (updatedSession: TrainingSession) => void;
   onAddDrill?: (drill: Drill) => void;
+  completions?: SessionCompletion[];
+  onToggleCompleteSession?: (sessionId: string) => void;
+  activePlanId?: string;
 }
 
 export default function MobileCourtView({ 
@@ -42,7 +46,10 @@ export default function MobileCourtView({
   onPreviewDrill,
   isSharedMobile = false,
   onUpdateSession,
-  onAddDrill
+  onAddDrill,
+  completions = [],
+  onToggleCompleteSession,
+  activePlanId = 'plan-default'
 }: MobileCourtViewProps) {
   const [activeDrillIndex, setActiveDrillIndex] = useState(0);
   const [isFullscreenBoard, setIsFullscreenBoard] = useState(false);
@@ -50,6 +57,22 @@ export default function MobileCourtView({
   const [isMotionMode, setIsMotionMode] = useState(false);
   const [editorSearchText, setEditorSearchText] = useState('');
   const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
+
+  // Network connection status for completely offline Modo Pista support
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Camera scanner states
   const [showAiScanner, setShowAiScanner] = useState(false);
@@ -60,42 +83,54 @@ export default function MobileCourtView({
   const [scannerAnalyzedDrill, setScannerAnalyzedDrill] = useState<Drill | null>(null);
   const [scannerAnalysisStep, setScannerAnalysisStep] = useState<string>('');
   const [scannerSaving, setScannerSaving] = useState<boolean>(false);
+  const [scannerStepIdx, setScannerStepIdx] = useState<number>(0);
+  const [scannerQualityAnalysis, setScannerQualityAnalysis] = useState<ImageAnalysisResult | null>(null);
 
   const scannerLoadingSteps = [
-    "Iniciant motor de visió artificial de Gemini...",
-    "Escanejant línies de la pista de bàsquet...",
-    "Identificant la distribució de cons i fitxes...",
-    "Detecció de posicions de jugadors d'atac i defensa...",
-    "Calculant trajectòries, passades i fletxes...",
-    "Traduint contingut tècnic al català (FCBQ)...",
-    "Generant fets de microfase..."
+    "Connectant amb l'IA de Gemini de Google...",
+    "Processant i optimitzant fotografia...",
+    "Detectant jugadors (atacants O i defensors X)...",
+    "Interpretant moviments, fletxes i trajectòries...",
+    "Generant esquema de la pissarra tàctica...",
+    "Sintetitzant títol i instruccions de l'exercici...",
+    "Enllestint la fitxa tècnica (FCBQ Standard)..."
   ];
 
   useEffect(() => {
     if (!scannerAnalyzing) return;
     let stepIndex = 0;
     setScannerAnalysisStep(scannerLoadingSteps[0]);
+    setScannerStepIdx(0);
 
     const interval = setInterval(() => {
       stepIndex = (stepIndex + 1) % scannerLoadingSteps.length;
       setScannerAnalysisStep(scannerLoadingSteps[stepIndex]);
+      setScannerStepIdx(stepIndex);
     }, 2400);
 
     return () => clearInterval(interval);
   }, [scannerAnalyzing]);
 
-  const handleScannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setScannerMimeType(file.type || 'image/jpeg');
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSelectedImage(reader.result as string);
-      setScannerAnalyzedDrill(null);
-      setScannerErrorMsg(null);
-    };
-    reader.readAsDataURL(file);
+    setScannerAnalyzing(true);
+    setScannerErrorMsg(null);
+    setScannerAnalyzedDrill(null);
+    setScannerQualityAnalysis(null);
+
+    try {
+      const result = await compressAndResizeImage(file, 1200);
+      setScannerMimeType(result.mimeType);
+      setSelectedImage(`data:${result.mimeType};base64,${result.base64Data}`);
+      setScannerQualityAnalysis(result);
+    } catch (err: any) {
+      console.error(err);
+      setScannerErrorMsg("No s'ha pogut processar o reduir la imatge seleccionada.");
+    } finally {
+      setScannerAnalyzing(false);
+    }
   };
 
   const handleScannerAnalyze = async () => {
@@ -388,9 +423,46 @@ export default function MobileCourtView({
     }
   };
 
+  const isSessionCompleted = completions.some(c => c.planId === activePlanId && c.sessionId === session.id);
+
   return (
     <div id="mobile-court-view-layout" className="max-w-md mx-auto bg-slate-950 text-white min-h-[750px] flex flex-col rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden select-none">
       
+      {/* Network & Completion Control Center for fully supported offline session tracking */}
+      <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between text-xs font-sans shrink-0 gap-3">
+        <div className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse shadow-xs shadow-emerald-400' : 'bg-amber-500 shadow-xs shadow-amber-400 animate-ping'}`}></span>
+          <span className="text-[9px] font-bold font-mono tracking-wide text-slate-300">
+            {isOnline ? 'CONNEXIÓ ACTIVA (NÚVOL)' : 'SENSE SENSE CONNEXIÓ (LOCAL)'}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (onToggleCompleteSession) {
+              onToggleCompleteSession(session.id);
+            }
+          }}
+          className={`px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer border ${
+            isSessionCompleted 
+              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-450 hover:bg-emerald-500/20' 
+              : 'bg-orange-600 hover:bg-orange-700 text-white border-orange-700/50 shadow-xs'
+          }`}
+        >
+          {isSessionCompleted ? (
+            <>
+              <Check size={10} strokeWidth={3.5} />
+              <span>Sessió Completada ✓</span>
+            </>
+          ) : (
+            <>
+              <span>Finalitzar Sessió</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* HEADER BAR FOR MOBILE */}
       <div id="mobile-header" className="px-5 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0">
         {!isSharedMobile ? (
@@ -1361,26 +1433,82 @@ export default function MobileCourtView({
                 />
               </label>
             ) : scannerAnalyzing ? (
-              <div className="text-center p-8 bg-slate-900/60 border border-orange-500/30 rounded-xl space-y-5 shadow-xl w-full flex flex-col items-center justify-center min-h-[300px]">
+              <div className="text-center p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-5 shadow-xl w-full flex flex-col items-center justify-center min-h-[350px]">
                 <div className="relative flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full border-4 border-dashed border-orange-500 animate-spin"></div>
-                  <span className="absolute text-orange-500 text-lg animate-pulse">✨</span>
+                  <Sparkles size={24} className="text-orange-500 absolute animate-pulse" />
                 </div>
-                <div className="space-y-1">
-                  <h4 className="text-xs font-black uppercase text-orange-400 tracking-widest">Processament Intel·ligent</h4>
-                  <p className="text-[11px] text-slate-305 font-medium h-12 flex items-center justify-center px-4 leading-normal text-center">
-                    {scannerAnalysisStep}
-                  </p>
+                
+                <div className="space-y-2 w-full px-2">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-wider">
+                    <span className="text-orange-400 font-extrabold animate-pulse">ANALITZANT PISSARRA...</span>
+                    <span className="text-slate-400 font-bold">{Math.round(((scannerStepIdx + 1) / scannerLoadingSteps.length) * 100)}%</span>
+                  </div>
+                  
+                  {/* Visual Progress Bar */}
+                  <div className="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800 p-[1px]">
+                    <div 
+                      className="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${Math.round(((scannerStepIdx + 1) / scannerLoadingSteps.length) * 100)}%` }}
+                    ></div>
+                  </div>
+
+                  <div className="bg-slate-950/60 p-2.5 rounded border border-slate-850 text-center min-h-[44px] flex items-center justify-center mt-2 shadow-inner">
+                    <p className="text-[11px] text-slate-200 font-semibold leading-snug">
+                      {scannerAnalysisStep}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step Checklist */}
+                <div className="w-full space-y-1.5 text-left bg-slate-950/40 p-3.5 rounded-lg border border-slate-900 text-[10px] font-mono text-slate-500 max-h-[170px] overflow-y-auto">
+                  <div className="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Fases de l'Escaneig Tàctic</div>
+                  {scannerLoadingSteps.map((step, idx) => {
+                    const isCompleted = idx < scannerStepIdx;
+                    const isCurrent = idx === scannerStepIdx;
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`flex items-center gap-2 transition-all duration-300 ${
+                          isCurrent ? 'text-orange-400 font-bold' : isCompleted ? 'text-emerald-400 font-semibold' : 'text-slate-650'
+                        }`}
+                      >
+                        <span className="shrink-0 text-[11px] w-4 flex justify-center">
+                          {isCompleted ? '✓' : isCurrent ? '⚡' : '○'}
+                        </span>
+                        <span className="truncate">{step}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : !scannerAnalyzedDrill ? (
               <div className="space-y-4">
-                <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shadow-inner max-h-[260px] flex items-center justify-center">
+                <div className={`relative bg-slate-950 rounded-xl overflow-hidden shadow-inner max-h-[260px] flex items-center justify-center border transition-all duration-300 ${
+                  scannerQualityAnalysis 
+                    ? scannerQualityAnalysis.qualityScore >= 90 ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg'
+                      : scannerQualityAnalysis.qualityScore >= 70 ? 'border-amber-500/50 shadow-amber-500/10 shadow-lg'
+                      : 'border-rose-500/50 shadow-rose-500/10 shadow-lg'
+                    : 'border-slate-800'
+                }`}>
                   <img
                     src={selectedImage}
                     alt="Captura"
                     className="max-h-[260px] object-contain w-full"
                   />
+                  
+                  {/* Floating Focus Badge Overlay on Image */}
+                  {scannerQualityAnalysis && (
+                    <div className={`absolute bottom-2 left-2 px-2 py-1 rounded text-[8px] font-mono font-black uppercase tracking-widest flex items-center gap-1.5 shadow-md border ${
+                      scannerQualityAnalysis.qualityScore >= 90 ? 'bg-emerald-950/90 text-emerald-400 border-emerald-500/30' :
+                      scannerQualityAnalysis.qualityScore >= 70 ? 'bg-amber-950/90 text-amber-400 border-amber-500/30' :
+                      'bg-rose-950/90 text-rose-400 border-rose-500/30'
+                    }`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-current animate-ping"></span>
+                      <span>ENFOCAMENT: {scannerQualityAnalysis.qualityLabel} ({scannerQualityAnalysis.qualityScore}%)</span>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => setSelectedImage(null)}
                     className="absolute top-2 right-2 bg-slate-900/90 text-slate-300 hover:bg-rose-950 hover:text-red-400 p-1 px-2.5 rounded text-[10px] font-bold transition shadow-md border border-slate-850 cursor-pointer"
@@ -1388,6 +1516,67 @@ export default function MobileCourtView({
                     Treure imatge
                   </button>
                 </div>
+
+                {/* Live Quality / Focus indicator dashboard */}
+                {scannerQualityAnalysis && (
+                  <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-3 text-left shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-mono font-black text-slate-400 uppercase tracking-widest">
+                        Anàlisi de Qualitat de Captura
+                      </span>
+                      <span className={`text-[8px] font-mono font-black uppercase px-2 py-0.5 rounded-full ${
+                        scannerQualityAnalysis.qualityScore >= 90 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                        scannerQualityAnalysis.qualityScore >= 70 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                        'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}>
+                        {scannerQualityAnalysis.qualityLabel} ({scannerQualityAnalysis.qualityScore}%)
+                      </span>
+                    </div>
+
+                    {/* Visual score dial/bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[8px] text-slate-400 font-mono">
+                        <span>Nitidesa i contrast de línies</span>
+                        <span>{scannerQualityAnalysis.qualityScore}/100</span>
+                      </div>
+                      <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-850">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            scannerQualityAnalysis.qualityScore >= 90 ? 'bg-emerald-500' :
+                            scannerQualityAnalysis.qualityScore >= 70 ? 'bg-amber-500' :
+                            'bg-rose-500'
+                          }`}
+                          style={{ width: `${scannerQualityAnalysis.qualityScore}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Metadata list */}
+                    <div className="grid grid-cols-2 gap-2 text-[9px] font-mono bg-slate-950 p-2 rounded border border-slate-850 text-slate-400">
+                      <div>
+                        <span className="text-slate-500 block text-[7px] uppercase">Resolució de Sensor</span>
+                        <span className="font-bold text-slate-300">{scannerQualityAnalysis.originalWidth}x{scannerQualityAnalysis.originalHeight}px</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[7px] uppercase">Pes d'Enviament</span>
+                        <span className="font-bold text-slate-300">{scannerQualityAnalysis.compressedSizeKb} KB</span>
+                      </div>
+                    </div>
+
+                    {/* Suggestion / Tips checklist */}
+                    <div className="space-y-1.5 border-t border-slate-800/60 pt-2.5">
+                      <span className="text-[8px] font-mono font-black text-orange-400 uppercase tracking-widest block mb-1">
+                        Recomanacions del Motor de Visió
+                      </span>
+                      {scannerQualityAnalysis.suggestions.map((suggestion: string, idx: number) => (
+                        <p key={idx} className="text-[9px] text-slate-300 leading-normal flex items-start gap-1">
+                          <span className="text-orange-500 select-none shrink-0">•</span>
+                          <span>{suggestion}</span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="button"

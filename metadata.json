@@ -1,6 +1,6 @@
 {
   "name": "Coach Pinety",
   "description": "Eina de planificació de sessions d'entrenament de bàsquet per a equips Junior, amb pissarra tàctica interactiva i visualització mòbil per a la pista.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

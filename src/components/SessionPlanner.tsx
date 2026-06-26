@@ -444,6 +444,23 @@ export default function SessionPlanner({
                   </svg>
                 </span>
               </div>
+              
+              {/* Dynamic start-time scheduler for system notification alerts */}
+              <div className="flex items-center gap-2 mt-2.5 text-[10px] bg-slate-50 border border-slate-200/60 px-3 py-1.5 rounded-lg max-w-sm">
+                <span className="font-extrabold text-slate-700 uppercase tracking-wider shrink-0 flex items-center gap-1">📅 Programar entrenament:</span>
+                <input
+                  type="datetime-local"
+                  value={session.scheduledTime || ''}
+                  onChange={(e) => {
+                    onChangeSession({
+                      ...session,
+                      scheduledTime: e.target.value
+                    });
+                  }}
+                  className="bg-white border border-slate-300 px-2 py-1 rounded text-[10px] font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer w-full"
+                  title="Tria la data i hora d'aquest entrenament"
+                />
+              </div>
             </div>
 
             {/* Quick Presets Dropdown or list - Geometric Balance crisp tags */}

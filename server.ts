@@ -46,12 +46,34 @@ Analitza de forma molt exhaustiva aquesta imatge d'un exercici tàctic de bàsqu
 Pautes crítiques d'extracció i millorament de qualitat:
 1. Identifica el Títol, la Descripció en català, la Categoria apropiada, la Durada aproximada, els Objectius del moviment i les Instruccions detallades de col·locació i de rotacions.
 2. Reconeix la disposició en pista per crear tant 'boardState' (el gràfic original o global) com l'array 'boardStates' d'etapes o fases progressives.
-3. ÉS REQUERIT I MANDATORI QUE SEMPRE ENVIÏS UN DIBUIX DE COORDINADES ('boardState' I 'boardStates' AMB ARRAYS DE 'pins' I 'paths' NO BUITS). Encara que la imatge tingui un dibuix borrós, oblic, o fins i tot si només té text, DISSENYA I CONSTRUEIX SINTÈTICAMENT de manera lògica els xips o fitxes (pins) i trajectòries (paths). És a dir, col·loca sempre mínim 4-6 pins (jugadors d'atac/defensa, con de sortida, pilota 🏀) i de 2 o 3 fletxes de trajectòria (paths) per a representar esportivament l'exercici sobre la pista táctica. Mai deixis el 'boardState' buit ni sense línies gràfiques!
-4. Els xips ('pins') han d'estar perfectament distribuïts per ressaltar l'exercici de forma pulcra dins la pista (coordenades x: 5% a 95%, y: 5% a 95%) amb labels i id clars (id únics com 'att1', 'def1', 'cone1', 'ball'). El pin de la pilota (id: 'ball', label: '🏀', type: 'ball') s'ha d'ubicar inicialment on comença la jugada o l'atacant amb pilota.
-5. Els traçats ('paths') han d'usar obligatòriament colors hex adients: #eab308 o #f97316 per trajectòries d'atac (solid o zigzag), #0ea5e9 per passades de pilota (dashed), #ef4444 per desplaçament defensiu (dotted). Cada path ha de contenir com a mínim un punt inicial i un punt final directament orientats cap a la cistella.
-6. Assegura't que la Categoria de l'exercici estigui estrictament restringida a un d'aquests valors: 'Defensa', 'Atac', 'Escalfament'.
-7. REQUISIT CRÍTIC DE GRAFISME: El valor de retornar 'boardState' i 'boardStates' ha de contenir la representació gràfica completa del flux de l'exercici. És completament obligatori que dibuixis el tatami/pista sobre el full de dades estructurades per representar visualment la mecànica de l'exercici.
-Tots els teus comentaris, instruccions i dades de retorn han d'estar redactats íntegrament en un català correcte, tècnic i formal. Els títols i instruccions han de ser eloqüents.`;
+3. ÉS REQUERIT I MANDATORI QUE SEMPRE ENVIÏS UN DIBUIX DE COORDINADES ('boardState' I 'boardStates' AMB ARRAYS DE 'pins' I 'paths' NO BUITS). Encara que la imatge tingui un dibuix borrós, oblic, o fins i tot si només té text, DISSENYA I CONSTRUEIX SINTÈTICAMENT de manera lògica els xips o fitxes (pins) i trajectòries (paths). És a dir, col·loca sempre mínim 4-6 pins (jugadors d'atac/defensa, con de sortida, pilota 🏀) i de 2 o 3 fletxes de trajectòria (paths) per a representar esportivament l'exercici sobre la pista tàctica. Mai deixis el 'boardState' buit ni sense línies gràfiques!
+
+4. ORIENTACIÓ I MAPA DE COORDENADES (MOLT IMPORTANT):
+   - El terreny de joc (pista) utilitza coordenades cartesianes x i y de 0 a 100.
+   - Per a la mitja pista ('courtType': 'half'):
+     * La cistella, el tauler i l'aro de bàsquet estan situats a la part INFERIOR de la pista, en la coordenada central x=50, y=90.
+     * La línia de mig camp està a la part SUPERIOR de la pista (y=50).
+     * Els atacants i defensors del perímetre s'han de situar entre y=50 i y=75. Els jugadors interiors (pivots o postes) i talls cap a cistella s'han d'ubicar més a baix, entre y=75 i y=90.
+     * Per tant, les trajectòries d'atac que van cap a cistella han de progressar cap a valors de y més grans (per exemple d'un inici a y=60 fins a un final a y=88).
+   - Per a la pista sencera ('courtType': 'full'):
+     * Hi ha dues cistelles: una a la part superior (x=50, y=10) i una altra a la part inferior (x=50, y=90). La línia de mig camp està exactament a y=50.
+     * Distribueix els jugadors congruentment al llarg de tota la pista.
+
+5. IDENTIFICACIÓ DE SÍMBOLS:
+   - Atacants (type: 'attacker', id: 'att1', 'att2', etc.): Sovint representats per cercles ('O'), números ('1', '2', '3') o etiquetes text.
+   - Defensors (type: 'defender', id: 'def1', 'def2', etc.): Sovint representats per creus ('X') o etiquetes defensives.
+   - Cons (type: 'cone', id: 'cone1', 'cone2', etc., label: '▲'): Representats per triangles o 'C'.
+   - Pilota (type: 'ball', id: 'ball', label: '🏀'): Ubica-la a la mateixa posició x, y del jugador d'atac que comença la jugada amb la pilota.
+
+6. DISSENY DE TRAJECTÒRIES ('paths'):
+   - Cada path ha de tenir almenys 2 punts ordenats.
+   - Talls/Carreres d'atac sense pilota: Línies contínues ('type': 'solid', 'color': '#eab308').
+   - Desplaçaments botant la pilota: Línies en zigzag ('type': 'zigzag', 'color': '#f97316').
+   - Passades de pilota: Línies discontínues / de guions ('type': 'dashed', 'color': '#0ea5e9').
+   - Desplaçaments de defensa / ajudes: Línies de punts fins ('type': 'dotted', 'color': '#ef4444').
+
+7. Assegura't que la Categoria de l'exercici estigui estrictament restringida a un d'aquests valors: 'Defensa', 'Atac', 'Escalfament'.
+Tots els teus comentaris, instruccions i dades de retorn han d'estar redactats íntegrament en un català correcte, tècnic i formal de nivell entrenador FCBQ.`;
 
     const imagePart = {
       inlineData: {
