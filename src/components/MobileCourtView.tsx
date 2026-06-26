@@ -14,7 +14,12 @@ import {
   Megaphone,
   Expand,
   Minimize,
-  X
+  X,
+  Camera,
+  Sparkles,
+  Upload,
+  Check,
+  RefreshCw
 } from 'lucide-react';
 import { Drill, TrainingSession, BoardState } from '../types';
 import TacticalBoard from './TacticalBoard';
@@ -27,6 +32,7 @@ interface MobileCourtViewProps {
   onPreviewDrill?: (drill: Drill) => void;
   isSharedMobile?: boolean;
   onUpdateSession?: (updatedSession: TrainingSession) => void;
+  onAddDrill?: (drill: Drill) => void;
 }
 
 export default function MobileCourtView({ 
@@ -35,7 +41,8 @@ export default function MobileCourtView({
   onBackToPlanner, 
   onPreviewDrill,
   isSharedMobile = false,
-  onUpdateSession
+  onUpdateSession,
+  onAddDrill
 }: MobileCourtViewProps) {
   const [activeDrillIndex, setActiveDrillIndex] = useState(0);
   const [isFullscreenBoard, setIsFullscreenBoard] = useState(false);
@@ -43,6 +50,143 @@ export default function MobileCourtView({
   const [isMotionMode, setIsMotionMode] = useState(false);
   const [editorSearchText, setEditorSearchText] = useState('');
   const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
+
+  // Camera scanner states
+  const [showAiScanner, setShowAiScanner] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [scannerMimeType, setScannerMimeType] = useState<string>('image/jpeg');
+  const [scannerAnalyzing, setScannerAnalyzing] = useState<boolean>(false);
+  const [scannerErrorMsg, setScannerErrorMsg] = useState<string | null>(null);
+  const [scannerAnalyzedDrill, setScannerAnalyzedDrill] = useState<Drill | null>(null);
+  const [scannerAnalysisStep, setScannerAnalysisStep] = useState<string>('');
+  const [scannerSaving, setScannerSaving] = useState<boolean>(false);
+
+  const scannerLoadingSteps = [
+    "Iniciant motor de visió artificial de Gemini...",
+    "Escanejant línies de la pista de bàsquet...",
+    "Identificant la distribució de cons i fitxes...",
+    "Detecció de posicions de jugadors d'atac i defensa...",
+    "Calculant trajectòries, passades i fletxes...",
+    "Traduint contingut tècnic al català (FCBQ)...",
+    "Generant fets de microfase..."
+  ];
+
+  useEffect(() => {
+    if (!scannerAnalyzing) return;
+    let stepIndex = 0;
+    setScannerAnalysisStep(scannerLoadingSteps[0]);
+
+    const interval = setInterval(() => {
+      stepIndex = (stepIndex + 1) % scannerLoadingSteps.length;
+      setScannerAnalysisStep(scannerLoadingSteps[stepIndex]);
+    }, 2400);
+
+    return () => clearInterval(interval);
+  }, [scannerAnalyzing]);
+
+  const handleScannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setScannerMimeType(file.type || 'image/jpeg');
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+      setScannerAnalyzedDrill(null);
+      setScannerErrorMsg(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleScannerAnalyze = async () => {
+    if (!selectedImage) return;
+
+    setScannerAnalyzing(true);
+    setScannerErrorMsg(null);
+    setScannerAnalyzedDrill(null);
+
+    try {
+      const base64Content = selectedImage.split(',')[1];
+      const res = await fetch('/api/analyze-drill', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Content,
+          mimeType: scannerMimeType
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "No s'ha pogut obtenir l'anàlisi de la pissarra.");
+      }
+
+      const data = await res.json();
+      if (data && data.drill) {
+        setScannerAnalyzedDrill(data.drill);
+      } else {
+        throw new Error("Estructura d'exercici no vàlida de Gemini.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setScannerErrorMsg(err.message || "Error analitzant amb Gemini. Comprova la connexió.");
+    } finally {
+      setScannerAnalyzing(false);
+    }
+  };
+
+  const handleScannerSave = async (addToSession: boolean) => {
+    if (!scannerAnalyzedDrill) return;
+
+    setScannerSaving(true);
+    try {
+      const newDrillId = `drill-scanned-${Date.now()}`;
+      const newDrill: Drill = {
+        ...scannerAnalyzedDrill,
+        id: newDrillId
+      };
+
+      // 1. Add to global list of drills
+      if (onAddDrill) {
+        onAddDrill(newDrill);
+      }
+
+      // 2. Add to session if requested
+      if (addToSession && onUpdateSession) {
+        const newDrillRef = {
+          drillId: newDrillId,
+          duration: newDrill.duration || 15,
+          notes: "Afegit amb l'Escàner de Càmera IA"
+        };
+        const updatedDrills = [...session.drills, newDrillRef];
+        const updatedSession = {
+          ...session,
+          drills: updatedDrills,
+          totalDuration: updatedDrills.reduce((acc, c) => acc + c.duration, 0)
+        };
+        onUpdateSession(updatedSession);
+      }
+
+      // Clean up states
+      setSelectedImage(null);
+      setScannerAnalyzedDrill(null);
+      setShowAiScanner(false);
+      
+      // Select the newly added drill as active drill so they can see it instantly!
+      if (addToSession) {
+        setTimeout(() => {
+          setActiveDrillIndex(session.drills.length);
+        }, 150);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setScannerErrorMsg("No s'ha pogut guardar l'exercici.");
+    } finally {
+      setScannerSaving(false);
+    }
+  };
 
   // Timer states
   const [timeLeft, setTimeLeft] = useState(0);
@@ -511,13 +655,23 @@ export default function MobileCourtView({
           </button>
 
           {!isMotionMode && (
-            <button
-              type="button"
-              onClick={() => setShowSessionEditor(true)}
-              className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-[10px] font-black uppercase tracking-wider text-white rounded transition flex items-center gap-1 cursor-pointer"
-            >
-              ✏️ Exercicis
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowSessionEditor(true)}
+                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-[10px] font-bold uppercase tracking-wider text-slate-305 rounded transition flex items-center gap-1 cursor-pointer"
+              >
+                ✏️ Exercicis
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setShowAiScanner(true)}
+                className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-[10px] font-black uppercase tracking-wider text-white rounded transition flex items-center gap-1 cursor-pointer shadow-md"
+              >
+                <span className="animate-pulse">📸</span> Scanner IA
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -872,6 +1026,25 @@ export default function MobileCourtView({
 
           {/* Drawer Scrollable Content with spacious bottom padding so items can be fully scrolled above the footer */}
           <div className="flex-1 overflow-y-auto p-5 pb-32 space-y-5 text-left">
+            {/* NEW AI CAMERA SCANNER BANNER */}
+            <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-2 text-center shadow-lg">
+              <span className="text-[9px] uppercase font-mono font-black text-orange-400 tracking-wider block">NOU: RECONEIXEMENT AMB IA</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSessionEditor(false);
+                  setShowAiScanner(true);
+                }}
+                className="w-full py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+              >
+                <Camera size={14} />
+                Fes una Foto i Reconeix l'Exercici (IA)
+              </button>
+              <p className="text-[8px] text-slate-400 leading-normal">
+                Apunta amb la càmera a una pissarra, llibre o dibuix fet a mà. Gemini Vision ho digitalitzarà a l'instant.
+              </p>
+            </div>
+
             {/* CURRENT DRILLS IN SESSION */}
             <div className="space-y-2.5">
               <h5 className="text-[10px] font-black uppercase tracking-widest text-orange-400">Exercicis a l'Entrenament d'Avui</h5>
@@ -1138,6 +1311,192 @@ export default function MobileCourtView({
             >
               Completar i Desar canvis
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* AI SCANNER DRAWER IN MOBILE VIEW */}
+      {showAiScanner && (
+        <div className="absolute inset-x-0 bottom-0 top-0 bg-slate-950 z-50 flex flex-col animate-in slide-in-from-bottom duration-250 select-text overflow-y-auto">
+          {/* Header */}
+          <div className="px-5 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📸</span>
+              <div className="text-left">
+                <h4 className="text-xs font-black uppercase text-white tracking-wider">Escàner de Pissarres IA</h4>
+                <p className="text-[10px] text-slate-400">Reconeix i digitalitza fletxes i jugadors</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAiScanner(false);
+                setSelectedImage(null);
+                setScannerAnalyzedDrill(null);
+                setScannerErrorMsg(null);
+              }}
+              className="p-1 px-2.5 text-slate-400 hover:text-white rounded bg-slate-850 hover:bg-slate-800 transition text-xs font-bold cursor-pointer"
+            >
+              Tancar
+            </button>
+          </div>
+
+          {/* Scanner Body */}
+          <div className="flex-1 p-5 pb-32 space-y-5 text-left">
+            {!selectedImage ? (
+              <label className="flex flex-col items-center justify-center p-8 bg-slate-900/40 border-2 border-dashed border-slate-800 hover:border-orange-500 hover:bg-slate-900/80 rounded-2xl transition cursor-pointer text-center group min-h-[220px]">
+                <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-full text-slate-400 group-hover:text-orange-500 group-hover:scale-105 transition duration-150 shadow-md">
+                  <Camera size={32} />
+                </div>
+                <span className="text-xs font-black uppercase text-slate-200 mt-4 tracking-wider">Fes una foto o tria imatge</span>
+                <p className="text-[10px] text-slate-500 mt-1.5 px-4 leading-relaxed">
+                  Prem per activar la càmera del mòbil sobre el teu esbós, quadern o pissarra tàctica
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleScannerFileChange}
+                  className="hidden"
+                />
+              </label>
+            ) : scannerAnalyzing ? (
+              <div className="text-center p-8 bg-slate-900/60 border border-orange-500/30 rounded-xl space-y-5 shadow-xl w-full flex flex-col items-center justify-center min-h-[300px]">
+                <div className="relative flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full border-4 border-dashed border-orange-500 animate-spin"></div>
+                  <span className="absolute text-orange-500 text-lg animate-pulse">✨</span>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-xs font-black uppercase text-orange-400 tracking-widest">Processament Intel·ligent</h4>
+                  <p className="text-[11px] text-slate-305 font-medium h-12 flex items-center justify-center px-4 leading-normal text-center">
+                    {scannerAnalysisStep}
+                  </p>
+                </div>
+              </div>
+            ) : !scannerAnalyzedDrill ? (
+              <div className="space-y-4">
+                <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shadow-inner max-h-[260px] flex items-center justify-center">
+                  <img
+                    src={selectedImage}
+                    alt="Captura"
+                    className="max-h-[260px] object-contain w-full"
+                  />
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute top-2 right-2 bg-slate-900/90 text-slate-300 hover:bg-rose-950 hover:text-red-400 p-1 px-2.5 rounded text-[10px] font-bold transition shadow-md border border-slate-850 cursor-pointer"
+                  >
+                    Treure imatge
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleScannerAnalyze}
+                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+                >
+                  <span className="animate-pulse">✨</span>
+                  Analitzar Exercici amb Gemini IA
+                </button>
+              </div>
+            ) : (
+              /* RECOGNIZED DRILL PREVIEW */
+              <div className="space-y-4">
+                <div className="p-3 bg-emerald-950/20 border border-emerald-500/25 rounded-xl flex gap-2 items-start">
+                  <span className="text-emerald-400 mt-0.5">✨</span>
+                  <div>
+                    <h5 className="text-[10px] font-black uppercase text-emerald-400 tracking-wide">Pissarra digitalitzada correctament!</h5>
+                    <p className="text-[9px] text-slate-400 leading-normal mt-0.5">
+                      S'han col·locat els jugadors, fletxes d'atac/defensa i s'ha traduït el contingut al català de nivell FCBQ.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Tactical Board Preview */}
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black tracking-widest text-orange-400 uppercase">Previsualització Tàctica</label>
+                  <div className="bg-slate-900 border border-slate-850 rounded-xl overflow-hidden relative shadow-inner aspect-[4/3] xs:aspect-[1.5] w-full">
+                    <TacticalBoard 
+                      boardState={scannerAnalyzedDrill.boardState || { paths: [], pins: [] }} 
+                      onChange={() => {}} 
+                      readOnly={true} 
+                    />
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-3">
+                  <div>
+                    <span className="text-[8px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded uppercase font-black tracking-wider">
+                      {scannerAnalyzedDrill.category || "Atac"}
+                    </span>
+                    <input
+                      type="text"
+                      value={scannerAnalyzedDrill.title}
+                      onChange={(e) => setScannerAnalyzedDrill({ ...scannerAnalyzedDrill, title: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-100 font-bold mt-1.5 focus:outline-none focus:border-orange-500"
+                      placeholder="Títol de l'exercici"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px] border-t border-b border-slate-800/80 py-2.5 font-sans">
+                    <div>
+                      <span className="text-slate-500 uppercase tracking-widest block font-mono text-[7px]">Durada recomanada</span>
+                      <input
+                        type="number"
+                        value={scannerAnalyzedDrill.duration || 15}
+                        onChange={(e) => setScannerAnalyzedDrill({ ...scannerAnalyzedDrill, duration: parseInt(e.target.value) || 15 })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 mt-1 focus:outline-none focus:border-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-slate-500 uppercase tracking-widest block font-mono text-[7px]">Mínim Jugadors</span>
+                      <input
+                        type="number"
+                        value={scannerAnalyzedDrill.playersNeeded || 6}
+                        onChange={(e) => setScannerAnalyzedDrill({ ...scannerAnalyzedDrill, playersNeeded: parseInt(e.target.value) || 6 })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 mt-1 focus:outline-none focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 uppercase tracking-widest block font-mono text-[7px]">Descripció de l'exercici</span>
+                    <textarea
+                      value={scannerAnalyzedDrill.description}
+                      onChange={(e) => setScannerAnalyzedDrill({ ...scannerAnalyzedDrill, description: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-300 mt-1.5 focus:outline-none focus:border-orange-500 min-h-20 font-sans"
+                    />
+                  </div>
+                </div>
+
+                {/* Save Buttons */}
+                <div className="flex flex-col gap-2 font-sans">
+                  <button
+                    type="button"
+                    onClick={() => handleScannerSave(true)}
+                    disabled={scannerSaving}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                  >
+                    {scannerSaving ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
+                    Desar i afegir a la sessió d'avui
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleScannerSave(false)}
+                    disabled={scannerSaving}
+                    className="w-full py-2 bg-slate-900 hover:bg-slate-850 text-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1 border border-slate-800"
+                  >
+                    Només desar a la biblioteca
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {scannerErrorMsg && (
+              <div className="p-3 bg-rose-950/20 border border-rose-500/20 text-rose-400 text-xs rounded-xl font-bold text-center">
+                ⚠️ {scannerErrorMsg}
+              </div>
+            )}
           </div>
         </div>
       )}

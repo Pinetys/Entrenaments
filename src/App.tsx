@@ -1167,6 +1167,7 @@ export default function App() {
               onPreviewDrill={setPreviewDrill}
               isSharedMobile={isSharedMobile}
               onUpdateSession={handleUpdateSession}
+              onAddDrill={handleAddDrillToDatabase}
             />
           </div>
         )}
