@@ -543,10 +543,10 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   key={colorName}
                   id={`arrow-${colorName}`}
                   viewBox="0 0 10 10"
-                  refX="7"
+                  refX="6.5"
                   refY="5"
-                  markerWidth="5"
-                  markerHeight="5"
+                  markerWidth="7"
+                  markerHeight="7"
                   orient="auto-start-reverse"
                 >
                   <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={hex} />
@@ -559,7 +559,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           <rect x="0" y="0" width="100" height="100" fill="#ffffff" />
           
           {/* Subtle grid lines matching the technical planner blueprint */}
-          <g stroke="#f1f5f9" strokeWidth="0.4">
+          <g stroke="#e2e8f0" strokeWidth="0.5">
             <line x1="10" y1="0" x2="10" y2="100" />
             <line x1="20" y1="0" x2="20" y2="100" />
             <line x1="30" y1="0" x2="30" y2="100" />
@@ -582,49 +582,49 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           </g>
 
           {/* Boundaries with deep classic black lines */}
-          <rect x="3" y="3" width="94" height="94" fill="none" stroke="#000000" strokeWidth="0.8" />
+          <rect x="3" y="3" width="94" height="94" fill="none" stroke="#000000" strokeWidth="1.2" />
 
           {/* Center line */}
-          <line x1="3" y1="50" x2="97" y2="50" stroke="#000000" strokeWidth="0.5" />
+          <line x1="3" y1="50" x2="97" y2="50" stroke="#000000" strokeWidth="0.8" />
           {/* Center circle */}
-          <circle cx="50" cy="50" r="12" fill="none" stroke="#000000" strokeWidth="0.5" />
-          <circle cx="50" cy="50" r="1.5" fill="#000000" />
+          <circle cx="50" cy="50" r="12" fill="none" stroke="#000000" strokeWidth="0.8" />
+          <circle cx="50" cy="50" r="2.0" fill="#000000" />
 
           {/* BOTTOM COURT (Main half court) */}
           {/* Area Paint with slight high-class technical dash background */}
-          <rect x="35" y="70" width="30" height="27" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.5" />
+          <rect x="35" y="70" width="30" height="27" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
           {/* Free throw circle top */}
-          <path d="M 35 70 A 15 15 0 0 1 65 70" fill="none" stroke="#000000" strokeWidth="0.5" />
+          <path d="M 35 70 A 15 15 0 0 1 65 70" fill="none" stroke="#000000" strokeWidth="0.8" />
           {/* Free throw circle bottom (dashed) */}
-          <path d="M 35 70 A 15 15 0 0 0 65 70" fill="none" stroke="#000000" strokeWidth="0.5" strokeDasharray="1.5, 1.5" />
+          <path d="M 35 70 A 15 15 0 0 0 65 70" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
           {/* Backboard & Rim */}
-          <line x1="42" y1="92" x2="58" y2="92" stroke="#000000" strokeWidth="0.6" />
-          <line x1="50" y1="92" x2="50" y2="94.5" stroke="#000000" strokeWidth="0.6" />
-          <circle cx="50" cy="89.5" r="2.2" fill="none" stroke="#000000" strokeWidth="0.6" /> {/* Rim */}
+          <line x1="42" y1="92" x2="58" y2="92" stroke="#000000" strokeWidth="1.0" />
+          <line x1="50" y1="92" x2="50" y2="94.5" stroke="#000000" strokeWidth="1.0" />
+          <circle cx="50" cy="89.5" r="2.5" fill="none" stroke="#000000" strokeWidth="1.0" /> {/* Rim */}
 
           {/* Three point line (International / FIBA compliant scale) */}
-          <path d="M 3 83.5 L 9.5 83.5 A 40.5 40.5 0 0 0 90.5 83.5 L 97 83.5" fill="none" stroke="#000000" strokeWidth="0.5" />
+          <path d="M 3 83.5 L 9.5 83.5 A 40.5 40.5 0 0 0 90.5 83.5 L 97 83.5" fill="none" stroke="#000000" strokeWidth="0.8" />
           {/* Restricted area arc */}
-          <path d="M 44.5 90 A 5.5 5.5 0 0 1 55.5 90" fill="none" stroke="#000000" strokeWidth="0.4" />
+          <path d="M 44.5 90 A 5.5 5.5 0 0 1 55.5 90" fill="none" stroke="#000000" strokeWidth="0.7" />
 
           {/* TOP COURT */}
           {boardType === 'full' && (
             <g>
               {/* Restricted area with classic paint stain */}
-              <rect x="35" y="3" width="30" height="27" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.5" />
+              <rect x="35" y="3" width="30" height="27" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
               {/* Free throw circle bottom */}
-              <path d="M 35 30 A 15 15 0 0 0 65 30" fill="none" stroke="#000000" strokeWidth="0.5" />
+              <path d="M 35 30 A 15 15 0 0 0 65 30" fill="none" stroke="#000000" strokeWidth="0.8" />
               {/* Free throw circle top (dashed) */}
-              <path d="M 35 30 A 15 15 0 0 1 65 30" fill="none" stroke="#000000" strokeWidth="0.5" strokeDasharray="1.5, 1.5" />
+              <path d="M 35 30 A 15 15 0 0 1 65 30" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
               {/* Backboard & Rim */}
-              <line x1="42" y1="8" x2="58" y2="8" stroke="#000000" strokeWidth="0.6" />
-              <line x1="50" y1="8" x2="50" y2="5.5" stroke="#000000" strokeWidth="0.6" />
-              <circle cx="50" cy="10.5" r="2.2" fill="none" stroke="#000000" strokeWidth="0.6" />
+              <line x1="42" y1="8" x2="58" y2="8" stroke="#000000" strokeWidth="1.0" />
+              <line x1="50" y1="8" x2="50" y2="5.5" stroke="#000000" strokeWidth="1.0" />
+              <circle cx="50" cy="10.5" r="2.5" fill="none" stroke="#000000" strokeWidth="1.0" />
 
               {/* Three point line */}
-              <path d="M 3 16.5 L 9.5 16.5 A 40.5 40.5 0 0 1 90.5 16.5 L 97 16.5" fill="none" stroke="#000000" strokeWidth="0.5" />
+              <path d="M 3 16.5 L 9.5 16.5 A 40.5 40.5 0 0 1 90.5 16.5 L 97 16.5" fill="none" stroke="#000000" strokeWidth="0.8" />
               {/* Restricted area arc */}
-              <path d="M 44.5 10 A 5.5 5.5 0 0 0 55.5 10" fill="none" stroke="#000000" strokeWidth="0.4" />
+              <path d="M 44.5 10 A 5.5 5.5 0 0 0 55.5 10" fill="none" stroke="#000000" strokeWidth="0.7" />
             </g>
           )}
 
@@ -670,7 +670,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 <path
                   d={dPath}
                   stroke={p.color || '#000000'}
-                  strokeWidth={p.type === 'zigzag' ? 0.5 : 0.65}
+                  strokeWidth={p.type === 'zigzag' ? 1.0 : 1.25}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
@@ -701,7 +701,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                         idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`,
                       '')}
                   stroke={currentPath.color || '#000000'}
-                  strokeWidth={currentPath.type === 'zigzag' ? 0.5 : 0.65}
+                  strokeWidth={currentPath.type === 'zigzag' ? 1.0 : 1.25}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
@@ -721,7 +721,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               let pinBg = '#ffffff'; // White circle with thin black border for attackers "O"
               let pinText = '#000000';
               let pinBorder = '#000000';
-              let radius = 2.0;
+              let radius = 3.5;
 
               if (p.type === 'defender') {
                 pinBg = '#000000'; // Black circle with white label for defenders "X"
@@ -730,12 +730,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               } else if (p.type === 'ball') {
                 pinBg = '#ffffff';
                 pinText = '#000000';
-                radius = 1.25;
+                radius = 2.2;
                 pinBorder = '#000000';
               } else if (p.type === 'cone') {
                 pinBg = '#555555';
                 pinText = '#ffffff';
-                radius = 1.4;
+                radius = 2.5;
                 pinBorder = '#000000';
               }
 
@@ -755,7 +755,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   {/* Subtle dropshadow under pins */}
                   <circle
                     cx={p.x}
-                    cy={p.y + 0.3}
+                    cy={p.y + 0.5}
                     r={radius}
                     fill="#000000"
                     opacity={0.15}
@@ -768,15 +768,15 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                     r={radius}
                     fill={pinBg}
                     stroke={pinBorder}
-                    strokeWidth={0.3}
+                    strokeWidth={0.5}
                   />
 
                   {/* Labels on pins */}
                   <text
                     x={p.x}
                     y={p.y}
-                    dy="0.32em"
-                    fontSize={p.type === 'ball' ? '1.8px' : '2.4px'}
+                    dy="0.33em"
+                    fontSize={p.type === 'ball' ? '2.8px' : p.type === 'cone' ? '3.0px' : '3.6px'}
                     fontWeight="bold"
                     fontFamily="Inter, system-ui, sans-serif"
                     fill={pinText}

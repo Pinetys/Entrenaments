@@ -1000,7 +1000,7 @@ export default function SessionPlanner({
                           if (orig) onPreviewDrill(orig);
                         }}
                         title="Clica per veure en gran"
-                        className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 mx-auto md:mx-0 p-0.5 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.02] transition"
+                        className="w-24 xs:w-28 md:w-32 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 mx-auto md:mx-0 p-0.5 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.02] transition self-center"
                       >
                         <TacticalBoard boardState={sd.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                       </div>
@@ -1321,7 +1321,7 @@ export default function SessionPlanner({
                     <div 
                       onClick={() => onPreviewDrill(drill)}
                       title="Clica per veure en gran el manual tàctic"
-                      className="w-14 h-14 bg-white border border-slate-200 rounded overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5"
+                      className="w-20 xs:w-24 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
                     >
                       <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                     </div>

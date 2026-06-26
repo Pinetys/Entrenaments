@@ -889,7 +889,7 @@ export default function MobileCourtView({
                     return (
                       <div key={sIdx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-start gap-4 shadow-xs text-left">
                         {/* Enlarged Tactical Board Preview */}
-                        <div className="w-24 h-24 rounded bg-white overflow-hidden shrink-0 border border-slate-800 p-1 shadow-inner">
+                        <div className="w-28 xs:w-36 rounded-xl bg-white overflow-hidden shrink-0 border border-slate-800 p-0.5 shadow-inner self-center">
                           <TacticalBoard boardState={drillItem.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                         </div>
 
@@ -1084,7 +1084,7 @@ export default function MobileCourtView({
                     return (
                       <div key={d.id} className="bg-slate-950 border border-slate-900 p-3 rounded-lg flex items-start gap-4 text-left">
                         {/* Much larger Tactical Board Preview */}
-                        <div className="w-24 h-24 rounded bg-white overflow-hidden shrink-0 border border-slate-900 p-1">
+                        <div className="w-28 xs:w-36 rounded-xl bg-white overflow-hidden shrink-0 border border-slate-900 p-0.5 shadow-inner self-center">
                           <TacticalBoard boardState={d.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                         </div>
 
