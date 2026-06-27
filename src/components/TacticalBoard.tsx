@@ -898,54 +898,6 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             })}
         </svg>
 
-        {/* Floating Zoom and Pan HUD controls */}
-        <div className="absolute right-2 bottom-2 z-35 flex flex-col gap-1.5 bg-slate-950/85 p-1.5 rounded-lg border border-slate-800 backdrop-blur-md">
-          <button
-            type="button"
-            onClick={() => {
-              setZoom(z => Math.min(4, z + 0.25));
-            }}
-            className="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold text-base border border-slate-700 shadow-md cursor-pointer active:scale-90 transition-transform"
-            title="Lupa +"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setZoom(z => {
-                const nextZ = Math.max(1, z - 0.25);
-                if (nextZ === 1) {
-                  setPanX(0);
-                  setPanY(0);
-                }
-                return nextZ;
-              });
-            }}
-            className="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center font-bold text-base border border-slate-700 shadow-md cursor-pointer active:scale-90 transition-transform"
-            title="Lupa -"
-          >
-            -
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setZoom(1);
-              setPanX(0);
-              setPanY(0);
-            }}
-            className="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center justify-center text-[9px] font-bold border border-slate-700 shadow-md cursor-pointer active:scale-90 transition-transform font-mono"
-            title="Restaurar escala"
-          >
-            1x
-          </button>
-          {zoom > 1 && (
-            <span className="text-[7px] text-orange-400 font-bold text-center font-mono select-none block leading-none">
-              {Math.round(zoom * 100)}%
-            </span>
-          )}
-        </div>
-
         {/* Quick Help Overlay Indicator for Touch devices */}
         {!readOnly && (
           <div className="absolute bottom-2 left-2 bg-slate-950/80 px-2 py-1 rounded text-[10px] text-slate-300 font-mono flex items-center gap-1 backdrop-blur-xs">

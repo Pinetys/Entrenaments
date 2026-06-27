@@ -29,6 +29,7 @@ import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase'
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import MobileUploadPortal from './components/MobileUploadPortal';
+import UnifiedAiScanner from './components/UnifiedAiScanner';
 import { generateSyncCode, saveToCloud, loadFromCloud } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
@@ -1016,6 +1017,19 @@ export default function App() {
               </button>
 
               <button
+                id="tab-scanner"
+                onClick={() => setActiveView('scanner')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                  activeView === 'scanner' 
+                    ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Camera size={14} className={activeView === 'scanner' ? 'text-orange-500 animate-pulse' : 'text-slate-500'} />
+                📸 Escàner IA
+              </button>
+
+              <button
                 id="tab-court-mode"
                 onClick={() => setActiveView('mobile')}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-black uppercase tracking-wider transition-all duration-150 ${
@@ -1210,6 +1224,13 @@ export default function App() {
             triggerToast={triggerToast}
             favoriteDrillIds={favoriteDrillIds}
             onToggleFavorite={handleToggleFavoriteDrill}
+          />
+        ) : activeView === 'scanner' ? (
+          <UnifiedAiScanner
+            onAddDrill={handleAddDrillToDatabase}
+            activeSession={activeSession}
+            onUpdateSession={handleUpdateSession}
+            triggerToast={triggerToast}
           />
         ) : (
           <div className={`${isSharedMobile ? 'p-0' : 'py-2'}`}>

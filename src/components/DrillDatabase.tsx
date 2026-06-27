@@ -868,85 +868,15 @@ export default function DrillDatabase({
 
           {/* LLEGIR EXERCICI DES D'IMATGE (IA) - PLACED DIRECTLY BELOW THE GRAPHICS CONTAINER AS REQUESTED */}
           {!isEditing && (
-            <div className="p-4 bg-orange-50/70 border border-slate-200 rounded-sm space-y-4 shadow-2xs mt-4">
-              <div className="flex items-center gap-2 text-xs font-black text-orange-850 uppercase tracking-wider">
-                <ImageIcon size={15} className="text-orange-600 animate-pulse" />
-                <span>Digitalització d'Exercici amb IA</span>
+            <div className="p-4 bg-orange-50/50 border border-orange-200/60 rounded-lg space-y-2 mt-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-xs font-black text-orange-800 uppercase tracking-wider">
+                <Sparkles size={15} className="text-orange-500 animate-pulse" />
+                <span>Escàner de Pissarres amb IA</span>
               </div>
               
-              <p className="text-[11px] text-orange-800 leading-relaxed">
-                Puja una foto d'una pissarra tàctica de pista, llibre de sistemes o apunt ràpid. La IA de l'entrenador llegirà el gràfic i emplenarà tota la informació automàticament!
+              <p className="text-[11px] text-slate-600 leading-relaxed max-w-md mx-auto">
+                Per passar amb fotografia el teu grafisme i digitalitzar automàticament qualsevol exercici, utilitza la nova opció unificada de la barra superior del menú principal: <strong className="text-orange-700">📸 Escàner IA</strong>.
               </p>
-
-              {/* TWO FLAVORS SYNC PORTAL: Upload from Computer vs Mobile Companion Sync Link */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1.5">
-                
-                {/* OPTION A: Computer Direct local file load */}
-                <div className="flex flex-col justify-between space-y-2 bg-white/85 p-3 rounded-md border border-slate-100">
-                  <div>
-                    <span className="text-[9px] font-black uppercase text-slate-400 block tracking-widest leading-none">Opció 1</span>
-                    <strong className="text-xs font-bold text-slate-800 mt-1 block leading-tight">Ordinador (PC)</strong>
-                  </div>
-                  
-                  <label className="relative flex flex-col items-center justify-center border border-dashed border-slate-300 hover:border-orange-500 hover:bg-orange-50/20 transition text-center p-3 rounded cursor-pointer group">
-                    {analyzing ? (
-                      <div className="flex flex-col items-center gap-1">
-                        <RefreshCw className="animate-spin text-orange-500" size={16} />
-                        <span className="text-[9px] font-bold text-orange-800 uppercase animate-pulse">Analitzant...</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-800">
-                        <FileImage size={18} className="text-orange-400 group-hover:scale-105 transition" />
-                        <span className="text-[10px] font-bold">Puja PNG / JPG</span>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUploaded}
-                      disabled={analyzing}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                {/* OPTION B: Magic Mobile sync code with real active pairing sessions via generated QR or mobile hash */}
-                <div className="flex flex-col justify-between space-y-2 bg-slate-900 text-slate-100 p-3 rounded-md border border-slate-850 shadow-sm relative overflow-hidden">
-                  <div>
-                    <span className="text-[9px] font-black uppercase text-orange-500 block tracking-widest leading-none">Opció 2</span>
-                    <strong className="text-xs font-black text-white mt-1 block leading-tight">Envia-la des del Mòbil</strong>
-                  </div>
-
-                  <div className="flex items-center gap-2.5">
-                    {/* Generates standard QR Code targeting exact #upload-photo link on actual window.location.origin! */}
-                    <div className="bg-white p-1 rounded shrink-0 border border-slate-200">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(
-                          `${window.location.origin}${window.location.pathname}#upload-photo?code=${pairingCode}`
-                        )}`}
-                        alt="QR de vinculacio del mobil"
-                        className="w-[66px] h-[66px] object-cover"
-                      />
-                    </div>
-
-                    <div className="flex-1 space-y-1">
-                      <div className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">Codi Temporal:</div>
-                      <div className="text-sm font-mono font-black text-white tracking-widest select-all leading-none py-0.5 bg-slate-950 px-1.5 rounded border border-slate-800 text-center">
-                        {pairingCode}
-                      </div>
-                      <div className="text-[8px] text-emerald-400 font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                        <span>Buscant mòbil...</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-[8px] text-slate-350 leading-tight">
-                    Escaneja el QR per obrir la càmera a pista i sincronitzar!
-                  </p>
-                </div>
-
-              </div>
             </div>
           )}
 
