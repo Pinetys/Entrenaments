@@ -187,14 +187,33 @@ export default function UnifiedAiScanner({
 
       {/* Upload Screen vs Loading Steps vs Digitalized Results */}
       {!selectedImage ? (
-        <div className="space-y-4">
-          <label className="flex flex-col items-center justify-center p-12 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-orange-500 hover:bg-orange-50/20 rounded-3xl transition cursor-pointer text-center group min-h-[280px]">
-            <div className="p-4 bg-white border border-slate-100 rounded-full text-slate-400 group-hover:text-orange-500 group-hover:scale-105 transition duration-150 shadow-md">
-              <Camera size={38} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* CAMERA CAPTURE (opens camera directly on mobile) */}
+          <label className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-orange-50/40 to-amber-50/20 border-2 border-dashed border-orange-200 hover:border-orange-500 hover:bg-orange-50/50 rounded-3xl transition cursor-pointer text-center group min-h-[240px]">
+            <div className="p-4 bg-orange-500 text-white rounded-full group-hover:scale-110 transition duration-150 shadow-md">
+              <Camera size={32} />
             </div>
-            <span className="text-sm font-black uppercase text-slate-700 mt-5 tracking-wider">Feu una foto o trieu una imatge</span>
-            <p className="text-xs text-slate-400 mt-2 px-8 leading-relaxed max-w-md">
-              Apunta amb la càmera directament sobre el grafisme que vols digitalitzar. S'admeten fitxers PNG, JPG i JPEG d'ordinador i mòbils.
+            <span className="text-sm font-black uppercase text-orange-900 mt-4 tracking-wider">📸 Obrir Càmera Mòbil</span>
+            <p className="text-[11px] text-orange-750 mt-1.5 px-4 leading-relaxed max-w-xs">
+              Activa directament la càmera de fotos del mòbil o tauleta per fer una captura instantània de la pissarra.
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
+
+          {/* GALLERY / FILE UPLOAD */}
+          <label className="flex flex-col items-center justify-center p-8 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-orange-500 hover:bg-orange-50/20 rounded-3xl transition cursor-pointer text-center group min-h-[240px]">
+            <div className="p-4 bg-white border border-slate-100 rounded-full text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition duration-150 shadow-md">
+              <Upload size={32} />
+            </div>
+            <span className="text-sm font-black uppercase text-slate-700 mt-4 tracking-wider">📁 Seleccionar Imatge / Arxiu</span>
+            <p className="text-[11px] text-slate-400 mt-1.5 px-4 leading-relaxed max-w-xs">
+              Tria un arxiu d'imatge ja desat al teu ordinador o mòbil (galeria de fotos, descàrregues, etc.).
             </p>
             <input
               type="file"
@@ -445,9 +464,28 @@ export default function UnifiedAiScanner({
       )}
 
       {errorMsg && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-bold text-center">
-          ⚠️ {errorMsg}
-        </div>
+        errorMsg.includes("GEMINI_API_KEY") ? (
+          <div className="p-5 bg-amber-50 border border-amber-200 text-slate-800 rounded-2xl text-xs space-y-3 shadow-sm max-w-xl mx-auto text-left">
+            <div className="flex items-center gap-2 text-amber-700 font-black uppercase tracking-wider text-[11px]">
+              <span>⚠️ CONFIGURACIÓ DE L'API DE GEMINI REQUERIDA</span>
+            </div>
+            <p className="leading-relaxed text-slate-600">
+              Per poder analitzar i digitalitzar les teves imatges utilitzant la Intel·ligència Artificial de Google, necessites configurar una clau d'API de Gemini (<strong>GEMINI_API_KEY</strong>) gratuïta:
+            </p>
+            <ol className="list-decimal pl-5 space-y-1.5 text-slate-600 font-medium">
+              <li>Ves a la secció de <strong>Configuració / Secrets</strong> d'AI Studio (a la cantonada de la pantalla o menú superior/lateral de la plataforma).</li>
+              <li>Afegeix una nova variable d'entorn anomenada <code className="bg-amber-100 px-1 py-0.5 rounded font-mono font-bold text-amber-900">GEMINI_API_KEY</code>.</li>
+              <li>Insereix la teva clau de l'API de Gemini gratuïta (que pots obtenir a <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-orange-600 underline font-bold">aistudio.google.com</a>).</li>
+            </ol>
+            <p className="text-[10px] text-slate-500 italic pt-2 border-t border-amber-200/60">
+              Un cop configurada, torna a provar de pujar la imatge i digitalitzarem el teu exercici a l'instant!
+            </p>
+          </div>
+        ) : (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-bold text-center">
+            ⚠️ {errorMsg}
+          </div>
+        )
       )}
 
     </div>
