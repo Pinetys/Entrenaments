@@ -583,6 +583,210 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
         </div>
       )}
 
+      {/* Chip Management Panel */}
+      {!readOnly && (
+        <div id="pizarra-elements-panel" className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900 border-b border-slate-800 text-xs select-none">
+          <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
+            <span>⚙️</span>
+            <span>Gestió de fitxes a pista:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Attackers control */}
+            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-300 font-sans">Atacants (O):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const attackers = pins.filter(p => p.type === 'attacker');
+                  if (attackers.length > 0) {
+                    const maxAtt = attackers.reduce((prev, current) => {
+                      const prevNum = parseInt(prev.label, 10);
+                      const currNum = parseInt(current.label, 10);
+                      if (isNaN(prevNum)) return current;
+                      if (isNaN(currNum)) return prev;
+                      return currNum > prevNum ? current : prev;
+                    }, attackers[0]);
+                    const updatedPins = pins.filter(p => p.id !== maxAtt.id);
+                    const finalPins = updatedPins.map(p => 
+                      p.type === 'ball' && p.anchoredTo === maxAtt.id ? { ...p, anchoredTo: undefined } : p
+                    );
+                    updateBoard({ pins: finalPins });
+                  }
+                }}
+                disabled={pins.filter(p => p.type === 'attacker').length === 0}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Treure l'últim atacant"
+              >
+                -
+              </button>
+              <span className="w-4 text-center font-mono font-bold text-orange-400">
+                {pins.filter(p => p.type === 'attacker').length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const attackers = pins.filter(p => p.type === 'attacker');
+                  const nextLabel = attackers.length > 0 ? Math.max(...attackers.map(a => {
+                    const num = parseInt(a.label, 10);
+                    return isNaN(num) ? 0 : num;
+                  })) + 1 : 1;
+                  const defaultY = boardType === 'half' ? 75 : 60;
+                  const newAtt: BoardPin = {
+                    id: 'att_' + crypto.randomUUID(),
+                    label: String(nextLabel),
+                    x: 35 + (attackers.length % 5) * 8,
+                    y: defaultY + Math.floor(attackers.length / 5) * 5,
+                    type: 'attacker'
+                  };
+                  updateBoard({ pins: [...pins, newAtt] });
+                }}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Afegir nou atacant"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Defenders control */}
+            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-300 font-sans">Defensors (X):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const defenders = pins.filter(p => p.type === 'defender');
+                  if (defenders.length > 0) {
+                    const maxDef = defenders.reduce((prev, current) => {
+                      const prevNum = parseInt(prev.label, 10);
+                      const currNum = parseInt(current.label, 10);
+                      if (isNaN(prevNum)) return current;
+                      if (isNaN(currNum)) return prev;
+                      return currNum > prevNum ? current : prev;
+                    }, defenders[0]);
+                    const updatedPins = pins.filter(p => p.id !== maxDef.id);
+                    const finalPins = updatedPins.map(p => 
+                      p.type === 'ball' && p.anchoredTo === maxDef.id ? { ...p, anchoredTo: undefined } : p
+                    );
+                    updateBoard({ pins: finalPins });
+                  }
+                }}
+                disabled={pins.filter(p => p.type === 'defender').length === 0}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Treure l'últim defensor"
+              >
+                -
+              </button>
+              <span className="w-4 text-center font-mono font-bold text-sky-400">
+                {pins.filter(p => p.type === 'defender').length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const defenders = pins.filter(p => p.type === 'defender');
+                  const nextLabel = defenders.length > 0 ? Math.max(...defenders.map(d => {
+                    const num = parseInt(d.label, 10);
+                    return isNaN(num) ? 0 : num;
+                  })) + 1 : 1;
+                  const defaultY = boardType === 'half' ? 65 : 40;
+                  const newDef: BoardPin = {
+                    id: 'def_' + crypto.randomUUID(),
+                    label: String(nextLabel),
+                    x: 35 + (defenders.length % 5) * 8,
+                    y: defaultY + Math.floor(defenders.length / 5) * 5,
+                    type: 'defender'
+                  };
+                  updateBoard({ pins: [...pins, newDef] });
+                }}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Afegir nou defensor"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Cones control */}
+            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-300 font-sans">Conus (▲):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const cones = pins.filter(p => p.type === 'cone');
+                  if (cones.length > 0) {
+                    const lastCone = cones[cones.length - 1];
+                    updateBoard({ pins: pins.filter(p => p.id !== lastCone.id) });
+                  }
+                }}
+                disabled={pins.filter(p => p.type === 'cone').length === 0}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Treure un conus"
+              >
+                -
+              </button>
+              <span className="w-4 text-center font-mono font-bold text-yellow-500">
+                {pins.filter(p => p.type === 'cone').length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const cones = pins.filter(p => p.type === 'cone');
+                  const newCone: BoardPin = {
+                    id: 'cone_' + crypto.randomUUID(),
+                    label: '▲',
+                    x: 15 + (cones.length % 6) * 14,
+                    y: boardType === 'half' ? 52 + Math.floor(cones.length / 6) * 10 : 25 + Math.floor(cones.length / 6) * 15,
+                    type: 'cone'
+                  };
+                  updateBoard({ pins: [...pins, newCone] });
+                }}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Afegir conus"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Ball control */}
+            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-300 font-sans">Pilotes (🏀):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  updateBoard({ pins: pins.filter(p => p.type !== 'ball') });
+                }}
+                disabled={pins.filter(p => p.type === 'ball').length === 0}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Treure pilota"
+              >
+                -
+              </button>
+              <span className="w-4 text-center font-mono font-bold text-amber-500">
+                {pins.filter(p => p.type === 'ball').length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const balls = pins.filter(p => p.type === 'ball');
+                  if (balls.length === 0) {
+                    const newBall: BoardPin = {
+                      id: 'ball',
+                      label: '🏀',
+                      x: 50,
+                      y: boardType === 'half' ? 84 : 75,
+                      type: 'ball'
+                    };
+                    updateBoard({ pins: [...pins, newBall] });
+                  }
+                }}
+                disabled={pins.filter(p => p.type === 'ball').length >= 1}
+                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                title="Afegir pilota"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SVG Canvas Board */}
       <div className={`relative w-full ${boardType === 'full' ? 'aspect-square' : 'aspect-[100/52]'} bg-white cursor-crosshair overflow-hidden touch-none select-none border border-slate-300`}>
         {/* Custom Confirmation Overlay for Path Deletion */}
@@ -852,6 +1056,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 <g
                   key={p.id}
                   className={`select-none ${readOnly ? '' : 'cursor-grab active:cursor-grabbing'}`}
+                  title={readOnly ? undefined : "Doble clic per eliminar"}
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     handleStart(e, p.id);
@@ -859,6 +1064,17 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   onTouchStart={(e) => {
                     e.stopPropagation();
                     handleStart(e, p.id);
+                  }}
+                  onDoubleClick={(e) => {
+                    if (readOnly) return;
+                    e.stopPropagation();
+                    const updatedPins = pins.filter(pin => pin.id !== p.id);
+                    const finalPins = updatedPins.map(pin => 
+                      pin.type === 'ball' && pin.anchoredTo === p.id 
+                        ? { ...pin, anchoredTo: undefined } 
+                        : pin
+                    );
+                    updateBoard({ pins: finalPins });
                   }}
                 >
                   {/* Subtle dropshadow under pins */}
