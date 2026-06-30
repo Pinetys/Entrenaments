@@ -967,17 +967,17 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 {/* Thick interactive overlay path for easy clicking/touching */}
                 {!readOnly && (
                   <path
-                    d={dPath}
-                    stroke="transparent"
-                    strokeWidth={4.0}
-                    fill="none"
-                    style={{ pointerEvents: 'stroke' }}
-                    className="cursor-pointer hover:stroke-orange-500/20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPathToDeleteId(p.id);
-                    }}
-                    title="Clica per eliminar aquest traç"
+                     d={dPath}
+                     stroke="transparent"
+                     strokeWidth={4.0}
+                     fill="none"
+                     style={{ pointerEvents: 'stroke' }}
+                     className="cursor-pointer hover:stroke-orange-500/20"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       setPathToDeleteId(p.id);
+                     }}
+                     title="Clica per eliminar aquest traç"
                   />
                 )}
                 <path

@@ -1013,7 +1013,13 @@ export default function DrillDatabase({
               <div
                 id={`drill-card-${drill.id}`}
                 key={drill.id}
-                className="bg-white border border-slate-200 rounded-sm hover:border-orange-400 transition p-3 md:p-5 flex flex-row md:flex-row gap-3 md:gap-5 group items-start"
+                className={`bg-white border rounded-sm transition p-3 md:p-5 flex flex-row md:flex-row gap-3 md:gap-5 group items-start shadow-sm ${
+                  drill.category === 'Atac' 
+                    ? 'border-l-4 border-l-orange-500 border-orange-200 bg-orange-50/5 hover:border-orange-400' 
+                    : drill.category === 'Defensa' 
+                      ? 'border-l-4 border-l-rose-500 border-rose-200 bg-rose-50/5 hover:border-rose-400' 
+                      : 'border-l-4 border-l-emerald-500 border-emerald-200 bg-emerald-50/5 hover:border-emerald-400'
+                }`}
               >
                 {/* Micro diagram static render or thumbnail */}
                 <div className="w-20 h-20 md:w-44 md:h-auto bg-white border border-slate-200 rounded shadow-sm overflow-hidden shrink-0 p-0.5 md:p-1 relative hover:shadow-xs transition duration-150">

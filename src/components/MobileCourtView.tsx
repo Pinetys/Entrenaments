@@ -816,40 +816,52 @@ export default function MobileCourtView({
         )}
 
         {/* Drill Title block navigation */}
-        <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 shrink-0 shadow-sm">
-          <button
-            id="btn-swipe-prev"
-            onClick={prevDrill}
-            disabled={safeActiveIndex === 0}
-            className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition"
-          >
-            <ChevronLeft size={18} strokeWidth={2.5} />
-          </button>
+        {(() => {
+          const rawCat = activeDrill.category || 'Atac';
+          const activeNormCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+          return (
+            <div className={`flex items-center justify-between bg-slate-900 border rounded-2xl p-4 shrink-0 shadow-sm transition-colors duration-300 ${
+              activeNormCat === 'Atac' ? 'border-orange-500' :
+              activeNormCat === 'Defensa' ? 'border-rose-500' : 'border-emerald-500'
+            }`}>
+              <button
+                id="btn-swipe-prev"
+                onClick={prevDrill}
+                disabled={safeActiveIndex === 0}
+                className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition"
+              >
+                <ChevronLeft size={18} strokeWidth={2.5} />
+              </button>
 
-          <div 
-            onClick={() => {
-              // Find the original full drill object if possible
-              const orig = drills.find(d => d.id === activeDrill.drillId) || activeDrill as any;
-              if (onPreviewDrill && orig) onPreviewDrill(orig);
-            }}
-            title="Veure el manual tàctic tipus llibre"
-            className="text-center min-w-0 flex-1 px-2 cursor-pointer group select-none active:scale-95 transition"
-          >
-            <span className="text-[9px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-300 font-bold tracking-wider font-mono uppercase block w-max mx-auto mb-1 group-hover:bg-orange-600 group-hover:text-white transition-colors">
-              Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′) • 📖 Ver manual
-            </span>
-            <h3 className="text-sm font-black text-white leading-snug underline hover:text-orange-400 decoration-dotted break-all whitespace-normal">{activeDrill.title}</h3>
-          </div>
+              <div 
+                onClick={() => {
+                  // Find the original full drill object if possible
+                  const orig = drills.find(d => d.id === activeDrill.drillId) || activeDrill as any;
+                  if (onPreviewDrill && orig) onPreviewDrill(orig);
+                }}
+                title="Veure el manual tàctic tipus llibre"
+                className="text-center min-w-0 flex-1 px-2 cursor-pointer group select-none active:scale-95 transition"
+              >
+                <span className={`text-[9px] px-2 py-0.5 rounded-full text-white font-bold tracking-wider font-mono uppercase block w-max mx-auto mb-1 transition-colors ${
+                  activeNormCat === 'Atac' ? 'bg-orange-600' :
+                  activeNormCat === 'Defensa' ? 'bg-rose-600' : 'bg-emerald-600'
+                }`}>
+                  Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′) • 📖 Ver manual
+                </span>
+                <h3 className="text-sm font-black text-white leading-snug underline hover:text-orange-400 decoration-dotted break-all whitespace-normal">{activeDrill.title}</h3>
+              </div>
 
-          <button
-            id="btn-swipe-next"
-            onClick={nextDrill}
-            disabled={safeActiveIndex === drillsInSession.length - 1}
-            className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition"
-          >
-            <ChevronRight size={18} strokeWidth={2.5} />
-          </button>
-        </div>
+              <button
+                id="btn-swipe-next"
+                onClick={nextDrill}
+                disabled={safeActiveIndex === drillsInSession.length - 1}
+                className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition"
+              >
+                <ChevronRight size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+          );
+        })()}
 
         {/* TACTICAL BOARD DISPLAY OR SPECIAL POSTER FOR VIRTUAL PAUSES */}
         {activeDrill.isVirtual ? (
@@ -1042,16 +1054,23 @@ export default function MobileCourtView({
       {/* QUICK FOOTER DOTS TRACKER (Hidden in Motion-Pista Mode for clutter-free scrolling) */}
       {!isMotionMode && (
         <div id="mobile-dots-indicator" className="py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-1.5 shrink-0">
-          {drillsInSession.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveDrillIndex(i)}
-              type="button"
-              className={`w-2 h-2 rounded-full cursor-pointer transition ${
-                safeActiveIndex === i ? 'bg-orange-500 scale-125' : 'bg-slate-700 hover:bg-slate-600'
-              }`}
-            />
-          ))}
+          {drillsInSession.map((item, i) => {
+            const rawCat = item.category || 'Atac';
+            const itemNormCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+            const colorClass = itemNormCat === 'Atac' 
+              ? (safeActiveIndex === i ? 'bg-orange-500 ring-2 ring-orange-500 scale-125' : 'bg-orange-500/40')
+              : itemNormCat === 'Defensa'
+                ? (safeActiveIndex === i ? 'bg-rose-500 ring-2 ring-rose-500 scale-125' : 'bg-rose-500/40')
+                : (safeActiveIndex === i ? 'bg-emerald-500 ring-2 ring-emerald-500 scale-125' : 'bg-emerald-500/40');
+            return (
+              <button
+                key={i}
+                onClick={() => setActiveDrillIndex(i)}
+                type="button"
+                className={`w-2 h-2 rounded-full cursor-pointer transition-all duration-300 ${colorClass}`}
+              />
+            );
+          })}
         </div>
       )}
 

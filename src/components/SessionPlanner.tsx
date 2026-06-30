@@ -958,6 +958,8 @@ export default function SessionPlanner({
                 }
 
                 const realIdx = sd.realIndex;
+                const rawCat = sd.category || 'Atac';
+                const normCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
 
                 return (
                   <div
@@ -987,12 +989,16 @@ export default function SessionPlanner({
                       setDraggedIndex(null);
                       setDragOverIndex(null);
                     }}
-                    className={`border rounded-md p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 transition shadow-xs group cursor-grab active:cursor-grabbing ${
+                    className={`border border-l-4 rounded-md p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 transition shadow-xs group cursor-grab active:cursor-grabbing ${
                       draggedIndex === realIdx 
                         ? 'opacity-40 border-slate-300 border-dashed bg-slate-50' 
                         : dragOverIndex === realIdx 
                           ? 'border-orange-500 scale-[1.01] bg-orange-50/40' 
-                          : 'bg-white border-slate-200 hover:border-orange-400'
+                          : normCat === 'Atac'
+                            ? 'border-l-orange-500 border-orange-200 bg-orange-50/5 hover:border-orange-400'
+                            : normCat === 'Defensa'
+                              ? 'border-l-rose-500 border-rose-200 bg-rose-50/5 hover:border-rose-400'
+                              : 'border-l-emerald-500 border-emerald-200 bg-emerald-50/5 hover:border-emerald-400'
                     }`}
                   >
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 flex-1 min-w-0">
@@ -1327,11 +1333,19 @@ export default function SessionPlanner({
               })
               .map((drill) => {
               const isAlreadyIn = session.drills.some(sd => sd.drillId === drill.id);
+              const rawCat = drill.category || 'Atac';
+              const normCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
               return (
                 <div
                   id={`quick-drill-item-${drill.id}`}
                   key={drill.id}
-                  className="p-3 border border-slate-250 rounded bg-white hover:border-orange-450 transition flex flex-col justify-between gap-2.5 group shadow-xs hover:shadow-2xs"
+                  className={`p-3 border rounded transition flex flex-col justify-between gap-2.5 group shadow-xs hover:shadow-2xs ${
+                    normCat === 'Atac' 
+                      ? 'border-l-4 border-l-orange-500 border-orange-200 bg-orange-50/5 hover:border-orange-400' 
+                      : normCat === 'Defensa' 
+                        ? 'border-l-4 border-l-rose-500 border-rose-200 bg-rose-50/5 hover:border-rose-400' 
+                        : 'border-l-4 border-l-emerald-500 border-emerald-200 bg-emerald-50/5 hover:border-emerald-400'
+                  }`}
                 >
                   <div className="flex items-start gap-3 w-full">
                     {/* Tactical Board Miniature Preview Graphic */}
@@ -1746,7 +1760,13 @@ export default function SessionPlanner({
                     const hasBoardState = item.boardState && (item.boardState.pins.length > 0 || item.boardState.paths.length > 0);
                     
                     return (
-                      <div key={item.id} className="border border-slate-200 rounded-xl p-5 bg-white space-y-4 shadow-2xs break-inside-avoid print:border-slate-300">
+                      <div key={item.id} className={`border border-l-4 rounded-xl p-5 bg-white space-y-4 shadow-2xs break-inside-avoid print:border-slate-300 ${
+                        normalizedCat === 'Atac' 
+                          ? 'border-l-orange-500 border-orange-200' 
+                          : normalizedCat === 'Defensa' 
+                            ? 'border-l-rose-500 border-rose-200' 
+                            : 'border-l-emerald-500 border-emerald-200'
+                      }`}>
                         
                         {/* Header info of the exercise */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 pb-3">

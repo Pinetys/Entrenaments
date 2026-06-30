@@ -355,8 +355,17 @@ export default function UnifiedAiScanner({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             
             {/* Form details */}
-            <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-              <h5 className="text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-2">Fitxa Tècnica de l'Exercici</h5>
+            {(() => {
+              const rawCat = analyzedDrill.category || 'Atac';
+              const normCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+              return (
+                <div className={`space-y-4 bg-slate-50 p-5 rounded-2xl border transition-colors duration-300 ${
+                  normCat === 'Atac' ? 'border-l-4 border-l-orange-500 border-orange-200' :
+                  normCat === 'Defensa' ? 'border-l-4 border-l-rose-500 border-rose-200' :
+                  'border-l-4 border-l-emerald-500 border-emerald-200'
+                }`}>
+                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-2">Fitxa Tècnica de l'Exercici</h5>
+
 
               <div className="space-y-3">
                 <div>
@@ -425,6 +434,8 @@ export default function UnifiedAiScanner({
                 </div>
               </div>
             </div>
+          );
+        })()}
 
             {/* Interactive tactical preview */}
             <div className="space-y-4">

@@ -35,7 +35,10 @@ export default function DrillManualBooklet({ drill, onClose }: DrillManualBookle
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-5xl bg-[#fdfbf7] border-4 border-[#e9e3d5] rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className={`relative w-full max-w-5xl bg-[#fdfbf7] border-4 rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col my-auto animate-in fade-in zoom-in-95 duration-200 ${
+        drill.category === 'Atac' ? 'border-orange-500' :
+        drill.category === 'Defensa' ? 'border-rose-500' : 'border-emerald-500'
+      }`}>
         
         {/* TEXTBOOK VINTAGE TOP BANNER */}
         <div className="bg-[#1e293b] text-[#f8fafc] px-6 py-3 flex items-center justify-between border-b border-amber-950/20 shrink-0">
