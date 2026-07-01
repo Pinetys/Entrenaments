@@ -95,6 +95,15 @@ export default function App() {
     return '';
   });
 
+  const [hasLoadedFromCloud, setHasLoadedFromCloud] = useState<boolean>(() => {
+    try {
+      const savedCode = localStorage.getItem('basket_planner_sync_code');
+      return !savedCode;
+    } catch (e) {
+      return true;
+    }
+  });
+
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [showSyncModal, setShowSyncModal] = useState<boolean>(false);
@@ -332,7 +341,20 @@ export default function App() {
       loadFromCloud(savedCode)
         .then(cloudData => {
           if (cloudData) {
-            if (cloudData.drills && cloudData.drills.length > 0) setDrills(cloudData.drills);
+            setDrills(prevLocal => {
+              const cloudDrills = cloudData.drills || [];
+              if (cloudDrills.length === 0) return prevLocal;
+              
+              // MERGE: Keep any locally added custom drills that are not in the cloud
+              const merged = [...cloudDrills];
+              prevLocal.forEach(localDrill => {
+                if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
+                  merged.push(localDrill);
+                }
+              });
+              return merged;
+            });
+
             if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
             if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
             if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
@@ -352,12 +374,17 @@ export default function App() {
         })
         .finally(() => {
           setIsSyncing(false);
+          setHasLoadedFromCloud(true);
         });
+    } else {
+      setHasLoadedFromCloud(true);
     }
   }, []);
 
   // Auto-generate sync code and auto-save changes
   useEffect(() => {
+    if (!hasLoadedFromCloud) return;
+
     if (!syncCode) {
       const newCode = generateSyncCode();
       setSyncCode(newCode);
@@ -382,10 +409,10 @@ export default function App() {
       } finally {
         setIsSyncing(false);
       }
-    }, 3000);
+    }, 2000); // reduced timeout to 2 seconds for faster cloud backup response
 
     return () => clearTimeout(timer);
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, syncCode]);
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, syncCode, hasLoadedFromCloud]);
 
   // Real HTML5 Notification Scheduler to alert the coach 10 minutes prior to training session start
   useEffect(() => {
@@ -451,7 +478,20 @@ export default function App() {
     try {
       const cloudData = await loadFromCloud(trimmed);
       if (cloudData) {
-        if (cloudData.drills && cloudData.drills.length > 0) setDrills(cloudData.drills);
+        setDrills(prevLocal => {
+          const cloudDrills = cloudData.drills || [];
+          if (cloudDrills.length === 0) return prevLocal;
+          
+          // MERGE: Keep any locally added custom drills that are not in the cloud
+          const merged = [...cloudDrills];
+          prevLocal.forEach(localDrill => {
+            if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
+              merged.push(localDrill);
+            }
+          });
+          return merged;
+        });
+
         if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
         if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
         if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
@@ -460,6 +500,7 @@ export default function App() {
         
         setSyncCode(trimmed);
         localStorage.setItem('basket_planner_sync_code', trimmed);
+        setHasLoadedFromCloud(true);
         if (cloudData.updatedAt) {
           setLastSynced(new Date(cloudData.updatedAt));
         } else {
@@ -688,16 +729,16 @@ export default function App() {
 
   // Manual Drill list manipulation operations
   const handleAddDrillToDatabase = (newDrill: Drill) => {
-    setDrills([newDrill, ...drills]);
+    setDrills(prev => [newDrill, ...prev]);
   };
 
   const handleEditDrillInDatabase = (updatedDrill: Drill) => {
-    setDrills(drills.map(d => d.id === updatedDrill.id ? updatedDrill : d));
+    setDrills(prev => prev.map(d => d.id === updatedDrill.id ? updatedDrill : d));
   };
 
   const handleDeleteDrillFromDatabase = (drillId: string) => {
     // Delete from list
-    setDrills(drills.filter(d => d.id !== drillId));
+    setDrills(prev => prev.filter(d => d.id !== drillId));
     // Remove references to this deleted drill from weekly schedules
     const sanitizeSession = (sess: TrainingSession): TrainingSession => {
       const filtered = sess.drills.filter(sd => sd.drillId !== drillId);
@@ -707,15 +748,12 @@ export default function App() {
         totalDuration: filtered.reduce((acc, c) => acc + c.duration, 0)
       };
     };
-    setSessions({
-      dia1: sanitizeSession(sessions.dia1),
-      dia2: sanitizeSession(sessions.dia2),
-      dia3: sanitizeSession(sessions.dia3),
-      dia4: sanitizeSession(sessions.dia4),
-      dia5: sanitizeSession(sessions.dia5),
-      dia6: sanitizeSession(sessions.dia6),
-      dia7: sanitizeSession(sessions.dia7),
-      dia8: sanitizeSession(sessions.dia8),
+    setSessions(prev => {
+      const updated: Record<string, TrainingSession> = {};
+      Object.keys(prev).forEach(key => {
+        updated[key] = sanitizeSession(prev[key]);
+      });
+      return updated;
     });
   };
 
@@ -742,7 +780,7 @@ export default function App() {
       dia8: { id: 'dia8', name: `Sessió 8: Dijous Setmana 4 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
     };
     
-    setWeeklyPlans([...weeklyPlans, newPlan]);
+    setWeeklyPlans(prev => [...prev, newPlan]);
     setSelectedWeeklyPlanId(newPlan.id);
     triggerToast(`S'ha creat la planificació de la temporada "${name}" amb èxit!`);
   };
@@ -756,55 +794,60 @@ export default function App() {
     if (!planToDelete) return;
 
     if (confirm(`Estàs completament segur que vols eliminar definitivament la planificació "${planToDelete.name}"?\nTots els seus entrenaments i observacions es perdran.`)) {
-      const remainingPlans = weeklyPlans.filter(p => p.id !== planId);
-      setWeeklyPlans(remainingPlans);
-      
-      if (selectedWeeklyPlanId === planId) {
-        const fallbackPlan = remainingPlans[0];
-        setSelectedWeeklyPlanId(fallbackPlan.id);
-      }
+      setWeeklyPlans(prev => {
+        const remainingPlans = prev.filter(p => p.id !== planId);
+        if (selectedWeeklyPlanId === planId) {
+          const fallbackPlan = remainingPlans[0];
+          setSelectedWeeklyPlanId(fallbackPlan.id);
+        }
+        return remainingPlans;
+      });
       triggerToast(`Planificació "${planToDelete.name}" eliminada correctament.`);
     }
   };
 
   // Plan scheduler callbacks
   const handleUpdateSession = (updatedSession: TrainingSession) => {
-    setSessions({
-      ...sessions,
+    setSessions(prev => ({
+      ...prev,
       [updatedSession.id]: updatedSession
-    });
+    }));
   };
 
   const handleDuplicateSession = (sourceSessionId: string, targetSessionId: string) => {
-    const sourceSession = sessions[sourceSessionId];
-    const targetSession = sessions[targetSessionId];
-    if (!sourceSession || !targetSession) return;
+    let targetName = 'sessió';
+    setSessions(prev => {
+      const sourceSession = prev[sourceSessionId];
+      const targetSession = prev[targetSessionId];
+      if (!sourceSession || !targetSession) return prev;
 
-    // Use a regex/split to retain target prefix structural details but copy source's actual content topic
-    let sourceTopic = "Còpia";
-    const parts = sourceSession.name.split(' - ');
-    if (parts.length > 1) {
-      sourceTopic = parts[1];
-    }
+      // Use a regex/split to retain target prefix structural details but copy source's actual content topic
+      let sourceTopic = "Còpia";
+      const parts = sourceSession.name.split(' - ');
+      if (parts.length > 1) {
+        sourceTopic = parts[1];
+      }
 
-    const targetPrefix = targetSession.name.split(' - ')[0];
-    const newName = `${targetPrefix} - ${sourceTopic}`;
+      const targetPrefix = targetSession.name.split(' - ')[0];
+      const newName = `${targetPrefix} - ${sourceTopic}`;
+      targetName = targetSession.name.split(':')[0];
 
-    const duplicatedSession: TrainingSession = {
-      ...targetSession,
-      name: newName,
-      totalDuration: sourceSession.totalDuration,
-      drills: sourceSession.drills.map(d => ({ ...d }))
-    };
+      const duplicatedSession: TrainingSession = {
+        ...targetSession,
+        name: newName,
+        totalDuration: sourceSession.totalDuration,
+        drills: sourceSession.drills.map(d => ({ ...d }))
+      };
 
-    setSessions({
-      ...sessions,
-      [targetSessionId]: duplicatedSession
+      return {
+        ...prev,
+        [targetSessionId]: duplicatedSession
+      };
     });
 
     // Automatically navigate/select target session to give visual feedback
     setSelectedSessionId(targetSessionId);
-    triggerToast(`🔄 Sessió duplicada correctament a la ${targetSession.name.split(':')[0]}!`);
+    triggerToast(`🔄 Sessió duplicada correctament a la ${targetName}!`);
   };
 
   // Back up configuration package via local json download
