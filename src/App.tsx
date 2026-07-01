@@ -73,10 +73,9 @@ const DEFAULT_SESSIONS = {
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
-  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Phone/i.test(navigator.userAgent);
-  const isSmallScreen = window.innerWidth < 1024;
-  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  return isMobileUA || isSmallScreen || hasTouch;
+  // Standard user-agent detection for phones and tablets. No false positives on touchscreen laptops/desktops.
+  const ua = navigator.userAgent || '';
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
 };
 
 export default function App() {
@@ -97,14 +96,14 @@ export default function App() {
 
   const [syncCode, setSyncCode] = useState<string>(() => {
     try {
+      const savedCode = localStorage.getItem('basket_planner_sync_code');
       if (isMobileDevice()) {
         const manuallyEntered = localStorage.getItem('basket_planner_sync_code_manually_entered');
-        if (manuallyEntered !== 'true') {
-          localStorage.removeItem('basket_planner_sync_code');
-          return '';
+        if (manuallyEntered === 'true' && savedCode) {
+          return savedCode;
         }
+        return '';
       }
-      const savedCode = localStorage.getItem('basket_planner_sync_code');
       if (savedCode) return savedCode;
     } catch (e) {}
     return '';
