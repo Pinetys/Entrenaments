@@ -469,14 +469,23 @@ export default function App() {
 
   // Handler to load cloud data from entering a sync code manually
   const handleLoadCloudData = async (codeToLoad: string) => {
-    const trimmed = codeToLoad.trim().toUpperCase();
-    if (!trimmed) {
+    // Highly robust sanitization: supports abcd, PINETY-abcd, pinetyabcd, pinety abcd
+    let sanitizedCode = codeToLoad.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (!sanitizedCode) {
       triggerToast('⚠️ Introdueix un codi vàlid per sincronitzar.');
       return;
     }
+
+    if (sanitizedCode.startsWith('PINETY')) {
+      const suffix = sanitizedCode.substring(6);
+      sanitizedCode = `PINETY-${suffix}`;
+    } else {
+      sanitizedCode = `PINETY-${sanitizedCode}`;
+    }
+
     setIsSyncing(true);
     try {
-      const cloudData = await loadFromCloud(trimmed);
+      const cloudData = await loadFromCloud(sanitizedCode);
       if (cloudData) {
         setDrills(prevLocal => {
           const cloudDrills = cloudData.drills || [];
@@ -498,8 +507,8 @@ export default function App() {
         if (cloudData.completions) setCompletions(cloudData.completions);
         if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
         
-        setSyncCode(trimmed);
-        localStorage.setItem('basket_planner_sync_code', trimmed);
+        setSyncCode(sanitizedCode);
+        localStorage.setItem('basket_planner_sync_code', sanitizedCode);
         setHasLoadedFromCloud(true);
         if (cloudData.updatedAt) {
           setLastSynced(new Date(cloudData.updatedAt));
@@ -509,11 +518,57 @@ export default function App() {
         setShowSyncModal(false);
         triggerToast('🔄 Sincronització completada amb èxit! Dades recuperades.');
       } else {
-        triggerToast('⚠️ No s’han trobat dades vinculades a aquest codi.');
+        triggerToast(`⚠️ No s'han trobat dades vinculades al codi "${sanitizedCode}".`);
       }
     } catch (err) {
       console.error(err);
       triggerToast('❌ Error en descarregar les dades del núvol.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Immediate save on opening sync modal to completely avoid race conditions
+  const handleOpenSyncModal = () => {
+    setInputSyncCode('');
+    setShowSyncModal(true);
+    if (syncCode && hasLoadedFromCloud) {
+      setIsSyncing(true);
+      saveToCloud(syncCode, {
+        drills,
+        weeklyPlans,
+        selectedWeeklyPlanId,
+        selectedSessionId,
+        completions,
+        favoriteDrillIds
+      }).then(() => {
+        setLastSynced(new Date());
+      }).catch(e => {
+        console.warn('Auto-save on opening sync modal failed:', e);
+      }).finally(() => {
+        setIsSyncing(false);
+      });
+    }
+  };
+
+  // Force save to cloud manually
+  const handleForceSaveToCloud = async () => {
+    if (!syncCode || !hasLoadedFromCloud) return;
+    setIsSyncing(true);
+    try {
+      await saveToCloud(syncCode, {
+        drills,
+        weeklyPlans,
+        selectedWeeklyPlanId,
+        selectedSessionId,
+        completions,
+        favoriteDrillIds
+      });
+      setLastSynced(new Date());
+      triggerToast('☁️ Dades desades al núvol correctament!');
+    } catch (e) {
+      console.error(e);
+      triggerToast('❌ Error al desar al núvol.');
     } finally {
       setIsSyncing(false);
     }
@@ -950,10 +1005,7 @@ export default function App() {
 
             <button
               id="btn-header-sync"
-              onClick={() => {
-                setInputSyncCode('');
-                setShowSyncModal(true);
-              }}
+              onClick={handleOpenSyncModal}
               title="Sincronització automàtica Firestore"
               className="py-1.5 md:py-2 px-3.5 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
             >
@@ -1379,9 +1431,9 @@ export default function App() {
             <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 text-center space-y-2">
               <span className="text-[10px] text-amber-700 font-extrabold uppercase tracking-widest font-mono">El teu codi de sincronització</span>
               <div className="text-2xl font-black text-amber-950 tracking-wider font-mono select-all">
-                {syncCode}
+                {syncCode || 'Generant...'}
               </div>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[10px] text-slate-500 font-sans">
                 Guarda aquest codi per enllaçar altres mòbils, tauletes o ordinadors i tenir totes les dades en temps real.
               </p>
               {lastSynced && (
@@ -1390,19 +1442,28 @@ export default function App() {
                   Desat darrer cop: {lastSynced.toLocaleTimeString()}
                 </div>
               )}
+              <button
+                id="btn-force-save-cloud"
+                onClick={handleForceSaveToCloud}
+                disabled={isSyncing || !syncCode}
+                className="mt-2 w-full py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw size={11} className={isSyncing ? "animate-spin" : ""} />
+                {isSyncing ? 'Sincronitzant...' : 'Sincronitzar dades ara'}
+              </button>
             </div>
 
             <div className="border-t border-slate-105 pt-4 space-y-3">
-              <h4 className="text-xs font-bold text-slate-700">Enllaçar un altre dispositiu o recuperar dades</h4>
-              <p className="text-[10px] text-slate-450">
-                Escriu el codi de sincronització de l'altre dispositiu per descarregar i carregar tota la informació:
+              <h4 className="text-xs font-bold text-slate-700">Enllaçar un altro dispositiu o recuperar dades</h4>
+              <p className="text-[10px] text-slate-450 leading-relaxed font-sans">
+                Escriu el codi de sincronització de l'altre dispositiu (polsant "Núvol Sync" a l'ordinador). Pots escriure el codi sencer (Ex: <strong>PINETY-ABCD</strong>) o només les darreres 4 lletres (Ex: <strong>ABCD</strong>):
               </p>
               
               <div className="flex gap-2">
                 <input
                   id="input-sync-code"
                   type="text"
-                  placeholder="Ex: PINETY-ABCD"
+                  placeholder="Ex: PINETY-ABCD o ABCD"
                   value={inputSyncCode}
                   onChange={(e) => setInputSyncCode(e.target.value)}
                   className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono flex-1 focus:outline-none focus:ring-1 focus:ring-amber-500 uppercase"
