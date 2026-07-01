@@ -71,6 +71,13 @@ const DEFAULT_SESSIONS = {
   dia8: { id: 'dia8', name: 'Sessió 8: Dijous Setmana 4 - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
 };
 
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false;
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isSmallScreen = window.innerWidth < 768;
+  return isMobileUA || isSmallScreen;
+};
+
 export default function App() {
   const [drills, setDrills] = useState<Drill[]>(() => {
     try {
@@ -386,9 +393,11 @@ export default function App() {
     if (!hasLoadedFromCloud) return;
 
     if (!syncCode) {
-      const newCode = generateSyncCode();
-      setSyncCode(newCode);
-      localStorage.setItem('basket_planner_sync_code', newCode);
+      if (!isMobileDevice()) {
+        const newCode = generateSyncCode();
+        setSyncCode(newCode);
+        localStorage.setItem('basket_planner_sync_code', newCode);
+      }
       return;
     }
 
@@ -549,6 +558,13 @@ export default function App() {
         setIsSyncing(false);
       });
     }
+  };
+
+  const handleUnlinkSyncCode = () => {
+    setSyncCode('');
+    localStorage.removeItem('basket_planner_sync_code');
+    setLastSynced(null);
+    triggerToast('🔌 Codi de sincronització desvinculat.');
   };
 
   // Force save to cloud manually
@@ -1428,30 +1444,51 @@ export default function App() {
               </p>
             </div>
 
-            <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 text-center space-y-2">
-              <span className="text-[10px] text-amber-700 font-extrabold uppercase tracking-widest font-mono">El teu codi de sincronització</span>
-              <div className="text-2xl font-black text-amber-950 tracking-wider font-mono select-all">
-                {syncCode || 'Generant...'}
+            {isMobileDevice() && !syncCode ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-2">
+                <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest font-mono">Dispositiu mòbil</span>
+                <p className="text-xs text-slate-750 font-bold leading-snug">
+                  La creació de nous codis de sincronització es fa des de l'ordinador.
+                </p>
+                <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
+                  Per sincronitzar aquest dispositiu amb el teu ordinador, obre l'aplicació a l'ordinador, prem "Núvol Sync" per obtenir el teu codi, i introdueix-lo a continuació.
+                </p>
               </div>
-              <p className="text-[10px] text-slate-500 font-sans">
-                Guarda aquest codi per enllaçar altres mòbils, tauletes o ordinadors i tenir totes les dades en temps real.
-              </p>
-              {lastSynced && (
-                <div className="text-[9px] text-emerald-600 font-semibold flex items-center justify-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Desat darrer cop: {lastSynced.toLocaleTimeString()}
+            ) : (
+              <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 text-center space-y-2">
+                <span className="text-[10px] text-amber-700 font-extrabold uppercase tracking-widest font-mono">El teu codi de sincronització</span>
+                <div className="text-2xl font-black text-amber-950 tracking-wider font-mono select-all">
+                  {syncCode || 'Generant...'}
                 </div>
-              )}
-              <button
-                id="btn-force-save-cloud"
-                onClick={handleForceSaveToCloud}
-                disabled={isSyncing || !syncCode}
-                className="mt-2 w-full py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw size={11} className={isSyncing ? "animate-spin" : ""} />
-                {isSyncing ? 'Sincronitzant...' : 'Sincronitzar dades ara'}
-              </button>
-            </div>
+                <p className="text-[10px] text-slate-500 font-sans">
+                  Guarda aquest codi per enllaçar altres mòbils, tauletes o ordinadors i tenir totes les dades en temps real.
+                </p>
+                {lastSynced && (
+                  <div className="text-[9px] text-emerald-600 font-semibold flex items-center justify-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Desat darrer cop: {lastSynced.toLocaleTimeString()}
+                  </div>
+                )}
+                <div className="flex flex-col gap-2 mt-2">
+                  <button
+                    id="btn-force-save-cloud"
+                    onClick={handleForceSaveToCloud}
+                    disabled={isSyncing || !syncCode}
+                    className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw size={11} className={isSyncing ? "animate-spin" : ""} />
+                    {isSyncing ? 'Sincronitzant...' : 'Sincronitzar dades ara'}
+                  </button>
+                  <button
+                    id="btn-unlink-sync"
+                    onClick={handleUnlinkSyncCode}
+                    className="w-full py-1 bg-slate-100 hover:bg-slate-200 text-slate-650 hover:text-slate-900 font-extrabold text-[9px] uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    Desvincular codi actiu
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="border-t border-slate-105 pt-4 space-y-3">
               <h4 className="text-xs font-bold text-slate-700">Enllaçar un altro dispositiu o recuperar dades</h4>
