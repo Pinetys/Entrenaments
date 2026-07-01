@@ -21,6 +21,7 @@ import {
   Star
 } from 'lucide-react';
 import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan } from '../types';
+import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 
 export function getEnhancedSessionDrills(
@@ -958,8 +959,8 @@ export default function SessionPlanner({
                 }
 
                 const realIdx = sd.realIndex;
-                const rawCat = sd.category || 'Atac';
-                const normCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+                const drillObj = drills.find(d => d.id === sd.drillId) || { id: sd.drillId, title: sd.title, category: sd.category };
+                const colors = getDrillColorProfile(drillObj as any);
 
                 return (
                   <div
@@ -994,11 +995,7 @@ export default function SessionPlanner({
                         ? 'opacity-40 border-slate-300 border-dashed bg-slate-50' 
                         : dragOverIndex === realIdx 
                           ? 'border-orange-500 scale-[1.01] bg-orange-50/40' 
-                          : normCat === 'Atac'
-                            ? 'border-l-orange-500 border-orange-200 bg-orange-50/5 hover:border-orange-400'
-                            : normCat === 'Defensa'
-                              ? 'border-l-rose-500 border-rose-200 bg-rose-50/5 hover:border-rose-400'
-                              : 'border-l-emerald-500 border-emerald-200 bg-emerald-50/5 hover:border-emerald-400'
+                          : colors.cardClass
                     }`}
                   >
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 flex-1 min-w-0">
@@ -1030,18 +1027,11 @@ export default function SessionPlanner({
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                          <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${
-                            sd.category === 'Transición' ? 'bg-orange-100 text-orange-850' :
-                            sd.category === 'Táctica' ? 'bg-blue-100 text-blue-800' :
-                            sd.category === 'Tiro' ? 'bg-emerald-100 text-emerald-800' :
-                            sd.category === 'Físico' ? 'bg-red-100 text-red-800' :
-                            sd.category === 'Defensa' ? 'bg-rose-100 text-rose-800' :
-                            sd.category === 'Sistemas' ? 'bg-purple-100 text-purple-800' : 'bg-cyan-100 text-cyan-800'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${colors.badgeClass}`}>
                             {sd.category}
                           </span>
                           {sd.concept && (
-                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-black uppercase tracking-wider animate-fadeIn">
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider animate-fadeIn ${colors.conceptClass}`}>
                               {sd.concept}
                             </span>
                           )}
@@ -1323,51 +1313,41 @@ export default function SessionPlanner({
                 if (plannerCategoryFilter === 'Escalfament') {
                   return ['Técnica', 'Físico', 'Escalfament'].includes(drill.category);
                 }
-                if (plannerCategoryFilter === 'Atac') {
-                  return ['Táctica', 'Sistemas', 'Tiro', 'Transición', 'Atac'].includes(drill.category);
-                }
                 if (plannerCategoryFilter === 'Defensa') {
                   return ['Defensa'].includes(drill.category);
                 }
                 return true;
               })
               .map((drill) => {
-              const isAlreadyIn = session.drills.some(sd => sd.drillId === drill.id);
-              const rawCat = drill.category || 'Atac';
-              const normCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
-              return (
-                <div
-                  id={`quick-drill-item-${drill.id}`}
-                  key={drill.id}
-                  className={`p-3 border rounded transition flex flex-col justify-between gap-2.5 group shadow-xs hover:shadow-2xs ${
-                    normCat === 'Atac' 
-                      ? 'border-l-4 border-l-orange-500 border-orange-200 bg-orange-50/5 hover:border-orange-400' 
-                      : normCat === 'Defensa' 
-                        ? 'border-l-4 border-l-rose-500 border-rose-200 bg-rose-50/5 hover:border-rose-400' 
-                        : 'border-l-4 border-l-emerald-500 border-emerald-200 bg-emerald-50/5 hover:border-emerald-400'
-                  }`}
-                >
-                  <div className="flex items-start gap-3 w-full">
-                    {/* Tactical Board Miniature Preview Graphic */}
-                    <div 
-                      onClick={() => onPreviewDrill(drill)}
-                      title="Clica per veure en gran el manual tàctic"
-                      className="w-20 xs:w-24 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
-                    >
-                      <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
-                    </div>
+                const isAlreadyIn = session.drills.some(sd => sd.drillId === drill.id);
+                const colors = getDrillColorProfile(drill);
+                return (
+                  <div
+                    id={`quick-drill-item-${drill.id}`}
+                    key={drill.id}
+                    className={`p-3 border rounded transition flex flex-col justify-between gap-2.5 group shadow-xs hover:shadow-2xs ${colors.cardClass}`}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      {/* Tactical Board Miniature Preview Graphic */}
+                      <div 
+                        onClick={() => onPreviewDrill(drill)}
+                        title="Clica per veure en gran el manual tàctic"
+                        className="w-20 xs:w-24 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
+                      >
+                        <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                      </div>
 
-                    {/* Primary labels & titles */}
-                    <div className="min-w-0 flex-1 text-left">
-                      <div className="flex flex-wrap items-center gap-1 mb-1">
-                        <span className="px-1.5 py-0.5 rounded text-[8px] bg-slate-100 font-extrabold text-slate-650 uppercase tracking-widest border border-slate-200/60">
-                          {drill.category}
-                        </span>
-                        {drill.concept && (
-                          <span className="px-1 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-black uppercase tracking-wider">
-                            {drill.concept}
+                      {/* Primary labels & titles */}
+                      <div className="min-w-0 flex-1 text-left">
+                        <div className="flex flex-wrap items-center gap-1 mb-1">
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${colors.badgeClass}`}>
+                            {drill.category}
                           </span>
-                        )}
+                          {drill.concept && (
+                            <span className={`px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${colors.conceptClass}`}>
+                              {drill.concept}
+                            </span>
+                          )}
                         <button
                           type="button"
                           onClick={(e) => {

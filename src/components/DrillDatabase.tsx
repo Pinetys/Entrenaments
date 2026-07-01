@@ -24,6 +24,7 @@ import {
   Star
 } from 'lucide-react';
 import { Drill, DrillCategory, BoardState } from '../types';
+import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import DrillManualBooklet from './DrillManualBooklet';
 import { compressAndResizeImage } from '../lib/imageCompressor';
@@ -1009,53 +1010,46 @@ export default function DrillDatabase({
               <p className="text-slate-400 text-xs mt-1">Crea un manual nou a la finestreta esquerra.</p>
             </div>
           ) : (
-            filteredDrills.map((drill) => (
-              <div
-                id={`drill-card-${drill.id}`}
-                key={drill.id}
-                className={`bg-white border rounded-sm transition p-3 md:p-5 flex flex-row md:flex-row gap-3 md:gap-5 group items-start shadow-sm ${
-                  drill.category === 'Atac' 
-                    ? 'border-l-4 border-l-orange-500 border-orange-200 bg-orange-50/5 hover:border-orange-400' 
-                    : drill.category === 'Defensa' 
-                      ? 'border-l-4 border-l-rose-500 border-rose-200 bg-rose-50/5 hover:border-rose-400' 
-                      : 'border-l-4 border-l-emerald-500 border-emerald-200 bg-emerald-50/5 hover:border-emerald-400'
-                }`}
-              >
-                {/* Micro diagram static render or thumbnail */}
-                <div className="w-20 h-20 md:w-44 md:h-auto bg-white border border-slate-200 rounded shadow-sm overflow-hidden shrink-0 p-0.5 md:p-1 relative hover:shadow-xs transition duration-150">
-                  <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
-                  {drill.boardStates && drill.boardStates.length > 1 && (
-                    <div className="absolute bottom-1.5 right-1.5 bg-orange-600/90 text-[8px] text-white font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest font-mono">
-                      {drill.boardStates.length} Grafismes
-                    </div>
-                  )}
-                </div>
-
-                {/* Drill written Details info panel */}
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-start justify-between gap-1">
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${
-                          drill.category === 'Atac' ? 'bg-orange-100 text-orange-850' :
-                          drill.category === 'Defensa' ? 'bg-rose-100 text-rose-850' : 'bg-emerald-100 text-emerald-850'
-                        }`}>
-                          {drill.category}
-                        </span>
-                        {drill.concept && (
-                          <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[8.5px] font-black uppercase tracking-wider">
-                            {drill.concept}
-                          </span>
-                        )}
+            filteredDrills.map((drill) => {
+              const colors = getDrillColorProfile(drill);
+              return (
+                <div
+                  id={`drill-card-${drill.id}`}
+                  key={drill.id}
+                  className={`bg-white border rounded-sm transition p-3 md:p-5 flex flex-row md:flex-row gap-3 md:gap-5 group items-start shadow-sm ${colors.cardClass}`}
+                >
+                  {/* Micro diagram static render or thumbnail */}
+                  <div className="w-20 h-20 md:w-44 md:h-auto bg-white border border-slate-200 rounded shadow-sm overflow-hidden shrink-0 p-0.5 md:p-1 relative hover:shadow-xs transition duration-150">
+                    <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                    {drill.boardStates && drill.boardStates.length > 1 && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-slate-800 text-[8px] text-white font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest font-mono">
+                        {drill.boardStates.length} Grafismes
                       </div>
-                      <h3 
-                        onClick={() => setSelectedDrillForOverlay(drill)}
-                        title="Clica per veure el gràfic tàctic ampliat"
-                        className="text-sm font-black text-slate-800 mt-1 uppercase tracking-tight group-hover:text-orange-600 hover:underline cursor-pointer transition-colors"
-                      >
-                        {drill.title}
-                      </h3>
-                    </div>
+                    )}
+                  </div>
+
+                  {/* Drill written Details info panel */}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-start justify-between gap-1">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-wider ${colors.badgeClass}`}>
+                            {drill.category}
+                          </span>
+                          {drill.concept && (
+                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider ${colors.conceptClass}`}>
+                              {drill.concept}
+                            </span>
+                          )}
+                        </div>
+                        <h3 
+                          onClick={() => setSelectedDrillForOverlay(drill)}
+                          title="Clica per veure el gràfic tàctic ampliat"
+                          className="text-sm font-black text-slate-800 mt-1 uppercase tracking-tight group-hover:text-slate-900 hover:underline cursor-pointer transition-colors"
+                        >
+                          {drill.title}
+                        </h3>
+                      </div>
 
                      {/* Card action controls */}
                     <div className="flex items-center gap-1.5 shrink-0 select-none">
@@ -1136,7 +1130,8 @@ export default function DrillDatabase({
                   )}
                 </div>
               </div>
-            ))
+            );
+          })
           )}
         </div>
       </div>
