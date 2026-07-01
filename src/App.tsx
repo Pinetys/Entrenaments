@@ -73,9 +73,10 @@ const DEFAULT_SESSIONS = {
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
-  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const isSmallScreen = window.innerWidth < 768;
-  return isMobileUA || isSmallScreen;
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Phone/i.test(navigator.userAgent);
+  const isSmallScreen = window.innerWidth < 1024;
+  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  return isMobileUA || isSmallScreen || hasTouch;
 };
 
 export default function App() {
@@ -96,6 +97,13 @@ export default function App() {
 
   const [syncCode, setSyncCode] = useState<string>(() => {
     try {
+      if (isMobileDevice()) {
+        const manuallyEntered = localStorage.getItem('basket_planner_sync_code_manually_entered');
+        if (manuallyEntered !== 'true') {
+          localStorage.removeItem('basket_planner_sync_code');
+          return '';
+        }
+      }
       const savedCode = localStorage.getItem('basket_planner_sync_code');
       if (savedCode) return savedCode;
     } catch (e) {}
@@ -104,6 +112,12 @@ export default function App() {
 
   const [hasLoadedFromCloud, setHasLoadedFromCloud] = useState<boolean>(() => {
     try {
+      if (isMobileDevice()) {
+        const manuallyEntered = localStorage.getItem('basket_planner_sync_code_manually_entered');
+        if (manuallyEntered !== 'true') {
+          return true;
+        }
+      }
       const savedCode = localStorage.getItem('basket_planner_sync_code');
       return !savedCode;
     } catch (e) {
@@ -518,6 +532,7 @@ export default function App() {
         
         setSyncCode(sanitizedCode);
         localStorage.setItem('basket_planner_sync_code', sanitizedCode);
+        localStorage.setItem('basket_planner_sync_code_manually_entered', 'true');
         setHasLoadedFromCloud(true);
         if (cloudData.updatedAt) {
           setLastSynced(new Date(cloudData.updatedAt));
@@ -563,6 +578,7 @@ export default function App() {
   const handleUnlinkSyncCode = () => {
     setSyncCode('');
     localStorage.removeItem('basket_planner_sync_code');
+    localStorage.removeItem('basket_planner_sync_code_manually_entered');
     setLastSynced(null);
     triggerToast('🔌 Codi de sincronització desvinculat.');
   };
