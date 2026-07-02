@@ -419,36 +419,138 @@ export default function SessionPlanner({
             <span className="text-[140px] font-bold">🏀</span>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-slate-200 pb-4 relative z-10">
-            <div className="flex-1 group min-w-0">
-              <div className="flex items-center gap-1.5 text-xs text-orange-600 font-bold uppercase tracking-widest">
-                <CalendarDays size={13} className="text-orange-500" />
-                Planificació Real de Temporada
+          <div className="flex flex-col gap-4 mb-5 border-b border-slate-200 pb-4 relative z-10">
+            {/* Top Row: Title and Main actions */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full">
+              <div className="flex-1 group min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-orange-600 font-bold uppercase tracking-widest">
+                  <CalendarDays size={13} className="text-orange-500" />
+                  Planificació Real de Temporada
+                </div>
+                <div className="flex items-center gap-2 mt-1 max-w-full">
+                  <input
+                    id="session-name-editor-input"
+                    type="text"
+                    value={session.name}
+                    onChange={(e) => {
+                      onChangeSession({
+                        ...session,
+                        name: e.target.value
+                      });
+                    }}
+                    className="text-lg md:text-xl font-black text-slate-900 uppercase italic tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-orange-500 focus:bg-slate-50 px-1 py-0.5 rounded-sm focus:outline-none transition-all duration-155 flex-1 min-w-0 font-sans cursor-text"
+                    title="Fes clic per reanomenar la sessió"
+                  />
+                  <span className="text-slate-400 group-hover:text-orange-550 transition-colors pointer-events-none shrink-0" title="Editar nom de la sessió">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-1 max-w-full">
-                <input
-                  id="session-name-editor-input"
-                  type="text"
-                  value={session.name}
-                  onChange={(e) => {
-                    onChangeSession({
-                      ...session,
-                      name: e.target.value
-                    });
-                  }}
-                  className="text-lg md:text-xl font-black text-slate-900 uppercase italic tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-orange-500 focus:bg-slate-50 px-1 py-0.5 rounded-sm focus:outline-none transition-all duration-155 flex-1 min-w-0 font-sans cursor-text"
-                  title="Fes clic per reanomenar la sessió"
-                />
-                <span className="text-slate-400 group-hover:text-orange-550 transition-colors pointer-events-none shrink-0" title="Editar nom de la sessió">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </span>
+
+              {/* Main Actions: Duplicate & Print/PDF */}
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div className="relative">
+                  <button
+                    id="btn-duplicate-session"
+                    type="button"
+                    onClick={() => setShowDuplicateDropdown(!showDuplicateDropdown)}
+                    className={`px-3 py-2 border active:scale-95 rounded-sm text-xs font-black tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition-all duration-150 shadow-xs ${
+                      showDuplicateDropdown 
+                        ? 'bg-orange-500 text-white border-orange-600' 
+                        : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'
+                    }`}
+                    title="Copiar tots els exercicis d'aquesta sessió a una altra d'un clic"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                    </svg>
+                    Duplicar
+                  </button>
+
+                  {showDuplicateDropdown && (
+                    <div id="duplicate-session-dropdown" className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-md shadow-lg p-3.5 z-[100] animate-fadeIn">
+                      <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100">
+                        <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">Duplicar Sessió Activa</span>
+                        <button 
+                          onClick={() => setShowDuplicateDropdown(false)}
+                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
+                        Copiar els exercicis, durades i observacions de <strong className="text-slate-700">Sessió {session.id.replace('dia', '')}</strong> a una altra sessió del microcicle:
+                      </p>
+                      
+                      <div className="space-y-1 max-h-52 overflow-y-auto pr-0.5 no-scrollbar">
+                        {[
+                          { id: 'dia1', num: 1 },
+                          { id: 'dia2', num: 2 },
+                          { id: 'dia3', num: 3 },
+                          { id: 'dia4', num: 4 },
+                          { id: 'dia5', num: 5 },
+                          { id: 'dia6', num: 6 },
+                          { id: 'dia7', num: 7 },
+                          { id: 'dia8', num: 8 }
+                        ]
+                        .filter(s => s.id !== session.id)
+                        .map(target => {
+                          const destSession = allSessions ? allSessions[target.id] : (activePlan[target.id as keyof WeeklyPlan] as TrainingSession | undefined);
+                          const drillsCount = destSession?.drills?.length || 0;
+                          return (
+                            <button
+                              key={target.id}
+                              onClick={() => {
+                                if (drillsCount > 0) {
+                                  if (!confirm(`S'eliminaran els ${drillsCount} exercicis actuals de la "Sessió ${target.num}". Vols prosseguir?`)) {
+                                    return;
+                                  }
+                                }
+                                onDuplicateSession(session.id, target.id);
+                                setShowDuplicateDropdown(false);
+                              }}
+                              className="w-full text-left px-2 py-1 bg-white hover:bg-orange-50 font-medium text-slate-700 border border-slate-100 hover:border-orange-100 flex items-center justify-between text-xs transition cursor-pointer rounded"
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="w-5 h-5 flex items-center justify-center bg-orange-100 text-orange-850 rounded-sm text-[9px] font-black uppercase shrink-0">
+                                  S{target.num}
+                                </span>
+                                <span className="truncate font-semibold text-slate-700">
+                                  {destSession?.name ? destSession.name : `Sessió ${target.num}`}
+                                </span>
+                              </div>
+                              <span className="text-[8px] font-mono text-slate-400 uppercase font-black shrink-0 ml-1">
+                                {drillsCount > 0 ? `${drillsCount} ex.` : 'Buda'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  id="btn-pdf-session-active"
+                  type="button"
+                  onClick={() => setShowPrintPreview(true)}
+                  className="px-3 py-2 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black rounded-sm text-xs tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition border border-transparent shadow-xs"
+                  title="Generar un resum en format PDF de la sessió activa, incloent el cronograma, notes i descripcions dels exercicis."
+                >
+                  <Printer size={14} /> Generar PDF / Imprimir 🖨️
+                </button>
               </div>
-              
+            </div>
+
+            {/* Bottom Row: Scheduler and Presets */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-3 border-t border-slate-150 w-full">
               {/* Dynamic start-time scheduler for system notification alerts */}
-              <div className="flex items-center gap-2 mt-2.5 text-[10px] bg-slate-50 border border-slate-200/60 px-3 py-1.5 rounded-lg max-w-sm">
-                <span className="font-extrabold text-slate-700 uppercase tracking-wider shrink-0 flex items-center gap-1">📅 Programar entrenament:</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs bg-slate-50 border border-slate-200 p-2 rounded-lg w-full lg:max-w-md shrink-0">
+                <span className="font-extrabold text-slate-700 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  📅 PROGRAMAR ENTRENAMENT:
+                </span>
                 <input
                   type="datetime-local"
                   value={session.scheduledTime || ''}
@@ -458,130 +560,39 @@ export default function SessionPlanner({
                       scheduledTime: e.target.value
                     });
                   }}
-                  className="bg-white border border-slate-300 px-2 py-1 rounded text-[10px] font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer w-full"
+                  className="bg-white border border-slate-300 px-3 py-1.5 rounded-md text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex-1 w-full min-w-[180px]"
                   title="Tria la data i hora d'aquest entrenament"
                 />
               </div>
-            </div>
 
-            {/* Quick Presets Dropdown or list - Geometric Balance crisp tags */}
-            <div className="flex flex-wrap items-center gap-1.5 relative">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block md:inline mr-1">Pre-dissenyats:</span>
-              <button
-                id="btn-preset-balanced"
-                type="button"
-                onClick={() => loadPreset('balanced')}
-                className="px-2.5 py-1.5 bg-slate-900 text-white hover:bg-slate-800 active:scale-95 rounded-sm text-[10px] font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-transparent shadow-xs"
-              >
-                Balanced
-              </button>
-              <button
-                id="btn-preset-defensive"
-                type="button"
-                onClick={() => loadPreset('defensive')}
-                className="px-2.5 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-[10px] font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
-              >
-                Defensiu
-              </button>
-              <button
-                id="btn-preset-prematch"
-                type="button"
-                onClick={() => loadPreset('preMatch')}
-                className="px-2.5 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-[10px] font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
-              >
-                Pre-Partit
-              </button>
-
-              <div className="relative">
+              {/* Quick Presets Selection */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block mr-1">PRE-DISSENYATS:</span>
                 <button
-                  id="btn-duplicate-session"
+                  id="btn-preset-balanced"
                   type="button"
-                  onClick={() => setShowDuplicateDropdown(!showDuplicateDropdown)}
-                  className={`px-2.5 py-1.5 border active:scale-95 rounded-sm text-[10px] font-black tracking-wider uppercase flex items-center gap-1 cursor-pointer transition-all duration-150 shadow-xs ${
-                    showDuplicateDropdown 
-                      ? 'bg-orange-500 text-white border-orange-600' 
-                      : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'
-                  }`}
-                  title="Copiar tots els exercicis d'aquesta sessió a una altra d'un clic"
+                  onClick={() => loadPreset('balanced')}
+                  className="px-3 py-1.5 bg-slate-950 text-white hover:bg-slate-850 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-transparent shadow-xs"
                 >
-                  <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                  </svg>
-                  Duplicar
+                  Balanced
                 </button>
-
-                {showDuplicateDropdown && (
-                  <div id="duplicate-session-dropdown" className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-md shadow-lg p-3.5 z-[100] animate-fadeIn">
-                    <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100">
-                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">Duplicar Sessió Activa</span>
-                      <button 
-                        onClick={() => setShowDuplicateDropdown(false)}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
-                      Copiar els exercicis, durades i observacions de <strong className="text-slate-700">Sessió {session.id.replace('dia', '')}</strong> a una altra sessió del microcicle:
-                    </p>
-                    
-                    <div className="space-y-1 max-h-52 overflow-y-auto pr-0.5 no-scrollbar">
-                      {[
-                        { id: 'dia1', num: 1 },
-                        { id: 'dia2', num: 2 },
-                        { id: 'dia3', num: 3 },
-                        { id: 'dia4', num: 4 },
-                        { id: 'dia5', num: 5 },
-                        { id: 'dia6', num: 6 },
-                        { id: 'dia7', num: 7 },
-                        { id: 'dia8', num: 8 }
-                      ]
-                      .filter(s => s.id !== session.id)
-                      .map(target => {
-                        const destSession = allSessions ? allSessions[target.id] : (activePlan[target.id as keyof WeeklyPlan] as TrainingSession | undefined);
-                        const drillsCount = destSession?.drills?.length || 0;
-                        return (
-                          <button
-                            key={target.id}
-                            onClick={() => {
-                              if (drillsCount > 0) {
-                                if (!confirm(`S'eliminaran els ${drillsCount} exercicis actuals de la "Sessió ${target.num}". Vols prosseguir?`)) {
-                                  return;
-                                }
-                              }
-                              onDuplicateSession(session.id, target.id);
-                              setShowDuplicateDropdown(false);
-                            }}
-                            className="w-full text-left px-2 py-1 bg-white hover:bg-orange-50 font-medium text-slate-700 border border-slate-100 hover:border-orange-100 flex items-center justify-between text-xs transition cursor-pointer rounded"
-                          >
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="w-5 h-5 flex items-center justify-center bg-orange-100 text-orange-850 rounded-sm text-[9px] font-black uppercase shrink-0">
-                                S{target.num}
-                              </span>
-                              <span className="truncate font-semibold text-slate-700">
-                                {destSession?.name ? destSession.name : `Sessió ${target.num}`}
-                              </span>
-                            </div>
-                            <span className="text-[8px] font-mono text-slate-400 uppercase font-black shrink-0 ml-1">
-                              {drillsCount > 0 ? `${drillsCount} ex.` : 'Buda'}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <button
+                  id="btn-preset-defensive"
+                  type="button"
+                  onClick={() => loadPreset('defensive')}
+                  className="px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
+                >
+                  Defensiu
+                </button>
+                <button
+                  id="btn-preset-prematch"
+                  type="button"
+                  onClick={() => loadPreset('preMatch')}
+                  className="px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
+                >
+                  Pre-Partit
+                </button>
               </div>
-
-              <button
-                id="btn-pdf-session-active"
-                type="button"
-                onClick={() => setShowPrintPreview(true)}
-                className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black rounded-sm text-[10px] tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition border border-transparent shadow-xs"
-                title="Generar un resum en format PDF de la sessió activa, incloent el cronograma, notes i descripcions dels exercicis."
-              >
-                <Printer size={12} /> Generar PDF / Imprimir 🖨️
-              </button>
             </div>
           </div>
 
