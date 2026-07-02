@@ -21,7 +21,9 @@ import {
   QrCode,
   Smartphone,
   RefreshCw,
-  Star
+  Star,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { Drill, DrillCategory, BoardState } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
@@ -460,6 +462,7 @@ export default function DrillDatabase({
   const [boardState, setBoardState] = useState<BoardState>({ paths: [], pins: [] });
   const [boardStates, setBoardStates] = useState<BoardState[]>([{ paths: [], pins: [] }]);
   const [activePhaseIndex, setActivePhaseIndex] = useState<number>(0);
+  const [isDrawingModeOnly, setIsDrawingModeOnly] = useState<boolean>(false);
 
   const handleCloneDrill = (drill: Drill) => {
     try {
@@ -579,235 +582,269 @@ export default function DrillDatabase({
   return (
     <div id="drill-database-view" className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       
-      {/* LEFT: Drill Creator / Editor Form (5 columns) - Reskinned with sharp-geometry style */}
-      <div id="drill-creator-panel" className="lg:col-span-5 bg-white border border-slate-200 rounded-sm p-6 shadow-xs">
-        <div className="flex items-center justify-between mb-5 border-b border-slate-200 pb-3">
+      {/* LEFT: Drill Creator / Editor Form - Reskinned with sharp-geometry style */}
+      <div 
+        id="drill-creator-panel" 
+        className={`${isDrawingModeOnly ? 'lg:col-span-12' : 'lg:col-span-5'} bg-white border border-slate-200 rounded-sm p-6 shadow-xs transition-all duration-300`}
+      >
+        <div className="flex flex-wrap items-center justify-between mb-5 border-b border-slate-200 pb-3 gap-2">
           <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 uppercase tracking-wide">
             <BookOpen className="text-orange-500" size={18} />
             {isEditing ? 'EDITAR EXERCICI' : 'CREAR EXERCICI MANUAL'}
           </h2>
-          {isEditing && (
+          <div className="flex items-center gap-2">
             <button
-              id="btn-cancel-edit"
-              onClick={resetForm}
-              className="text-[10px] px-2.5 py-1.5 rounded-sm bg-slate-950 text-white hover:bg-slate-800 transition font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+              id="btn-toggle-drawing-mode"
+              type="button"
+              onClick={() => {
+                setIsDrawingModeOnly(!isDrawingModeOnly);
+                if (triggerToast) {
+                  triggerToast(!isDrawingModeOnly ? '🎯 Mode de dibuix ampliat activat: amagant llista d’exercicis.' : '📋 Tornant a la vista normal amb la llista d’exercicis.');
+                }
+              }}
+              className={`text-[10px] px-2.5 py-1.5 rounded-sm font-black uppercase tracking-wider flex items-center gap-1.5 border transition duration-150 cursor-pointer ${
+                isDrawingModeOnly 
+                  ? 'bg-amber-500 border-amber-500 text-slate-950 font-black shadow-xs' 
+                  : 'bg-slate-50 border-slate-200 text-slate-705 hover:bg-slate-100'
+              }`}
+              title={isDrawingModeOnly ? "Vista normal amb llista" : "Ampliar pissarra (amagar llista)"}
             >
-              <Undo2 size={12} /> Cancel·la
+              {isDrawingModeOnly ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              <span>{isDrawingModeOnly ? "Vista Normal" : "Mode Dibuix"}</span>
             </button>
-          )}
+            {isEditing && (
+              <button
+                id="btn-cancel-edit"
+                onClick={resetForm}
+                className="text-[10px] px-2.5 py-1.5 rounded-sm bg-slate-950 text-white hover:bg-slate-800 transition font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+              >
+                <Undo2 size={12} /> Cancel·la
+              </button>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom de l'Exercici *</label>
-            <input
-              id="form-drill-title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Contraatac continu 3 contra 2"
-              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-bold"
-              required
-            />
-          </div>
+          <div className={isDrawingModeOnly ? "grid grid-cols-1 lg:grid-cols-12 gap-6" : "space-y-4"}>
+            
+            {/* COLUMN 1: BOARD CANVAS (Spacious visual focus when drawing) */}
+            <div className={isDrawingModeOnly ? "lg:col-span-7 xl:col-span-8 space-y-4 bg-slate-50/55 p-4 border border-slate-200 rounded-sm shadow-inner" : "space-y-4"}>
+              {/* Drills drawing canvas with Multi-Graphic capability */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-extrabold text-slate-700">CROQUIS TÀCTIC (MULTIGRAFISME DE PISTA)</span>
+                  <span className="text-[9px] text-orange-600 bg-orange-50 font-semibold px-2 py-0.5 rounded flex items-center gap-1 font-mono">
+                    <Sparkles size={11} className="text-orange-500 animate-pulse" /> Suporta múltiples fases per exercits complexos!
+                  </span>
+                </label>
 
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-              <span>Anotació Tàctica / Concepte</span>
-              <span className="text-[8px] text-slate-400 font-normal">Ex: Pick & Roll, Bloqueig Indirecte, Defensa Zonal, Atac 1x1...</span>
-            </label>
-            <input
-              id="form-drill-concept"
-              type="text"
-              value={concept}
-              onChange={(e) => setConcept(e.target.value)}
-              placeholder="Ex: Pick & Roll"
-              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-medium"
-            />
-          </div>
+                {/* Phase Selector Tabs */}
+                <div className="flex flex-wrap items-center gap-1 bg-slate-50 p-1 border border-slate-200 rounded">
+                  {boardStates.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActivePhaseIndex(idx)}
+                      className={`px-3 py-1 text-xs font-black uppercase tracking-wider rounded-sm cursor-pointer transition ${
+                        activePhaseIndex === idx
+                          ? 'bg-orange-500 text-white shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      Grafisme {idx + 1}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentBS = boardStates[activePhaseIndex] || { paths: [], pins: [] };
+                      // Clone pins of current board state to make drawing successive phases extremely easy
+                      const clonedBS: BoardState = {
+                        paths: [], // Start with fresh paths so they don't overlap, but keep play position
+                        pins: JSON.parse(JSON.stringify(currentBS.pins)),
+                        courtType: currentBS.courtType || 'half'
+                      };
+                      setBoardStates([...boardStates, clonedBS]);
+                      setActivePhaseIndex(boardStates.length);
+                      if (triggerToast) triggerToast(`Grafisme ${boardStates.length + 1} afegit amb èxit.`);
+                    }}
+                    className="px-2.5 py-1 bg-slate-800 text-white hover:bg-slate-900 rounded-sm text-[10px] font-black uppercase tracking-wider ml-auto cursor-pointer"
+                  >
+                    + Afegir Grafisme
+                  </button>
+                  {boardStates.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm('Vols eliminar aquest grafisme de la llista d\'esquemes?')) {
+                          const updated = boardStates.filter((_, i) => i !== activePhaseIndex);
+                          setBoardStates(updated);
+                          setActivePhaseIndex(Math.max(0, activePhaseIndex - 1));
+                          if (triggerToast) triggerToast('S\'ha eliminat el grafisme actiu.');
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-red-650 hover:bg-red-750 text-white rounded-sm text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                    >
+                      ✘ Eliminar Grafisme
+                    </button>
+                  )}
+                </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Categoria</label>
-              <select
-                id="form-drill-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as DrillCategory)}
-                className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition bg-white font-medium"
-              >
-                <option value="Atac">Atac</option>
-                <option value="Defensa">Defensa</option>
-                <option value="Escalfament">Escalfament</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Duració (Mins)</label>
-              <input
-                id="form-drill-duration"
-                type="number"
-                min="1"
-                max="75"
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
-              />
-            </div>
-          </div>
-
-          {/* Drills drawing canvas with Multi-Graphic capability */}
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-              <span>CROQUIS TÀCTIC (MULTIGRAFISME DE PISTA)</span>
-              <span className="text-[9px] text-orange-600 bg-orange-50 font-semibold px-2 py-0.5 rounded flex items-center gap-1 font-mono">
-                <Sparkles size={11} className="text-orange-500 animate-pulse" /> Suporta múltiples fases per exercits complexos!
-              </span>
-            </label>
-
-            {/* Phase Selector Tabs */}
-            <div className="flex flex-wrap items-center gap-1 bg-slate-50 p-1 border border-slate-200 rounded">
-              {boardStates.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActivePhaseIndex(idx)}
-                  className={`px-3 py-1 text-xs font-black uppercase tracking-wider rounded-sm cursor-pointer transition ${
-                    activePhaseIndex === idx
-                      ? 'bg-orange-500 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  Grafisme {idx + 1}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  const currentBS = boardStates[activePhaseIndex] || { paths: [], pins: [] };
-                  // Clone pins of current board state to make drawing successive phases extremely easy
-                  const clonedBS: BoardState = {
-                    paths: [], // Start with fresh paths so they don't overlap, but keep play position
-                    pins: JSON.parse(JSON.stringify(currentBS.pins)),
-                    courtType: currentBS.courtType || 'half'
-                  };
-                  setBoardStates([...boardStates, clonedBS]);
-                  setActivePhaseIndex(boardStates.length);
-                  if (triggerToast) triggerToast(`Grafisme ${boardStates.length + 1} afegit amb èxit.`);
-                }}
-                className="px-2.5 py-1 bg-slate-800 text-white hover:bg-slate-900 rounded-sm text-[10px] font-black uppercase tracking-wider ml-auto cursor-pointer"
-              >
-                + Afegir Grafisme
-              </button>
-              {boardStates.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm('Vols eliminar aquest grafisme de la llista d\'esquemes?')) {
-                      const updated = boardStates.filter((_, i) => i !== activePhaseIndex);
+                {/* Mini board view */}
+                <div className="bg-white p-1 border border-slate-200 rounded">
+                  <TacticalBoard
+                    boardState={boardStates[activePhaseIndex] || { paths: [], pins: [] }}
+                    onChange={(newBS) => {
+                      const updated = [...boardStates];
+                      updated[activePhaseIndex] = newBS;
                       setBoardStates(updated);
-                      setActivePhaseIndex(Math.max(0, activePhaseIndex - 1));
-                      if (triggerToast) triggerToast('S\'ha eliminat el grafisme actiu.');
-                    }
-                  }}
-                  className="px-2.5 py-1 bg-red-650 hover:bg-red-750 text-white rounded-sm text-[10px] font-black uppercase tracking-wider cursor-pointer"
-                >
-                  ✘ Eliminar Grafisme
-                </button>
-              )}
+                      if (activePhaseIndex === 0) {
+                        setBoardState(newBS);
+                      }
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-slate-450 italic leading-tight">
+                  Afegeix els grafismes que vulguis per seqüenciar de principi a fi el joc! Cada grafisme guarda els seus propis camins i xips.
+                </p>
+              </div>
             </div>
 
-            {/* Mini board view */}
-            <div className="bg-white p-1 border border-slate-200 rounded">
-              <TacticalBoard
-                boardState={boardStates[activePhaseIndex] || { paths: [], pins: [] }}
-                onChange={(newBS) => {
-                  const updated = [...boardStates];
-                  updated[activePhaseIndex] = newBS;
-                  setBoardStates(updated);
-                  if (activePhaseIndex === 0) {
-                    setBoardState(newBS);
-                  }
-                }}
-              />
+            {/* COLUMN 2: FORM INPUTS (Beautifully compact fields) */}
+            <div className={isDrawingModeOnly ? "lg:col-span-5 xl:col-span-4 space-y-4" : "space-y-4"}>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom de l'Exercici *</label>
+                <input
+                  id="form-drill-title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex: Contraatac continu 3 contra 2"
+                  className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-bold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
+                  <span>Anotació Tàctica / Concepte</span>
+                  <span className="text-[8px] text-slate-400 font-normal">Ex: Pick & Roll, Bloqueig Indirecte...</span>
+                </label>
+                <input
+                  id="form-drill-concept"
+                  type="text"
+                  value={concept}
+                  onChange={(e) => setConcept(e.target.value)}
+                  placeholder="Ex: Pick & Roll"
+                  className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Categoria</label>
+                  <select
+                    id="form-drill-category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as DrillCategory)}
+                    className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition bg-white font-medium"
+                  >
+                    <option value="Atac">Atac</option>
+                    <option value="Defensa">Defensa</option>
+                    <option value="Escalfament">Escalfament</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Duració (Mins)</label>
+                  <input
+                    id="form-drill-duration"
+                    type="number"
+                    min="1"
+                    max="75"
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Jugadors Req.</label>
+                  <input
+                    id="form-drill-players"
+                    type="number"
+                    min="1"
+                    value={playersNeeded}
+                    onChange={(e) => setPlayersNeeded(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Materials</label>
+                  <input
+                    id="form-drill-materials"
+                    type="text"
+                    value={materialsString}
+                    onChange={(e) => setMaterialsString(e.target.value)}
+                    placeholder="Pilotes, Cons, Petos"
+                    className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Objectius de l'Exercici (Un per línia)</label>
+                <textarea
+                  id="form-drill-objectives"
+                  rows={2}
+                  value={objectivesString}
+                  onChange={(e) => setObjectivesString(e.target.value)}
+                  placeholder="Ex: Treballar contraatac 3v2&#13;Evitar bots innecessaris&#13;Balanç defensiu ràpid"
+                  className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-sans resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Descripció / Dinàmica</label>
+                <textarea
+                  id="form-drill-desc"
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Explica com es rota, els espais de passada..."
+                  className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition resize-none font-medium text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Anotacions tàctiques de Pista</label>
+                <input
+                  id="form-drill-setup"
+                  type="text"
+                  value={setupInstructions}
+                  onChange={(e) => setSetupInstructions(e.target.value)}
+                  placeholder="Ex: Defensor no roba fins a línia de tres"
+                  className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
+                />
+              </div>
+
+              <button
+                id="btn-submit-drill"
+                type="submit"
+                className="w-full py-3 px-4 rounded-sm text-xs font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-slate-800 transition shadow-xs flex items-center justify-center gap-2 cursor-pointer mt-2"
+              >
+                <Plus size={16} />
+                {isEditing ? 'Desar Canvis' : 'Afegir a Biblioteca'}
+              </button>
             </div>
-            <p className="text-[10px] text-slate-450 italic leading-tight">
-              Afegeix els grafismes que vulguis per seqüenciar de principi a fi el joc! Cada grafisme guarda els seus propis camins i xips.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Jugadors Req.</label>
-              <input
-                id="form-drill-players"
-                type="number"
-                min="1"
-                value={playersNeeded}
-                onChange={(e) => setPlayersNeeded(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Materials</label>
-              <input
-                id="form-drill-materials"
-                type="text"
-                value={materialsString}
-                onChange={(e) => setMaterialsString(e.target.value)}
-                placeholder="Pilotes, Cons, Petos"
-                className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
-              />
-            </div>
           </div>
-
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Objectius de l'Exercici (Un per línia)</label>
-            <textarea
-              id="form-drill-objectives"
-              rows={2}
-              value={objectivesString}
-              onChange={(e) => setObjectivesString(e.target.value)}
-              placeholder="Ex: Treballar contraatac 3v2&#13;Evitar bots innecessaris&#13;Balanç defensiu ràpid"
-              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-sans resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Descripció / Dinàmica</label>
-            <textarea
-              id="form-drill-desc"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Explica com es rota, els espais de passada..."
-              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition resize-none font-medium text-slate-800"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Anotacions tàctiques de Pista</label>
-            <input
-              id="form-drill-setup"
-              type="text"
-              value={setupInstructions}
-              onChange={(e) => setSetupInstructions(e.target.value)}
-              placeholder="Ex: Defensor no roba fins a línia de tres"
-              className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition"
-            />
-          </div>
-
-          <button
-            id="btn-submit-drill"
-            type="submit"
-            className="w-full py-3 px-4 rounded-sm text-xs font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-slate-800 transition shadow-xs flex items-center justify-center gap-2 cursor-pointer mt-2"
-          >
-            <Plus size={16} />
-            {isEditing ? 'Desar Canvis' : 'Afegir a Biblioteca'}
-          </button>
         </form>
       </div>
 
       {/* RIGHT: List of Available Drills (7 columns) */}
-      <div id="drill-list-panel" className="lg:col-span-7 space-y-5">
+      <div id="drill-list-panel" className={`${isDrawingModeOnly ? 'hidden' : 'lg:col-span-7'} space-y-5 transition-all duration-300`}>
         
         {/* Dynamic Filtering Toolbar */}
         <div className="bg-white border border-slate-200 rounded-sm p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">

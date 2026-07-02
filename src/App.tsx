@@ -27,7 +27,7 @@ import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
-import { generateSyncCode, saveToCloud, loadFromCloud } from './lib/firebase';
+import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
 
@@ -419,7 +419,7 @@ export default function App() {
     const timer = setTimeout(async () => {
       setIsSyncing(true);
       try {
-        await saveToCloud(syncCode, {
+        const savedTimeStr = await saveToCloud(syncCode, {
           drills,
           weeklyPlans,
           selectedWeeklyPlanId,
@@ -427,7 +427,7 @@ export default function App() {
           completions,
           favoriteDrillIds
         });
-        setLastSynced(new Date());
+        setLastSynced(new Date(savedTimeStr));
       } catch (e) {
         console.warn('Auto-save to cloud failed:', e);
       } finally {
@@ -437,6 +437,67 @@ export default function App() {
 
     return () => clearTimeout(timer);
   }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, syncCode, hasLoadedFromCloud]);
+
+  // Listen for real-time changes from the cloud (Firestore onSnapshot)
+  useEffect(() => {
+    if (!syncCode || !hasLoadedFromCloud) return;
+
+    const unsubscribe = subscribeToCloud(syncCode, (cloudData) => {
+      if (!cloudData) return;
+
+      // Check if cloudData is actually newer than our last synced or updated time
+      const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt) : null;
+      if (cloudUpdatedAt && lastSynced && cloudUpdatedAt.getTime() <= lastSynced.getTime()) {
+        // Cloud data is older or equal to what we have locally (or we just wrote it ourselves), skip updating
+        return;
+      }
+
+      // If we are actively saving (isSyncing is true), let's skip to avoid overwrite loops
+      if (isSyncing) return;
+
+      // Update local state from cloud
+      if (cloudData.drills && cloudData.drills.length > 0) {
+        setDrills(prevLocal => {
+          const cloudDrills = cloudData.drills || [];
+          if (cloudDrills.length === 0) return prevLocal;
+          
+          // MERGE: Keep any locally added custom drills that are not in the cloud
+          const merged = [...cloudDrills];
+          prevLocal.forEach(localDrill => {
+            if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
+              merged.push(localDrill);
+            }
+          });
+          return merged;
+        });
+      }
+
+      if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
+        setWeeklyPlans(cloudData.weeklyPlans);
+      }
+      if (cloudData.selectedWeeklyPlanId) {
+        setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
+      }
+      if (cloudData.selectedSessionId) {
+        setSelectedSessionId(cloudData.selectedSessionId);
+      }
+      if (cloudData.completions) {
+        setCompletions(cloudData.completions);
+      }
+      if (cloudData.favoriteDrillIds) {
+        setFavoriteDrillIds(cloudData.favoriteDrillIds);
+      }
+
+      if (cloudUpdatedAt) {
+        setLastSynced(cloudUpdatedAt);
+      } else {
+        setLastSynced(new Date());
+      }
+      triggerToast('🔄 Sincronització: Canvis actualitzats en temps real des del núvol!');
+    });
+
+    return () => unsubscribe();
+  }, [syncCode, hasLoadedFromCloud, lastSynced, isSyncing]);
 
   // Real HTML5 Notification Scheduler to alert the coach 10 minutes prior to training session start
   useEffect(() => {
@@ -566,8 +627,8 @@ export default function App() {
         selectedSessionId,
         completions,
         favoriteDrillIds
-      }).then(() => {
-        setLastSynced(new Date());
+      }).then((savedTimeStr) => {
+        setLastSynced(new Date(savedTimeStr));
       }).catch(e => {
         console.warn('Auto-save on opening sync modal failed:', e);
       }).finally(() => {
@@ -589,7 +650,7 @@ export default function App() {
     if (!syncCode || !hasLoadedFromCloud) return;
     setIsSyncing(true);
     try {
-      await saveToCloud(syncCode, {
+      const savedTimeStr = await saveToCloud(syncCode, {
         drills,
         weeklyPlans,
         selectedWeeklyPlanId,
@@ -597,7 +658,7 @@ export default function App() {
         completions,
         favoriteDrillIds
       });
-      setLastSynced(new Date());
+      setLastSynced(new Date(savedTimeStr));
       triggerToast('☁️ Dades desades al núvol correctament!');
     } catch (e) {
       console.error(e);
@@ -1332,6 +1393,10 @@ export default function App() {
               completions={completions}
               onToggleCompleteSession={(sessId) => handleToggleCompleteSession(activePlan?.id || 'plan-default', sessId)}
               activePlanId={activePlan?.id || 'plan-default'}
+              syncCode={syncCode}
+              onOpenSync={handleOpenSyncModal}
+              isSyncing={isSyncing}
+              lastSynced={lastSynced}
             />
           </div>
         )}

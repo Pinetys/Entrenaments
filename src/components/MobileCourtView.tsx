@@ -32,6 +32,10 @@ interface MobileCourtViewProps {
   completions?: SessionCompletion[];
   onToggleCompleteSession?: (sessionId: string) => void;
   activePlanId?: string;
+  syncCode?: string;
+  onOpenSync?: () => void;
+  isSyncing?: boolean;
+  lastSynced?: Date | null;
 }
 
 export default function MobileCourtView({ 
@@ -44,7 +48,11 @@ export default function MobileCourtView({
   onAddDrill,
   completions = [],
   onToggleCompleteSession,
-  activePlanId = 'plan-default'
+  activePlanId = 'plan-default',
+  syncCode = '',
+  onOpenSync,
+  isSyncing = false,
+  lastSynced = null
 }: MobileCourtViewProps) {
   const [activeDrillIndex, setActiveDrillIndex] = useState(0);
   const [isFullscreenBoard, setIsFullscreenBoard] = useState(false);
@@ -279,9 +287,29 @@ export default function MobileCourtView({
         <div className="flex items-center gap-1.5">
           <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse shadow-xs shadow-emerald-400' : 'bg-amber-500 shadow-xs shadow-amber-400 animate-ping'}`}></span>
           <span className="text-[9px] font-bold font-mono tracking-wide text-slate-300">
-            {isOnline ? 'CONNEXIÓ ACTIVA (NÚVOL)' : 'SENSE SENSE CONNEXIÓ (LOCAL)'}
+            {isOnline ? 'ONLINE' : 'OFFLINE'}
           </span>
         </div>
+
+        {syncCode ? (
+          <button
+            type="button"
+            onClick={onOpenSync}
+            className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700/60 hover:bg-slate-700 text-[9px] font-bold text-orange-450 tracking-wider flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
+            title="Codi de Sincronització Actiu. Prem per gestionar."
+          >
+            <span className={`w-1.5 h-1.5 rounded-full bg-orange-400 ${isSyncing ? 'animate-pulse' : ''}`}></span>
+            <span className="font-mono">{syncCode}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenSync}
+            className="px-2 py-0.5 rounded bg-orange-950/40 border border-orange-900/30 hover:bg-orange-950 text-[9px] font-bold text-orange-400 tracking-wider flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse"
+          >
+            <span>VINCULAR</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -299,7 +327,7 @@ export default function MobileCourtView({
           {isSessionCompleted ? (
             <>
               <Check size={10} strokeWidth={3.5} />
-              <span>Sessió Completada ✓</span>
+              <span>Sessió Feta ✓</span>
             </>
           ) : (
             <>

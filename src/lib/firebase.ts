@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAxpJxHal2pfwthSxfqB4YIwl0-gcFmRIc",
@@ -34,14 +34,16 @@ export function generateSyncCode(): string {
   return code;
 }
 
-// Save application state to Firestore
-export async function saveToCloud(syncCode: string, data: Omit<SyncData, 'updatedAt' | 'syncCode'>): Promise<void> {
+// Save application state to Firestore and return the exact timestamp string
+export async function saveToCloud(syncCode: string, data: Omit<SyncData, 'updatedAt' | 'syncCode'>): Promise<string> {
   const docRef = doc(db, 'syncs', syncCode);
+  const updatedAt = new Date().toISOString();
   await setDoc(docRef, {
     ...data,
     syncCode,
-    updatedAt: new Date().toISOString()
+    updatedAt
   });
+  return updatedAt;
 }
 
 // Retrieve application state from Firestore
@@ -52,4 +54,18 @@ export async function loadFromCloud(syncCode: string): Promise<SyncData | null> 
     return snap.data() as SyncData;
   }
   return null;
+}
+
+// Subscribe to real-time changes of the sync document
+export function subscribeToCloud(syncCode: string, callback: (data: SyncData | null) => void) {
+  const docRef = doc(db, 'syncs', syncCode);
+  return onSnapshot(docRef, (snap) => {
+    if (snap.exists()) {
+      callback(snap.data() as SyncData);
+    } else {
+      callback(null);
+    }
+  }, (err) => {
+    console.error("subscribeToCloud error:", err);
+  });
 }
