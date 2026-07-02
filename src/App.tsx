@@ -18,7 +18,6 @@ import {
   Download,
   Upload,
   Check,
-  Camera,
   RefreshCw,
   Cloud,
   Database
@@ -28,8 +27,6 @@ import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
-import MobileUploadPortal from './components/MobileUploadPortal';
-import UnifiedAiScanner from './components/UnifiedAiScanner';
 import { generateSyncCode, saveToCloud, loadFromCloud } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
@@ -631,7 +628,7 @@ export default function App() {
         setSelectedSessionId(packedData.selectedSessionId);
         setActiveView('mobile');
         window.history.replaceState('', document.title, window.location.pathname);
-        triggerToast('📥 S’ha importat correctament l’entrenament escanejat! S’ha obert el mode mòbil.');
+        triggerToast('📥 S’ha importat correctament l’entrenament compartit! S’ha obert el mode mòbil.');
       } else if (packedData.drills && packedData.sessions) {
         setDrills(packedData.drills);
         setSessions(packedData.sessions);
@@ -650,14 +647,6 @@ export default function App() {
       try {
         const hash = window.location.hash;
         if (hash) {
-          if (hash.startsWith('#upload-photo')) {
-            const match = hash.match(/code=([^&]+)/);
-            if (match && match[1]) {
-              setMobilePairingCode(match[1].toUpperCase());
-              setActiveView('mobile-upload-portal');
-              return;
-            }
-          }
           if (hash.startsWith('#plan=')) {
             // Instantly transition to the responsive, high-performance 'mobile' view.
             // This prevents mobile browsers from showing slow/heavy desktop frames while the background request runs!
@@ -980,19 +969,6 @@ export default function App() {
   };
 
   // Helper calculation details
-  if (activeView === 'mobile-upload-portal') {
-    return (
-      <MobileUploadPortal 
-        code={mobilePairingCode || ''} 
-        onBackToPC={() => {
-          setActiveView('planner');
-          // Clear hash to return to main base safely
-          window.location.hash = '';
-        }} 
-      />
-    );
-  }
-
   const activeSession = sessions[selectedSessionId] || sessions['dia1'] || { id: 'dia1', name: 'Sessió de Recuperació', dayOfWeek: 'Martes', totalDuration: 75, drills: [] };
   const timeScheduledObj = (activeSession.drills || []).reduce((acc, d) => acc + d.duration, 0);
 
@@ -1145,19 +1121,6 @@ export default function App() {
               >
                 <BookOpen size={14} className={activeView === 'database' ? 'text-orange-500' : 'text-slate-500'} />
                 Biblioteca d'Exercicis
-              </button>
-
-              <button
-                id="tab-scanner"
-                onClick={() => setActiveView('scanner')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
-                  activeView === 'scanner' 
-                    ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <Camera size={14} className={activeView === 'scanner' ? 'text-orange-500 animate-pulse' : 'text-slate-500'} />
-                📸 Escàner IA
               </button>
 
               <button
@@ -1355,13 +1318,6 @@ export default function App() {
             triggerToast={triggerToast}
             favoriteDrillIds={favoriteDrillIds}
             onToggleFavorite={handleToggleFavoriteDrill}
-          />
-        ) : activeView === 'scanner' ? (
-          <UnifiedAiScanner
-            onAddDrill={handleAddDrillToDatabase}
-            activeSession={activeSession}
-            onUpdateSession={handleUpdateSession}
-            triggerToast={triggerToast}
           />
         ) : (
           <div className={`${isSharedMobile ? 'p-0' : 'py-2'}`}>

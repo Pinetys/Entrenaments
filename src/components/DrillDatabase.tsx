@@ -27,7 +27,6 @@ import { Drill, DrillCategory, BoardState } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import DrillManualBooklet from './DrillManualBooklet';
-import { compressAndResizeImage } from '../lib/imageCompressor';
 
 // Pre-populated High-Level Drills for Junior Nivel A Catalan Federation
 export const PRE_POPULATED_DRILLS: Drill[] = [
@@ -462,120 +461,6 @@ export default function DrillDatabase({
   const [boardStates, setBoardStates] = useState<BoardState[]>([{ paths: [], pins: [] }]);
   const [activePhaseIndex, setActivePhaseIndex] = useState<number>(0);
 
-  // Mobile pairing status
-  const [pairingCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
-  const [isPollingMobile] = useState(true);
-
-  // Modular helper to process raw image uploads from both local input AND mobile phone
-  const analyzeImageContent = async (base64String: string, mimeType: string) => {
-    setAnalyzing(true);
-    if (triggerToast) {
-      triggerToast("⏳ Enllestint l'anàlisi de la imatge de l'exercici amb Gemini...");
-    }
-
-    try {
-      const res = await fetch('/api/analyze-drill', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: base64String,
-          mimeType: mimeType
-        })
-      });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Sense resposta del servidor d’intel·ligència artificial.');
-      }
-      
-      const data = await res.json();
-      if (data.drill) {
-        setTitle(data.drill.title || '');
-        setCategory(data.drill.category || 'Atac');
-        setConcept(data.drill.concept || '');
-        setDuration(data.drill.duration || 15);
-        setObjectivesString(Array.isArray(data.drill.objectives) ? data.drill.objectives.join('\n') : '');
-        setDescription(data.drill.description || '');
-        setSetupInstructions(data.drill.setupInstructions || '');
-        setPlayersNeeded(data.drill.playersNeeded || 8);
-        setMaterialsString(Array.isArray(data.drill.materials) ? data.drill.materials.join(', ') : '');
-        
-        const bState = data.drill.boardState || { paths: [], pins: [] };
-        const bStates = data.drill.boardStates && data.drill.boardStates.length > 0
-          ? data.drill.boardStates
-          : [bState];
-
-        setBoardState(bState);
-        setBoardStates(bStates);
-        setActivePhaseIndex(0);
-
-        if (triggerToast) {
-          triggerToast("✨ S'ha importat correctament l'exercici gràcies a l'anàlisi de la imatge!");
-        }
-      } else {
-        throw new Error('No es va rebre cap estructura d’exercici vàlida.');
-      }
-    } catch (innerErr: any) {
-      console.error("Error processant resposta d'anàlisi:", innerErr);
-      if (triggerToast) {
-        triggerToast("💥 Error formatant: " + (innerErr.message || innerErr));
-      }
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
-  // Poll for mobile photo upload corresponding with pairingCode in real-time
-  useEffect(() => {
-    if (isEditing || !isPollingMobile || analyzing) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/check-mobile-upload?code=${pairingCode}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.status === 'found' && data.image) {
-            if (data.drill) {
-              if (triggerToast) {
-                triggerToast("📱 S'ha importat instantàniament l'exercici digitalitzat des del mòbil amb èxit!");
-              }
-              // Set state fields directly
-              setTitle(data.drill.title || '');
-              setCategory(data.drill.category || 'Atac');
-              setConcept(data.drill.concept || '');
-              setDuration(data.drill.duration || 15);
-              setObjectivesString(Array.isArray(data.drill.objectives) ? data.drill.objectives.join('\n') : '');
-              setDescription(data.drill.description || '');
-              setSetupInstructions(data.drill.setupInstructions || '');
-              setPlayersNeeded(data.drill.playersNeeded || 8);
-              setMaterialsString(Array.isArray(data.drill.materials) ? data.drill.materials.join(', ') : '');
-              
-              const bState = data.drill.boardState || { paths: [], pins: [] };
-              const bStates = data.drill.boardStates && data.drill.boardStates.length > 0
-                ? data.drill.boardStates
-                : [bState];
-
-              setBoardState(bState);
-              setBoardStates(bStates);
-              setActivePhaseIndex(0);
-            } else {
-              if (triggerToast) {
-                triggerToast("📱 S'ha detectat la fotografia enviada des del mòbil! Analitzant amb Gemini...");
-              }
-              await analyzeImageContent(data.image, data.mimeType || 'image/jpeg');
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error polling mobile upload list:", err);
-      }
-    }, 2800);
-
-    return () => clearInterval(interval);
-  }, [pairingCode, isEditing, isPollingMobile, analyzing]);
-
   const handleCloneDrill = (drill: Drill) => {
     try {
       const clonedDrill: Drill = {
@@ -590,24 +475,6 @@ export default function DrillDatabase({
     } catch (e) {
       console.error(e);
       if (triggerToast) triggerToast("No s'ha pogut duplicar l'exercici.");
-    }
-  };
-
-  const handleImageUploaded = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      if (triggerToast) {
-        triggerToast("⚡ Reduint mida de la imatge i optimitzant resolució...");
-      }
-      const { base64Data, mimeType } = await compressAndResizeImage(file, 1200);
-      await analyzeImageContent(base64Data, mimeType);
-    } catch (err: any) {
-      console.error(err);
-      if (triggerToast) {
-        triggerToast("⚠️ Error en carregar l'arxiu d'imatge de l'exercici.");
-      }
     }
   };
 
@@ -866,20 +733,6 @@ export default function DrillDatabase({
               Afegeix els grafismes que vulguis per seqüenciar de principi a fi el joc! Cada grafisme guarda els seus propis camins i xips.
             </p>
           </div>
-
-          {/* LLEGIR EXERCICI DES D'IMATGE (IA) - PLACED DIRECTLY BELOW THE GRAPHICS CONTAINER AS REQUESTED */}
-          {!isEditing && (
-            <div className="p-4 bg-orange-50/50 border border-orange-200/60 rounded-lg space-y-2 mt-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-xs font-black text-orange-800 uppercase tracking-wider">
-                <Sparkles size={15} className="text-orange-500 animate-pulse" />
-                <span>Escàner de Pissarres amb IA</span>
-              </div>
-              
-              <p className="text-[11px] text-slate-600 leading-relaxed max-w-md mx-auto">
-                Per passar amb fotografia el teu grafisme i digitalitzar automàticament qualsevol exercici, utilitza la nova opció unificada de la barra superior del menú principal: <strong className="text-orange-700">📸 Escàner IA</strong>.
-              </p>
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>

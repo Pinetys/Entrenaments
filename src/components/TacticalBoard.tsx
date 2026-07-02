@@ -88,8 +88,10 @@ const DEFAULT_PINS: BoardPin[] = [
   { id: 'def3', label: '3', x: 75, y: 70, type: 'defender' },
   { id: 'def4', label: '4', x: 35, y: 55, type: 'defender' },
   { id: 'def5', label: '5', x: 65, y: 55, type: 'defender' },
-  // Ball
-  { id: 'ball', label: '🏀', x: 50, y: 84, type: 'ball' },
+  // Balls - Pre-populate 3 balls so the user can easily map multi-ball exercises
+  { id: 'ball', label: '🏀', x: 47, y: 84, type: 'ball' },
+  { id: 'ball2', label: '🏀', x: 50, y: 84, type: 'ball' },
+  { id: 'ball3', label: '🏀', x: 53, y: 84, type: 'ball' },
   // Cones
   { id: 'cone1', label: '▲', x: 15, y: 50, type: 'cone' },
   { id: 'cone2', label: '▲', x: 85, y: 50, type: 'cone' },
@@ -377,17 +379,26 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           }
         } else if (draggedPin.type === 'attacker' || draggedPin.type === 'defender') {
           // If we drag a player, check if there is an unanchored ball close to them. If yes, snap the ball!
-          const ball = pins.find(p => p.type === 'ball');
-          if (ball && (!ball.anchoredTo || ball.anchoredTo === draggedPin.id)) {
-            const dist = Math.hypot(draggedPin.x - ball.x, draggedPin.y - ball.y);
-            if (dist < 6.0) {
-              updatedPins = pins.map(p => {
-                if (p.type === 'ball') {
-                  return { ...p, x: draggedPin.x, y: draggedPin.y, anchoredTo: draggedPin.id };
-                }
-                return p;
-              });
+          let nearestBall: BoardPin | null = null;
+          let minBallDist = 6.0;
+
+          pins.forEach(p => {
+            if (p.type === 'ball' && (!p.anchoredTo || p.anchoredTo === draggedPin.id)) {
+              const d = Math.hypot(draggedPin.x - p.x, draggedPin.y - p.y);
+              if (d < minBallDist) {
+                minBallDist = d;
+                nearestBall = p;
+              }
             }
+          });
+
+          if (nearestBall) {
+            updatedPins = pins.map(p => {
+              if (p.id === (nearestBall as BoardPin).id) {
+                return { ...p, x: draggedPin.x, y: draggedPin.y, anchoredTo: draggedPin.id };
+              }
+              return p;
+            });
           }
         }
       }
@@ -452,19 +463,19 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   };
 
   return (
-    <div id="pizarra-tactica-seccion" className="flex flex-col bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-xl w-full">
+    <div id="pizarra-tactica-seccion" className="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm w-full">
       {/* Visual Controls Toolbar */}
       {!readOnly && (
-        <div id="pizarra-toolbar" className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-950 border-b border-slate-800 text-xs">
+        <div id="pizarra-toolbar" className="flex flex-wrap items-center justify-between gap-1.5 py-1 px-2.5 bg-slate-50 border-b border-slate-200 text-[10.5px]">
           <div className="flex items-center gap-1">
             <button
               id="btn-board-half"
               type="button"
               onClick={() => setFormat('half')}
-              className={`px-3 py-1.5 rounded-lg border font-medium transition ${
+              className={`px-2 py-1 rounded-md border font-bold transition text-[10px] ${
                 boardType === 'half' 
                   ? 'bg-orange-500 border-orange-500 text-white' 
-                  : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
               Media Pista
@@ -473,13 +484,13 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               id="btn-board-full"
               type="button"
               onClick={() => setFormat('full')}
-              className={`px-3 py-1.5 rounded-lg border font-medium transition ${
+              className={`px-2 py-1 rounded-md border font-bold transition text-[10px] ${
                 boardType === 'full' 
                   ? 'bg-orange-500 border-orange-500 text-white' 
-                  : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              Pista Entera
+              Pista Sencera
             </button>
           </div>
 
@@ -489,12 +500,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               type="button"
               title="Mover Fichas"
               onClick={() => setMode('move')}
-              className={`p-2 rounded-lg transition ${
-                mode === 'move' ? 'bg-indigo-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-slate-300'
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'move' ? 'bg-indigo-650 border-indigo-650 text-white font-bold' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Move size={16} className="inline mr-1" />
-              Mover
+              <Move size={11} />
+              Moure
             </button>
 
             <button
@@ -502,12 +513,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               type="button"
               title="Corte o Desmarque de Ataque (Línea Amarilla)"
               onClick={() => setMode('draw_cut')}
-              className={`p-2 rounded-lg transition ${
-                mode === 'draw_cut' ? 'bg-yellow-500 text-slate-950 font-semibold' : 'bg-slate-900 hover:bg-slate-800 text-yellow-400'
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'draw_cut' ? 'bg-amber-500 border-amber-500 text-slate-950 font-bold' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Brush size={16} className="inline mr-1" />
-              Corte (Ataque)
+              <Brush size={11} />
+              Tall (Atac)
             </button>
 
             <button
@@ -515,12 +526,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               type="button"
               title="Pase (Línea de Puntos Azul)"
               onClick={() => setMode('draw_pass')}
-              className={`p-2 rounded-lg transition ${
-                mode === 'draw_pass' ? 'bg-sky-500 text-slate-950 font-semibold' : 'bg-slate-900 hover:bg-slate-800 text-sky-400'
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'draw_pass' ? 'bg-sky-500 border-sky-500 text-slate-950 font-bold' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Brush size={16} className="inline mr-1" />
-              Pase
+              <Brush size={11} />
+              Passada
             </button>
 
             <button
@@ -528,11 +539,11 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               type="button"
               title="Movimiento de Defensa (Línea de Guiones Roja)"
               onClick={() => setMode('draw_run')}
-              className={`p-2 rounded-lg transition ${
-                mode === 'draw_run' ? 'bg-red-500 text-white' : 'bg-slate-900 hover:bg-slate-800 text-red-400'
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'draw_run' ? 'bg-red-500 border-red-500 text-white font-bold' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Brush size={16} className="inline mr-1" />
+              <Brush size={11} />
               Defensa
             </button>
 
@@ -541,43 +552,43 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               type="button"
               title="Bote / Dribling (Línea en Zigzag)"
               onClick={() => setMode('draw_dribble')}
-              className={`p-2 rounded-lg transition ${
-                mode === 'draw_dribble' ? 'bg-orange-500 text-white font-semibold' : 'bg-slate-900 hover:bg-slate-800 text-orange-400'
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'draw_dribble' ? 'bg-orange-500 border-orange-500 text-white font-bold' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Brush size={16} className="inline mr-1" />
-              Bote / Dribling
+              <Brush size={11} />
+              Botar
             </button>
           </div>
 
-          <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
+          <div className="flex items-center gap-1 border-l border-slate-200 pl-1.5">
             <button
               id="btn-board-undo"
               type="button"
               onClick={undoPath}
               disabled={paths.length === 0}
               title="Deshacer último trazo"
-              className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Undo size={16} />
+              <Undo size={11} />
             </button>
             <button
               id="btn-board-clear-drawings"
               type="button"
               onClick={clearDrawings}
               title="Borrar todos los trazos"
-              className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 cursor-pointer"
+              className="p-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer"
             >
-              <Trash2 size={16} />
+              <Trash2 size={11} />
             </button>
             <button
               id="btn-board-reset-pins"
               type="button"
               onClick={resetPins}
               title="Reiniciar posiciones"
-              className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 cursor-pointer"
+              className="p-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer"
             >
-              <RotateCcw size={16} />
+              <RotateCcw size={11} />
             </button>
           </div>
         </div>
@@ -585,15 +596,15 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
       {/* Chip Management Panel */}
       {!readOnly && (
-        <div id="pizarra-elements-panel" className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900 border-b border-slate-800 text-xs select-none">
-          <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
+        <div id="pizarra-elements-panel" className="flex flex-wrap items-center justify-between gap-1.5 py-1 px-2.5 bg-slate-50 border-b border-slate-200 text-[10px] select-none">
+          <div className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
             <span>⚙️</span>
-            <span>Gestió de fitxes a pista:</span>
+            <span>Fitxes:</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {/* Attackers control */}
-            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-              <span className="text-[10px] font-bold text-slate-300 font-sans">Atacants (O):</span>
+            <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
+              <span className="text-[9px] font-bold text-slate-600 font-sans">Atacants (O):</span>
               <button
                 type="button"
                 onClick={() => {
@@ -614,12 +625,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   }
                 }}
                 disabled={pins.filter(p => p.type === 'attacker').length === 0}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Treure l'últim atacant"
               >
                 -
               </button>
-              <span className="w-4 text-center font-mono font-bold text-orange-400">
+              <span className="w-3 text-center font-mono font-bold text-orange-600 text-[9px]">
                 {pins.filter(p => p.type === 'attacker').length}
               </span>
               <button
@@ -640,7 +651,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   };
                   updateBoard({ pins: [...pins, newAtt] });
                 }}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Afegir nou atacant"
               >
                 +
@@ -648,8 +659,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             </div>
 
             {/* Defenders control */}
-            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-              <span className="text-[10px] font-bold text-slate-300 font-sans">Defensors (X):</span>
+            <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
+              <span className="text-[9px] font-bold text-slate-600 font-sans">Defensors (X):</span>
               <button
                 type="button"
                 onClick={() => {
@@ -670,12 +681,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   }
                 }}
                 disabled={pins.filter(p => p.type === 'defender').length === 0}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Treure l'últim defensor"
               >
                 -
               </button>
-              <span className="w-4 text-center font-mono font-bold text-sky-400">
+              <span className="w-3 text-center font-mono font-bold text-sky-600 text-[9px]">
                 {pins.filter(p => p.type === 'defender').length}
               </span>
               <button
@@ -696,7 +707,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   };
                   updateBoard({ pins: [...pins, newDef] });
                 }}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Afegir nou defensor"
               >
                 +
@@ -704,8 +715,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             </div>
 
             {/* Cones control */}
-            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-              <span className="text-[10px] font-bold text-slate-300 font-sans">Conus (▲):</span>
+            <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
+              <span className="text-[9px] font-bold text-slate-600 font-sans">Conus (▲):</span>
               <button
                 type="button"
                 onClick={() => {
@@ -716,12 +727,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   }
                 }}
                 disabled={pins.filter(p => p.type === 'cone').length === 0}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Treure un conus"
               >
                 -
               </button>
-              <span className="w-4 text-center font-mono font-bold text-yellow-500">
+              <span className="w-3 text-center font-mono font-bold text-yellow-600 text-[9px]">
                 {pins.filter(p => p.type === 'cone').length}
               </span>
               <button
@@ -737,7 +748,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   };
                   updateBoard({ pins: [...pins, newCone] });
                 }}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Afegir conus"
               >
                 +
@@ -745,39 +756,42 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             </div>
 
             {/* Ball control */}
-            <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-              <span className="text-[10px] font-bold text-slate-300 font-sans">Pilotes (🏀):</span>
+            <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
+              <span className="text-[9px] font-bold text-slate-600 font-sans">Pilotes (🏀):</span>
               <button
                 type="button"
                 onClick={() => {
-                  updateBoard({ pins: pins.filter(p => p.type !== 'ball') });
+                  const balls = pins.filter(p => p.type === 'ball');
+                  if (balls.length > 0) {
+                    const lastBall = balls[balls.length - 1];
+                    updateBoard({ pins: pins.filter(p => p.id !== lastBall.id) });
+                  }
                 }}
                 disabled={pins.filter(p => p.type === 'ball').length === 0}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Treure pilota"
               >
                 -
               </button>
-              <span className="w-4 text-center font-mono font-bold text-amber-500">
+              <span className="w-3 text-center font-mono font-bold text-amber-600 text-[9px]">
                 {pins.filter(p => p.type === 'ball').length}
               </span>
               <button
                 type="button"
                 onClick={() => {
                   const balls = pins.filter(p => p.type === 'ball');
-                  if (balls.length === 0) {
-                    const newBall: BoardPin = {
-                      id: 'ball',
-                      label: '🏀',
-                      x: 50,
-                      y: boardType === 'half' ? 84 : 75,
-                      type: 'ball'
-                    };
-                    updateBoard({ pins: [...pins, newBall] });
-                  }
+                  const defaultY = boardType === 'half' ? 84 : 75;
+                  const newBall: BoardPin = {
+                    id: balls.length === 0 ? 'ball' : 'ball_' + crypto.randomUUID(),
+                    label: '🏀',
+                    x: 48 + (balls.length % 5) * 4,
+                    y: defaultY + Math.floor(balls.length / 5) * 4,
+                    type: 'ball'
+                  };
+                  updateBoard({ pins: [...pins, newBall] });
                 }}
-                disabled={pins.filter(p => p.type === 'ball').length >= 1}
-                className="w-5 h-5 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:hover:bg-slate-800 text-white rounded font-bold flex items-center justify-center cursor-pointer transition"
+                disabled={pins.filter(p => p.type === 'ball').length >= 10}
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Afegir pilota"
               >
                 +
@@ -1034,7 +1048,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               let pinBg = '#ffffff'; // White circle with thin black border for attackers "O"
               let pinText = '#000000';
               let pinBorder = '#000000';
-              let radius = 3.5;
+              let radius = 1.7; // Reduced from 2.3 to make players more compact and elegant
 
               if (p.type === 'defender') {
                 pinBg = '#000000'; // Black circle with white label for defenders "X"
@@ -1043,12 +1057,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               } else if (p.type === 'ball') {
                 pinBg = '#ffffff';
                 pinText = '#000000';
-                radius = 2.2;
+                radius = 0.9; // Reduced from 1.4 for a much cleaner proportion
                 pinBorder = '#000000';
               } else if (p.type === 'cone') {
                 pinBg = '#555555';
                 pinText = '#ffffff';
-                radius = 2.5;
+                radius = 1.2; // Reduced from 1.7 to keep cones subtle
                 pinBorder = '#000000';
               }
 
@@ -1101,7 +1115,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                     x={p.x}
                     y={p.y}
                     dy="0.33em"
-                    fontSize={p.type === 'ball' ? '2.8px' : p.type === 'cone' ? '3.0px' : '3.6px'}
+                    fontSize={p.type === 'ball' ? '1.2px' : p.type === 'cone' ? '1.4px' : '1.8px'}
                     fontWeight="bold"
                     fontFamily="Inter, system-ui, sans-serif"
                     fill={pinText}
