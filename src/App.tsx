@@ -1038,7 +1038,7 @@ export default function App() {
       
       {/* GLOBAL GEOMETRIC BALANCE HEADER */}
       {!isSharedMobile && (
-        <header id="global-header" className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-8 shrink-0 relative z-10 select-none">
+        <header id="global-header" className={`${activeView === 'mobile' ? 'hidden md:flex' : 'flex'} h-16 bg-white border-b border-slate-200 items-center justify-between px-6 md:px-8 shrink-0 relative z-10 select-none`}>
           
           {/* Logo brand & Catalan basket descriptors */}
           <div className="flex items-center gap-3">
@@ -1150,7 +1150,7 @@ export default function App() {
       )}
 
       {/* MAIN LAYOUT PAGE CONTENT VIEWPORT */}
-      <main id="main-content-area" className={`flex-1 ${isSharedMobile ? 'p-0 max-w-md' : 'max-w-7xl px-4 py-6 md:px-8'} w-full mx-auto relative`}>
+      <main id="main-content-area" className={`flex-1 ${isSharedMobile || activeView === 'mobile' ? 'p-0 md:px-8 md:py-6 max-w-md md:max-w-7xl' : 'max-w-7xl px-4 py-6 md:px-8'} w-full mx-auto relative`}>
         
         {/* TAB WORKSPACE SEPARATION (planner, library database, mobile view slider) */}
         {activeView !== 'mobile' && (
@@ -1381,7 +1381,7 @@ export default function App() {
             onToggleFavorite={handleToggleFavoriteDrill}
           />
         ) : (
-          <div className={`${isSharedMobile ? 'p-0' : 'py-2'}`}>
+          <div className={`${isSharedMobile || activeView === 'mobile' ? 'p-0' : 'py-2'}`}>
             <MobileCourtView
               session={activeSession}
               drills={drills}

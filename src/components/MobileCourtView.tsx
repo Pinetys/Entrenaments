@@ -280,7 +280,7 @@ export default function MobileCourtView({
   const isSessionCompleted = completions.some(c => c.planId === activePlanId && c.sessionId === session.id);
 
   return (
-    <div id="mobile-court-view-layout" className="max-w-md mx-auto bg-slate-950 text-white min-h-[750px] flex flex-col rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden select-none">
+    <div id="mobile-court-view-layout" className="w-full max-w-md mx-auto bg-slate-950 text-white min-h-screen md:min-h-[750px] flex flex-col md:rounded-3xl md:border md:border-slate-800 md:shadow-2xl relative overflow-hidden select-none">
       
       {/* Network & Completion Control Center for fully supported offline session tracking */}
       <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between text-xs font-sans shrink-0 gap-3">
