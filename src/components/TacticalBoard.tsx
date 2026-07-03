@@ -7,7 +7,8 @@ import {
   Undo,
   Circle,
   PlaySquare,
-  Sparkles
+  Sparkles,
+  Eraser
 } from 'lucide-react';
 import { BoardState, BoardPin, BoardPath } from '../types';
 
@@ -100,7 +101,7 @@ const DEFAULT_PINS: BoardPin[] = [
 export default function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [boardType, setBoardType] = useState<'half' | 'full'>(boardState?.courtType || 'half');
-  const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble'>('move');
+  const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'eraser'>('move');
   const [activePinId, setActivePinId] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState<BoardPath | null>(null);
   const [pathToDeleteId, setPathToDeleteId] = useState<string | null>(null);
@@ -262,6 +263,20 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
     const coords = getCoordinates(e);
     if (!coords) return;
+
+    if (mode === 'eraser') {
+      if (targetPinId) {
+        e.stopPropagation();
+        const updatedPins = pins.filter(pin => pin.id !== targetPinId);
+        const finalPins = updatedPins.map(pin => 
+          pin.type === 'ball' && pin.anchoredTo === targetPinId 
+            ? { ...pin, anchoredTo: undefined } 
+            : pin
+        );
+        updateBoard({ pins: finalPins });
+      }
+      return;
+    }
 
     if (mode === 'move') {
       if (targetPinId) {
@@ -558,6 +573,19 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             >
               <Brush size={11} />
               Botar
+            </button>
+
+            <button
+              id="btn-mode-eraser"
+              type="button"
+              title="Goma d'esborrar (Clica a sobre d'un traç o d'un jugador per eliminar-lo)"
+              onClick={() => setMode('eraser')}
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'eraser' ? 'bg-rose-600 border-rose-600 text-white font-bold' : 'bg-white border-slate-200 text-rose-650 hover:bg-rose-50'
+              }`}
+            >
+              <Eraser size={11} />
+              Esborrador
             </button>
           </div>
 
@@ -982,14 +1010,19 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 {!readOnly && (
                   <path
                      d={dPath}
-                     stroke="transparent"
-                     strokeWidth={4.0}
+                     stroke={mode === 'eraser' ? 'rgba(239, 68, 68, 0.45)' : 'transparent'}
+                     strokeWidth={mode === 'eraser' ? 6.0 : 4.0}
                      fill="none"
                      style={{ pointerEvents: 'stroke' }}
-                     className="cursor-pointer hover:stroke-orange-500/20"
+                     className={`cursor-pointer ${mode === 'eraser' ? 'hover:stroke-red-650 animate-pulse' : 'hover:stroke-orange-500/20'}`}
                      onClick={(e) => {
                        e.stopPropagation();
-                       setPathToDeleteId(p.id);
+                       if (mode === 'eraser') {
+                         const updatedPaths = paths.filter(item => item.id !== p.id);
+                         updateBoard({ paths: updatedPaths });
+                       } else {
+                         setPathToDeleteId(p.id);
+                       }
                      }}
                      title="Clica per eliminar aquest traç"
                   />
@@ -1069,8 +1102,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               return (
                 <g
                   key={p.id}
-                  className={`select-none ${readOnly ? '' : 'cursor-grab active:cursor-grabbing'}`}
-                  title={readOnly ? undefined : "Doble clic per eliminar"}
+                  className={`select-none ${readOnly ? '' : mode === 'eraser' ? 'cursor-pointer hover:opacity-50 transition' : 'cursor-grab active:cursor-grabbing'}`}
+                  title={readOnly ? undefined : mode === 'eraser' ? "Clica per eliminar" : "Doble clic per eliminar"}
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     handleStart(e, p.id);

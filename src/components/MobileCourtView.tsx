@@ -295,18 +295,19 @@ export default function MobileCourtView({
           <button
             type="button"
             onClick={onOpenSync}
-            className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700/60 hover:bg-slate-700 text-[9px] font-bold text-orange-450 tracking-wider flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
+            className="px-2.5 py-1 rounded bg-slate-900 border border-emerald-500 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-widest flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
             title="Codi de Sincronització Actiu. Prem per gestionar."
           >
-            <span className={`w-1.5 h-1.5 rounded-full bg-orange-400 ${isSyncing ? 'animate-pulse' : ''}`}></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
             <span className="font-mono">{syncCode}</span>
           </button>
         ) : (
           <button
             type="button"
             onClick={onOpenSync}
-            className="px-2 py-0.5 rounded bg-orange-950/40 border border-orange-900/30 hover:bg-orange-950 text-[9px] font-bold text-orange-400 tracking-wider flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse"
+            className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-[9px] font-black text-white tracking-widest flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse border border-red-500 shadow-lg shadow-red-500/30"
           >
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
             <span>VINCULAR</span>
           </button>
         )}

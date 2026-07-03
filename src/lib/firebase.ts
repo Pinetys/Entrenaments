@@ -13,6 +13,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, "ai-studio-planificadordeba-e08a4fe8-1e14-4fe1-a1da-a05b4b2b9893");
 
+export interface CoachProfile {
+  name: string;
+  email: string;
+  team: string;
+  level: string;
+  avatar: string;
+}
+
 export interface SyncData {
   drills: any[];
   weeklyPlans: any[];
@@ -22,6 +30,7 @@ export interface SyncData {
   favoriteDrillIds: string[];
   updatedAt: string;
   syncCode: string;
+  coachProfile?: CoachProfile;
 }
 
 // Function to generate a random 6-character alphanumeric code

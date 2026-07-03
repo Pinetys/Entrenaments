@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
@@ -440,10 +440,25 @@ export default function DrillDatabase({
   onToggleFavorite
 }: DrillDatabaseProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'Todos' | 'Favoritos' | 'Defensa' | 'Atac' | 'Escalfament'>('Todos');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [isEditing, setIsEditing] = useState(false);
   const [editDrillId, setEditDrillId] = useState<string | null>(null);
   const [drillToDelete, setDrillToDelete] = useState<Drill | null>(null);
+
+  // Custom Category States
+  const [isCreatingCustomCategory, setIsCreatingCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
+
+  // Dynamically obtain all unique categories from current drills state
+  const uniqueCategoriesInDrills = useMemo(() => {
+    const cats = new Set<string>(['Atac', 'Defensa', 'Escalfament']);
+    drills.forEach(d => {
+      if (d.category) {
+        cats.add(d.category);
+      }
+    });
+    return Array.from(cats);
+  }, [drills]);
 
   // IA analyzing image states
   const [analyzing, setAnalyzing] = useState(false);
@@ -496,6 +511,8 @@ export default function DrillDatabase({
     setActivePhaseIndex(0);
     setIsEditing(false);
     setEditDrillId(null);
+    setIsCreatingCustomCategory(false);
+    setCustomCategoryName('');
   };
 
   const handleEditClick = (drill: Drill) => {
@@ -516,6 +533,15 @@ export default function DrillDatabase({
       : [drill.boardState || { paths: [], pins: [] }];
     setBoardStates(initialStates);
     setActivePhaseIndex(0);
+
+    const defaultCats = ['Atac', 'Defensa', 'Escalfament'];
+    if (!defaultCats.includes(drill.category)) {
+      setIsCreatingCustomCategory(true);
+      setCustomCategoryName(drill.category);
+    } else {
+      setIsCreatingCustomCategory(false);
+      setCustomCategoryName('');
+    }
     
     // Smooth scroll to top form
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -567,14 +593,8 @@ export default function DrillDatabase({
     if (selectedCategory === 'Favoritos') {
       return matchesSearch && favoriteDrillIds.includes(d.id);
     }
-    if (selectedCategory === 'Defensa') {
-      return matchesSearch && d.category === 'Defensa';
-    }
-    if (selectedCategory === 'Escalfament') {
-      return matchesSearch && d.category === 'Escalfament';
-    }
-    if (selectedCategory === 'Atac') {
-      return matchesSearch && d.category === 'Atac';
+    if (selectedCategory !== 'Todos') {
+      return matchesSearch && d.category === selectedCategory;
     }
     return matchesSearch; // 'Todos'
   });
@@ -745,14 +765,39 @@ export default function DrillDatabase({
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Categoria</label>
                   <select
                     id="form-drill-category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as DrillCategory)}
+                    value={isCreatingCustomCategory ? "CREATE_NEW" : category}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "CREATE_NEW") {
+                        setIsCreatingCustomCategory(true);
+                        setCategory('');
+                      } else {
+                        setIsCreatingCustomCategory(false);
+                        setCategory(val);
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-slate-250 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 transition bg-white font-medium"
                   >
-                    <option value="Atac">Atac</option>
-                    <option value="Defensa">Defensa</option>
-                    <option value="Escalfament">Escalfament</option>
+                    {uniqueCategoriesInDrills.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="CREATE_NEW">➕ Nova categoria...</option>
                   </select>
+                  {isCreatingCustomCategory && (
+                    <div className="mt-1.5">
+                      <input
+                        id="form-drill-custom-category-input"
+                        type="text"
+                        placeholder="Escriu la nova categoria"
+                        value={customCategoryName}
+                        onChange={(e) => {
+                          setCustomCategoryName(e.target.value);
+                          setCategory(e.target.value);
+                        }}
+                        className="w-full px-2.5 py-1.5 border border-slate-250 rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 transition font-semibold text-orange-600 bg-orange-50/50"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Duració (Mins)</label>
@@ -868,7 +913,7 @@ export default function DrillDatabase({
               <Filter size={11} />
               Filtrar:
             </span>
-            {(['Todos', 'Favoritos', 'Defensa', 'Atac', 'Escalfament'] as const).map((cat) => (
+            {['Todos', 'Favoritos', ...uniqueCategoriesInDrills].map((cat) => (
               <button
                 id={`chip-${cat}`}
                 key={cat}
@@ -880,7 +925,7 @@ export default function DrillDatabase({
                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                {cat === 'Todos' ? 'TOTS' : cat === 'Favoritos' ? '⭐ FAVORITS' : cat === 'Defensa' ? 'DEFENSA' : cat === 'Atac' ? 'ATAC' : 'ESCALFAMENT'}
+                {cat === 'Todos' ? 'TOTS' : cat === 'Favoritos' ? '⭐ FAVORITS' : cat.toUpperCase()}
               </button>
             ))}
           </div>

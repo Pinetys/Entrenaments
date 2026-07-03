@@ -1,4 +1,4 @@
-export type DrillCategory = 'Defensa' | 'Atac' | 'Escalfament';
+export type DrillCategory = string;
 
 export interface BoardPath {
   id: string;

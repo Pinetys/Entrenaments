@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calendar, 
   BookOpen, 
@@ -20,16 +20,27 @@ import {
   Check,
   RefreshCw,
   Cloud,
-  Database
+  Database,
+  Camera,
+  User
 } from 'lucide-react';
 import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion } from './types';
 import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
-import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud } from './lib/firebase';
+import CoachProfileModal from './components/CoachProfileModal';
+import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
+
+const DEFAULT_COACH_PROFILE: CoachProfile = {
+  name: "David Pino",
+  email: "dpinogay@gmail.com",
+  team: "Junior Masculí • Nivell A (FCBQ)",
+  level: "Júnior A • FCBQ",
+  avatar: "/src/assets/images/coach_avatar_profile_1782414908020.jpg"
+};
 
 const DEFAULT_SESSIONS = {
   dia1: { 
@@ -106,10 +117,25 @@ export default function App() {
 
   const [hasLoadedFromCloud, setHasLoadedFromCloud] = useState<boolean>(false);
 
+  const [coachProfile, setCoachProfile] = useState<CoachProfile>(() => {
+    try {
+      const stored = localStorage.getItem('basket_planner_coach_profile');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return DEFAULT_COACH_PROFILE;
+  });
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const lastSavedTimeStrRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('basket_planner_coach_profile', JSON.stringify(coachProfile));
+  }, [coachProfile]);
+
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [showSyncModal, setShowSyncModal] = useState<boolean>(false);
   const [inputSyncCode, setInputSyncCode] = useState<string>('');
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const [weeklyPlans, setWeeklyPlans] = useState<WeeklyPlan[]>(() => {
     try {
@@ -383,12 +409,15 @@ export default function App() {
             if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
             if (cloudData.completions) setCompletions(cloudData.completions);
             if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
+            if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
             
             setSyncCode(codeToUse);
             if (cloudData.updatedAt) {
               setLastSynced(new Date(cloudData.updatedAt));
+              lastSavedTimeStrRef.current = cloudData.updatedAt;
             } else {
               setLastSynced(new Date());
+              lastSavedTimeStrRef.current = null;
             }
             triggerToast('🔄 Dades sincronitzades correctament des del núvol!');
           } else {
@@ -425,18 +454,22 @@ export default function App() {
           selectedWeeklyPlanId,
           selectedSessionId,
           completions,
-          favoriteDrillIds
+          favoriteDrillIds,
+          coachProfile
         });
         setLastSynced(new Date(savedTimeStr));
-      } catch (e) {
+        lastSavedTimeStrRef.current = savedTimeStr;
+        setSyncError(null);
+      } catch (e: any) {
         console.warn('Auto-save to cloud failed:', e);
+        setSyncError(e?.message || String(e));
       } finally {
         setIsSyncing(false);
       }
     }, 2000); // reduced timeout to 2 seconds for faster cloud backup response
 
     return () => clearTimeout(timer);
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, syncCode, hasLoadedFromCloud]);
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, syncCode, hasLoadedFromCloud]);
 
   // Listen for real-time changes from the cloud (Firestore onSnapshot)
   useEffect(() => {
@@ -445,10 +478,10 @@ export default function App() {
     const unsubscribe = subscribeToCloud(syncCode, (cloudData) => {
       if (!cloudData) return;
 
-      // Check if cloudData is actually newer than our last synced or updated time
-      const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt) : null;
-      if (cloudUpdatedAt && lastSynced && cloudUpdatedAt.getTime() <= lastSynced.getTime()) {
-        // Cloud data is older or equal to what we have locally (or we just wrote it ourselves), skip updating
+      // Check if cloudData is actually newer than our last saved/synced updatedAt timestamp
+      // Comparing raw strings avoids any client clock skew or timezone offsets.
+      if (cloudData.updatedAt && lastSavedTimeStrRef.current && cloudData.updatedAt === lastSavedTimeStrRef.current) {
+        // This update is our own write (or we already applied it), skip updating to avoid local reset
         return;
       }
 
@@ -487,17 +520,25 @@ export default function App() {
       if (cloudData.favoriteDrillIds) {
         setFavoriteDrillIds(cloudData.favoriteDrillIds);
       }
-
-      if (cloudUpdatedAt) {
-        setLastSynced(cloudUpdatedAt);
-      } else {
-        setLastSynced(new Date());
+      if (cloudData.coachProfile) {
+        setCoachProfile(cloudData.coachProfile);
       }
-      triggerToast('🔄 Sincronització: Canvis actualitzats en temps real des del núvol!');
+
+      if (cloudData.updatedAt) {
+        setLastSynced(new Date(cloudData.updatedAt));
+        lastSavedTimeStrRef.current = cloudData.updatedAt;
+      } else {
+        const fallbackNow = new Date();
+        setLastSynced(fallbackNow);
+        lastSavedTimeStrRef.current = fallbackNow.toISOString();
+      }
+      
+      // Silent in-background synchronization (no continuous toasts to prevent UX noise)
+      console.log('🔄 Sincronització en segon pla completada correctament.');
     });
 
     return () => unsubscribe();
-  }, [syncCode, hasLoadedFromCloud, lastSynced, isSyncing]);
+  }, [syncCode, hasLoadedFromCloud, isSyncing]);
 
   // Real HTML5 Notification Scheduler to alert the coach 10 minutes prior to training session start
   useEffect(() => {
@@ -591,6 +632,7 @@ export default function App() {
         if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
         if (cloudData.completions) setCompletions(cloudData.completions);
         if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
+        if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
         
         setSyncCode(sanitizedCode);
         localStorage.setItem('basket_planner_sync_code', sanitizedCode);
@@ -598,8 +640,10 @@ export default function App() {
         setHasLoadedFromCloud(true);
         if (cloudData.updatedAt) {
           setLastSynced(new Date(cloudData.updatedAt));
+          lastSavedTimeStrRef.current = cloudData.updatedAt;
         } else {
           setLastSynced(new Date());
+          lastSavedTimeStrRef.current = null;
         }
         setShowSyncModal(false);
         triggerToast('🔄 Sincronització completada amb èxit! Dades recuperades.');
@@ -659,10 +703,13 @@ export default function App() {
         favoriteDrillIds
       });
       setLastSynced(new Date(savedTimeStr));
+      setSyncError(null);
       triggerToast('☁️ Dades desades al núvol correctament!');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      triggerToast('❌ Error al desar al núvol.');
+      const errMsg = e?.message || String(e);
+      setSyncError(errMsg);
+      triggerToast(`❌ Error al desar al núvol: ${errMsg.substring(0, 45)}...`);
     } finally {
       setIsSyncing(false);
     }
@@ -821,7 +868,7 @@ export default function App() {
         throw new Error('Codi de resposta no vàlid');
       }
 
-      const absoluteUrl = `${window.location.origin}${window.location.pathname}#plan=${resJson.code}`;
+      const absoluteUrl = `${window.location.origin}${window.location.pathname}?sync=${syncCode}#plan=${resJson.code}`;
       setShareUrl(absoluteUrl);
       setShowShareModal(true);
       setCopied(false);
@@ -851,7 +898,7 @@ export default function App() {
         };
         const jsonStr = JSON.stringify(dataToPack);
         const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-        const absoluteUrl = `${window.location.origin}${window.location.pathname}#plan=${base64Str}`;
+        const absoluteUrl = `${window.location.origin}${window.location.pathname}?sync=${syncCode}#plan=${base64Str}`;
         setShareUrl(absoluteUrl);
         setShowShareModal(true);
         setCopied(false);
@@ -1036,6 +1083,20 @@ export default function App() {
   return (
     <div id="app-workspace" className="min-h-screen bg-slate-150 text-slate-900 font-sans flex flex-col antialiased">
       
+      {/* MOBILE VIEW REDIRECT BANNER */}
+      {!isSharedMobile && activeView !== 'mobile' && (
+        <div id="mobile-redirect-banner" className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 md:hidden shrink-0 shadow-sm relative z-50">
+          <span>📱 Estàs fent servir un mòbil?</span>
+          <button
+            type="button"
+            onClick={() => setActiveView('mobile')}
+            className="bg-white text-orange-600 px-3 py-1 rounded-lg font-black uppercase text-[10px] shadow-sm tracking-wider hover:bg-orange-50 transition active:scale-95 cursor-pointer"
+          >
+            Obrir Modo Pista
+          </button>
+        </div>
+      )}
+      
       {/* GLOBAL GEOMETRIC BALANCE HEADER */}
       {!isSharedMobile && (
         <header id="global-header" className={`${activeView === 'mobile' ? 'hidden md:flex' : 'flex'} h-16 bg-white border-b border-slate-200 items-center justify-between px-6 md:px-8 shrink-0 relative z-10 select-none`}>
@@ -1053,7 +1114,7 @@ export default function App() {
                 <h1 className="text-base md:text-xl font-black tracking-tighter text-slate-900 leading-none">COACH PINETY</h1>
                 <span className="bg-orange-500/10 text-orange-600 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider hidden sm:inline-block">v1.2</span>
               </div>
-              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5 leading-none">Junior Masculí • Nivell A (FCBQ)</p>
+              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5 leading-none">{coachProfile.team}</p>
             </div>
           </div>
 
@@ -1113,9 +1174,15 @@ export default function App() {
 
             {/* User Profile Custom Avatar */}
             <div className="flex items-center gap-2 border-l border-slate-200 pl-2.5 md:pl-3.5">
-              <div className="relative group cursor-pointer">
+              <button
+                type="button"
+                id="btn-coach-profile-avatar"
+                onClick={() => setShowProfileModal(true)}
+                className="relative group cursor-pointer focus:outline-none"
+                title="Editar Perfil d'Entrenador"
+              >
                 <img
-                  src="/src/assets/images/coach_avatar_profile_1782414908020.jpg"
+                  src={coachProfile.avatar}
                   alt="Coach Profile Avatar"
                   referrerPolicy="no-referrer"
                   className="w-9 h-9 rounded-full object-cover border-2 border-orange-500/80 shadow-xs hover:border-orange-600 transition duration-200"
@@ -1123,14 +1190,15 @@ export default function App() {
                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
                 
                 {/* Profile dropdown tooltip on hover */}
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg py-2 px-3 hidden group-hover:block transition duration-250 z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg py-2 px-3 hidden group-hover:block transition duration-250 z-50 text-left">
                   <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Entrenador Actiu</p>
-                  <p className="text-xs font-bold text-slate-800 mt-0.5 truncate" title="dpinogay@gmail.com">David Pino</p>
-                  <p className="text-[9px] font-medium text-slate-500 mt-0.5 truncate">dpinogay@gmail.com</p>
+                  <p className="text-xs font-bold text-slate-800 mt-0.5 truncate" title={coachProfile.email}>{coachProfile.name}</p>
+                  <p className="text-[9px] font-medium text-slate-500 mt-0.5 truncate">{coachProfile.email}</p>
                   <div className="border-t border-slate-100 my-1.5" />
-                  <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded text-center">Júnior A • FCBQ</p>
+                  <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded text-center mb-1">{coachProfile.level}</p>
+                  <p className="text-[9px] text-center text-slate-400 hover:text-orange-500 transition font-bold uppercase tracking-wider mt-1">Prem per editar ✎</p>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
         </header>
@@ -1533,6 +1601,23 @@ export default function App() {
                   )}
                 </div>
 
+                {syncError && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-left space-y-1.5 mt-2">
+                    <span className="text-[10px] text-red-750 font-extrabold uppercase tracking-widest font-mono flex items-center gap-1">
+                      ⚠️ Alerta de Sincronització
+                    </span>
+                    <p className="text-[10px] text-red-650 leading-normal font-sans font-semibold">
+                      La connexió amb la base de dades no s'ha pogut establir o està offline:
+                    </p>
+                    <div className="bg-red-100/50 rounded p-1.5 font-mono text-[9px] text-red-800 break-all select-all">
+                      {syncError}
+                    </div>
+                    <p className="text-[9px] text-slate-500 leading-normal">
+                      💡 <strong>Consell:</strong> Comprova que tinguis connexió a internet al mòbil. L'aplicació continuarà funcionant correctament desant tot en local, i es sincronitzarà automàticament quan recuperi la connexió.
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 mt-2 pt-1 border-t border-amber-100/50">
                   <button
                     id="btn-force-save-cloud"
@@ -1599,6 +1684,19 @@ export default function App() {
             OK
           </button>
         </div>
+      )}
+
+      {/* FLOATING COACH PROFILE EDITOR POPUP */}
+      {showProfileModal && (
+        <CoachProfileModal
+          profile={coachProfile}
+          onSave={(updatedProfile) => {
+            setCoachProfile(updatedProfile);
+            setShowProfileModal(false);
+            triggerToast('✅ Canvis al perfil de l’entrenador actualitzats!');
+          }}
+          onClose={() => setShowProfileModal(false)}
+        />
       )}
 
       {/* FOOTER GENERAL BRANDING CREDITS */}
