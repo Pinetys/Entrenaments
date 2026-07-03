@@ -35,7 +35,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-rueda-11',
     title: "Roda d'11 FCBQ de Contraatac Continuat",
-    category: 'Atac',
+    category: 'Transició',
     concept: 'Contraatac Ràpid',
     duration: 12,
     objectives: [
@@ -95,7 +95,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-press-break',
     title: 'Sortida de Pressió 1-3-1 amb Connexió Vertical',
-    category: 'Atac',
+    category: 'Transició',
     concept: 'Sortida de Pressió',
     duration: 15,
     objectives: [
@@ -154,7 +154,7 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
   {
     id: 'drill-junior-transicion-3x2',
     title: '3x2 Continu amb Retorn en 2x1 (Transició d’Alt Nivell)',
-    category: 'Atac',
+    category: 'Transició',
     concept: 'Superioritat 3x2 / 2x1',
     duration: 15,
     objectives: [
@@ -440,7 +440,7 @@ export default function DrillDatabase({
   onToggleFavorite
 }: DrillDatabaseProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Tots');
   const [isEditing, setIsEditing] = useState(false);
   const [editDrillId, setEditDrillId] = useState<string | null>(null);
   const [drillToDelete, setDrillToDelete] = useState<Drill | null>(null);
@@ -451,7 +451,7 @@ export default function DrillDatabase({
 
   // Dynamically obtain all unique categories from current drills state
   const uniqueCategoriesInDrills = useMemo(() => {
-    const cats = new Set<string>(['Atac', 'Defensa', 'Escalfament']);
+    const cats = new Set<string>(['Atac', 'Defensa', 'Transició', 'Escalfament']);
     drills.forEach(d => {
       if (d.category) {
         cats.add(d.category);
@@ -590,13 +590,13 @@ export default function DrillDatabase({
   const filteredDrills = drills.filter(d => {
     const matchesSearch = d.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           d.description.toLowerCase().includes(searchQuery.toLowerCase());
-    if (selectedCategory === 'Favoritos') {
+    if (selectedCategory === 'Favorits') {
       return matchesSearch && favoriteDrillIds.includes(d.id);
     }
-    if (selectedCategory !== 'Todos') {
+    if (selectedCategory !== 'Tots') {
       return matchesSearch && d.category === selectedCategory;
     }
-    return matchesSearch; // 'Todos'
+    return matchesSearch; // 'Tots'
   });
 
   return (
@@ -913,7 +913,7 @@ export default function DrillDatabase({
               <Filter size={11} />
               Filtrar:
             </span>
-            {['Todos', 'Favoritos', ...uniqueCategoriesInDrills].map((cat) => (
+            {['Tots', 'Favorits', ...uniqueCategoriesInDrills].map((cat) => (
               <button
                 id={`chip-${cat}`}
                 key={cat}
@@ -925,7 +925,7 @@ export default function DrillDatabase({
                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                {cat === 'Todos' ? 'TOTS' : cat === 'Favoritos' ? '⭐ FAVORITS' : cat.toUpperCase()}
+                {cat === 'Tots' ? 'TOTS' : cat === 'Favorits' ? '⭐ FAVORITS' : cat.toUpperCase()}
               </button>
             ))}
           </div>

@@ -693,19 +693,20 @@ export default function MobileCourtView({
         {/* Drill Title block navigation */}
         {(() => {
           const rawCat = activeDrill.category || 'Atac';
-          const activeNormCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+          const activeNormCat = rawCat === 'Defensa' ? 'Defensa' : (rawCat === 'Transició' ? 'Transició' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac'));
           return (
-            <div className={`flex items-center justify-between bg-slate-900 border rounded-2xl p-4 shrink-0 shadow-sm transition-colors duration-300 ${
+            <div className={`flex items-center justify-between bg-slate-900 border-2 rounded-2xl p-5 shrink-0 shadow-lg transition-colors duration-300 ${
               activeNormCat === 'Atac' ? 'border-orange-500' :
-              activeNormCat === 'Defensa' ? 'border-rose-500' : 'border-emerald-500'
+              activeNormCat === 'Defensa' ? 'border-rose-500' :
+              activeNormCat === 'Transició' ? 'border-sky-500' : 'border-emerald-500'
             }`}>
               <button
                 id="btn-swipe-prev"
                 onClick={prevDrill}
                 disabled={safeActiveIndex === 0}
-                className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition"
+                className="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white disabled:opacity-10 cursor-pointer active:scale-95 transition flex items-center justify-center shrink-0"
               >
-                <ChevronLeft size={18} strokeWidth={2.5} />
+                <ChevronLeft size={22} strokeWidth={3} />
               </button>
 
               <div 
@@ -715,24 +716,27 @@ export default function MobileCourtView({
                   if (onPreviewDrill && orig) onPreviewDrill(orig);
                 }}
                 title="Veure el manual tàctic tipus llibre"
-                className="text-center min-w-0 flex-1 px-2 cursor-pointer group select-none active:scale-95 transition"
+                className="text-center min-w-0 flex-1 px-3 cursor-pointer group select-none active:scale-95 transition"
               >
-                <span className={`text-[9px] px-2 py-0.5 rounded-full text-white font-bold tracking-wider font-mono uppercase block w-max mx-auto mb-1 transition-colors ${
+                <span className={`text-[10px] px-2.5 py-1 rounded-full text-white font-extrabold tracking-wider font-mono uppercase block w-max mx-auto mb-1.5 transition-colors shadow-xs ${
                   activeNormCat === 'Atac' ? 'bg-orange-600' :
-                  activeNormCat === 'Defensa' ? 'bg-rose-600' : 'bg-emerald-600'
+                  activeNormCat === 'Defensa' ? 'bg-rose-600' :
+                  activeNormCat === 'Transició' ? 'bg-sky-600' : 'bg-emerald-600'
                 }`}>
                   Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′) • 📖 Ver manual
                 </span>
-                <h3 className="text-sm font-black text-white leading-snug underline hover:text-orange-400 decoration-dotted break-all whitespace-normal">{activeDrill.title}</h3>
+                <h3 className="text-base xs:text-lg font-black text-white tracking-tight leading-snug group-hover:text-orange-400 transition break-words whitespace-normal drop-shadow-sm uppercase">
+                  {activeDrill.title}
+                </h3>
               </div>
 
               <button
                 id="btn-swipe-next"
                 onClick={nextDrill}
                 disabled={safeActiveIndex === drillsInSession.length - 1}
-                className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition"
+                className="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white disabled:opacity-10 cursor-pointer active:scale-95 transition flex items-center justify-center shrink-0"
               >
-                <ChevronRight size={18} strokeWidth={2.5} />
+                <ChevronRight size={22} strokeWidth={3} />
               </button>
             </div>
           );
@@ -764,8 +768,8 @@ export default function MobileCourtView({
             )}
           </div>
         ) : (
-          <div id="mobile-tactical-container" className="space-y-2 relative">
-            <div className="flex items-center justify-between pl-1">
+          <div id="mobile-tactical-container" className="space-y-2.5 relative -mx-5 sm:mx-0">
+            <div className="flex items-center justify-between px-5 sm:px-0">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <span>Esquema de l'Exercici</span>
                 {activeBoardStates.length > 1 && (
@@ -793,7 +797,7 @@ export default function MobileCourtView({
 
             {/* Quick Slide Navigation Tabs */}
             {activeBoardStates.length > 1 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto py-1 select-none no-scrollbar">
+              <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-5 sm:px-0 select-none no-scrollbar">
                 {activeBoardStates.map((_, bIdx) => (
                   <button
                     key={bIdx}
@@ -931,12 +935,14 @@ export default function MobileCourtView({
         <div id="mobile-dots-indicator" className="py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-1.5 shrink-0">
           {drillsInSession.map((item, i) => {
             const rawCat = item.category || 'Atac';
-            const itemNormCat = rawCat === 'Defensa' ? 'Defensa' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac');
+            const itemNormCat = rawCat === 'Defensa' ? 'Defensa' : (rawCat === 'Transició' ? 'Transició' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac'));
             const colorClass = itemNormCat === 'Atac' 
               ? (safeActiveIndex === i ? 'bg-orange-500 ring-2 ring-orange-500 scale-125' : 'bg-orange-500/40')
               : itemNormCat === 'Defensa'
                 ? (safeActiveIndex === i ? 'bg-rose-500 ring-2 ring-rose-500 scale-125' : 'bg-rose-500/40')
-                : (safeActiveIndex === i ? 'bg-emerald-500 ring-2 ring-emerald-500 scale-125' : 'bg-emerald-500/40');
+                : itemNormCat === 'Transició'
+                  ? (safeActiveIndex === i ? 'bg-sky-500 ring-2 ring-sky-500 scale-125' : 'bg-sky-500/40')
+                  : (safeActiveIndex === i ? 'bg-emerald-500 ring-2 ring-emerald-500 scale-125' : 'bg-emerald-500/40');
             return (
               <button
                 key={i}

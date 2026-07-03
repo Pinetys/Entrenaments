@@ -478,7 +478,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   };
 
   return (
-    <div id="pizarra-tactica-seccion" className="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm w-full">
+    <div id="pizarra-tactica-seccion" className="flex flex-col bg-white border-y sm:border border-slate-250 rounded-none sm:rounded-2xl overflow-hidden shadow-md w-full">
       {/* Visual Controls Toolbar */}
       {!readOnly && (
         <div id="pizarra-toolbar" className="flex flex-wrap items-center justify-between gap-1.5 py-1 px-2.5 bg-slate-50 border-b border-slate-200 text-[10.5px]">
@@ -900,8 +900,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   viewBox="0 0 10 10"
                   refX="6.5"
                   refY="5"
-                  markerWidth="7"
-                  markerHeight="7"
+                  markerWidth="9"
+                  markerHeight="9"
                   orient="auto-start-reverse"
                 >
                   <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={hex} />
@@ -1030,7 +1030,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 <path
                   d={dPath}
                   stroke={p.color || '#000000'}
-                  strokeWidth={p.type === 'zigzag' ? 1.0 : 1.25}
+                  strokeWidth={p.type === 'zigzag' ? 1.4 : 1.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
@@ -1061,7 +1061,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                         idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`,
                       '')}
                   stroke={currentPath.color || '#000000'}
-                  strokeWidth={currentPath.type === 'zigzag' ? 1.0 : 1.25}
+                  strokeWidth={currentPath.type === 'zigzag' ? 1.4 : 1.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
@@ -1077,11 +1077,11 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           {pins
             .filter(p => boardType === 'full' || p.y >= 45 || p.type === 'cone')
             .map((p) => {
-              // High contrast vintage black and white styling (scaled down to fit court elegantly)
+              // High contrast vintage black and white styling (scaled up for high legibility)
               let pinBg = '#ffffff'; // White circle with thin black border for attackers "O"
               let pinText = '#000000';
               let pinBorder = '#000000';
-              let radius = 1.7; // Reduced from 2.3 to make players more compact and elegant
+              let radius = 2.4; // Scaled up from 1.7 for superb visibility
 
               if (p.type === 'defender') {
                 pinBg = '#000000'; // Black circle with white label for defenders "X"
@@ -1090,12 +1090,12 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               } else if (p.type === 'ball') {
                 pinBg = '#ffffff';
                 pinText = '#000000';
-                radius = 0.9; // Reduced from 1.4 for a much cleaner proportion
+                radius = 1.3; // Scaled up from 0.9 for better prominence
                 pinBorder = '#000000';
               } else if (p.type === 'cone') {
                 pinBg = '#555555';
                 pinText = '#ffffff';
-                radius = 1.2; // Reduced from 1.7 to keep cones subtle
+                radius = 1.8; // Scaled up from 1.2 to be easily noticeable
                 pinBorder = '#000000';
               }
 
@@ -1148,7 +1148,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                     x={p.x}
                     y={p.y}
                     dy="0.33em"
-                    fontSize={p.type === 'ball' ? '1.2px' : p.type === 'cone' ? '1.4px' : '1.8px'}
+                    fontSize={p.type === 'ball' ? '1.8px' : p.type === 'cone' ? '2.1px' : '2.5px'}
                     fontWeight="bold"
                     fontFamily="Inter, system-ui, sans-serif"
                     fill={pinText}
