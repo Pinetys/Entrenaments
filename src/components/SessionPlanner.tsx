@@ -1371,82 +1371,86 @@ export default function SessionPlanner({
                       <div 
                         onClick={() => onPreviewDrill(drill)}
                         title="Clica per veure en gran el manual tàctic"
-                        className="w-28 xs:w-32 sm:w-36 md:w-20 lg:w-24 xl:w-28 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
+                        className="w-20 xs:w-24 sm:w-28 md:w-20 lg:w-24 xl:w-28 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
                       >
                         <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                       </div>
 
-                      {/* Primary labels & titles */}
-                      <div className="min-w-0 flex-1 text-left">
-                        <div className="flex flex-wrap items-center gap-1 mb-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${colors.badgeClass}`}>
-                            {drill.category}
-                          </span>
-                          {drill.concept && (
-                            <span className={`px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${colors.conceptClass}`}>
-                              {drill.concept}
+                      {/* Primary labels, titles & buttons grouped in 1 spacious column */}
+                      <div className="min-w-0 flex-1 flex flex-col justify-between self-stretch text-left">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-1 mb-1.5">
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${colors.badgeClass}`}>
+                              {drill.category}
                             </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onToggleFavorite) onToggleFavorite(drill.id);
-                            }}
-                            className={`p-1 rounded-full transition cursor-pointer border-none bg-transparent hover:scale-110 ml-auto flex items-center justify-center ${
-                              favoriteDrillIds.includes(drill.id)
-                                ? 'text-amber-500'
-                                : 'text-slate-300 hover:text-amber-400'
-                            }`}
-                            title={favoriteDrillIds.includes(drill.id) ? 'Treure de preferits' : 'Marcar com a preferit'}
+                            {drill.concept && (
+                              <span className={`px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${colors.conceptClass}`}>
+                                {drill.concept}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onToggleFavorite) onToggleFavorite(drill.id);
+                              }}
+                              className={`p-1 rounded-full transition cursor-pointer border-none bg-transparent hover:scale-110 ml-auto flex items-center justify-center ${
+                                favoriteDrillIds.includes(drill.id)
+                                  ? 'text-amber-500'
+                                  : 'text-slate-300 hover:text-amber-400'
+                              }`}
+                              title={favoriteDrillIds.includes(drill.id) ? 'Treure de preferits' : 'Marcar com a preferit'}
+                            >
+                              <Star size={12} fill={favoriteDrillIds.includes(drill.id) ? 'currentColor' : 'none'} />
+                            </button>
+                            <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1">
+                              <Clock size={10} className="text-slate-400" />
+                              {drill.duration}′
+                            </span>
+                          </div>
+                          
+                          <h4 
+                            onClick={() => onPreviewDrill(drill)}
+                            title="Clica per veure el manual tàctic"
+                            className="text-xs sm:text-sm md:text-xs xl:text-sm font-black text-slate-900 uppercase tracking-tight leading-snug group-hover:text-orange-600 hover:underline cursor-pointer transition-colors break-words whitespace-normal"
                           >
-                            <Star size={12} fill={favoriteDrillIds.includes(drill.id) ? 'currentColor' : 'none'} />
-                          </button>
-                          <span className="text-[10px] text-slate-505 font-mono font-bold flex items-center gap-1">
-                            <Clock size={10} className="text-slate-400" />
-                            {drill.duration}′
-                          </span>
+                            {drill.title}
+                          </h4>
                         </div>
-                        <h4 
-                          onClick={() => onPreviewDrill(drill)}
-                          title="Clica per veure el manual tàctic"
-                          className="text-sm sm:text-base md:text-xs xl:text-sm font-black text-slate-900 uppercase tracking-tight leading-snug group-hover:text-orange-600 hover:underline cursor-pointer transition-colors break-words whitespace-normal"
-                        >
-                          {drill.title}
-                        </h4>
+
+                        {/* Action buttons inside the right column */}
+                        <div className="flex flex-row gap-1.5 mt-2.5">
+                          <button
+                            id={`btn-quick-add-${drill.id}`}
+                            onClick={() => {
+                              handleAddDrillToSession(drill.id, drillQuickNotes[drill.id]);
+                              // Clear the input after adding
+                              setDrillQuickNotes(prev => {
+                                const copy = { ...prev };
+                                copy[drill.id] = '';
+                                return copy;
+                              });
+                            }}
+                            type="button"
+                            className="px-2 py-1 rounded bg-orange-500 hover:bg-orange-600 transition text-[9px] font-black uppercase text-white flex items-center justify-center gap-1 cursor-pointer shadow-xs border-none flex-1"
+                          >
+                            <Plus size={10} strokeWidth={3} />
+                            {isAlreadyIn ? 'Afegir+' : 'Afegir'}
+                          </button>
+
+                          <button
+                            id={`btn-quick-delete-${drill.id}`}
+                            onClick={() => setDrillToDelete(drill)}
+                            type="button"
+                            title="Eliminar de la biblioteca de l'equip"
+                            className="px-1.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/50 transition text-[8px] font-bold uppercase flex items-center justify-center gap-1 cursor-pointer flex-1"
+                          >
+                            <Trash2 size={10} />
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
-
-                    <div className="flex flex-col gap-1 shrink-0">
-                      <button
-                        id={`btn-quick-add-${drill.id}`}
-                        onClick={() => {
-                          handleAddDrillToSession(drill.id, drillQuickNotes[drill.id]);
-                          // Clear the input after adding
-                          setDrillQuickNotes(prev => {
-                            const copy = { ...prev };
-                            copy[drill.id] = '';
-                            return copy;
-                          });
-                        }}
-                        type="button"
-                        className="px-2.5 py-1.5 rounded bg-orange-500 hover:bg-orange-600 transition text-[9px] font-black uppercase text-white flex items-center justify-center gap-1 cursor-pointer shadow-xs border-none"
-                      >
-                        <Plus size={10} strokeWidth={3} />
-                        {isAlreadyIn ? 'Afegir+' : 'Afegir'}
-                      </button>
-
-                      <button
-                        id={`btn-quick-delete-${drill.id}`}
-                        onClick={() => setDrillToDelete(drill)}
-                        type="button"
-                        title="Eliminar de la biblioteca de l'equip"
-                        className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/50 transition text-[8px] font-bold uppercase flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <Trash2 size={10} />
-                        Eliminar
-                      </button>
                     </div>
-                  </div>
 
                   {/* Optional Note / Custom written note beside tag info */}
                   <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded border border-slate-150">
