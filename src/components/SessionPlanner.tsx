@@ -27,20 +27,50 @@ import TacticalBoard from './TacticalBoard';
 export function getEnhancedSessionDrills(
   sessionDrills: { drillId: string; duration: number; notes?: string }[],
   allDrills: Drill[]
-) {
-  // First, filter out any manual virtual breaks from the drill reference list so we don't double count
-  const realDrillsRef = sessionDrills.filter(sd => 
-    sd.drillId !== 'virtual-hydration' && 
-    !sd.drillId.startsWith('virtual-hydration') &&
-    sd.drillId !== 'virtual-freethrows' && 
-    !sd.drillId.startsWith('virtual-freethrows')
-  );
+): any[] {
+  if (!sessionDrills || sessionDrills.length === 0) return [];
 
-  const M = realDrillsRef.length;
-  if (M === 0) return [];
+  return sessionDrills.map((sd, index) => {
+    const isHydration = sd.drillId === 'virtual-hydration' || sd.drillId.startsWith('virtual-hydration');
+    const isFreeThrows = sd.drillId === 'virtual-freethrows' || sd.drillId.startsWith('virtual-freethrows');
 
-  // Map each active real drill to its detailed form
-  const enhancedReal = realDrillsRef.map((sd, index) => {
+    if (isHydration) {
+      return {
+        ...sd,
+        id: `hydration-${index}`,
+        title: 'Descans d’Hidratació',
+        category: 'Físico' as DrillCategory,
+        concept: 'HIDRATACIÓ',
+        duration: sd.duration || 3,
+        setupInstructions: 'Tot l’equip corre a banquetes. Hidratació ràpida (90 segons) i retorn ràpid.',
+        description: 'Pausa de seguretat distribuïda per garantir la correcta hidratació durant la sessió.',
+        boardState: { paths: [], pins: [] },
+        objectives: ['Hidratació', 'Recuperació cardíaca'],
+        isVirtual: true,
+        virtualType: 'hydration' as const,
+        realIndex: index
+      };
+    }
+
+    if (isFreeThrows) {
+      return {
+        ...sd,
+        id: `freethrows-${index}`,
+        title: 'Tirs Lliures de Recuperació Activa',
+        category: 'Tiro' as DrillCategory,
+        concept: 'REC. ACTIVA',
+        duration: sd.duration || 4,
+        setupInstructions: 'Llançaments de lliures per l’equip (en parelles, 10 llançaments cadascun).',
+        description: 'Llançament de tirs lliures en condicions de fatiga acumulada simulada.',
+        boardState: { paths: [], pins: [] },
+        objectives: ['Sota fatiga extrema', 'Tècnica de tir lliure'],
+        isVirtual: true,
+        virtualType: 'freethrows' as const,
+        realIndex: index
+      };
+    }
+
+    // Regular drill
     const originalDrill = allDrills.find(d => d.id === sd.drillId);
     const drillDuration = sd.duration || originalDrill?.duration || 10;
     return {
@@ -60,93 +90,6 @@ export function getEnhancedSessionDrills(
       realIndex: index
     };
   });
-
-  // Calculate the index positions (0-indexed relative to real drills list) where we should trigger hydration
-  let h1 = -1;
-  let h2 = -1;
-  if (M === 1) {
-    h1 = 0; // Trigger before/after as handled in loop
-  } else if (M === 2) {
-    h1 = 0;
-    h2 = 1;
-  } else {
-    h1 = Math.floor((M - 1) / 3);
-    h2 = Math.floor(2 * (M - 1) / 3);
-    if (h2 === h1) {
-      h2 = Math.min(M - 1, h1 + 1);
-    }
-  }
-
-  const result: any[] = [];
-
-  // Helper builder for automatic hydration breaks
-  const createHydrationBlock = (index: number, partLabel: string) => ({
-    id: `auto-hydration-${index}`,
-    drillId: 'virtual-hydration-auto',
-    title: `Descans d’Hidratació (${partLabel})`,
-    category: 'Físico' as DrillCategory,
-    concept: 'HIDRATACIÓ',
-    duration: 3,
-    setupInstructions: 'Tot l’equip corre a banquetes. Hidratació ràpida (90 segons) i retorn ràpid.',
-    description: 'Pausa automàtica de seguretat distribuïda per garantir la correcta hidratació durant la sessió.',
-    notes: '',
-    boardState: { paths: [], pins: [] },
-    objectives: ['Hidratació', 'Recuperació cardíaca'],
-    isVirtual: true,
-    virtualType: 'hydration' as const,
-    realIndex: index
-  });
-
-  // Helper builder for automatic active-recovery free throws
-  const createFreeThrowsBlock = (index: number) => ({
-    id: `auto-freethrows-${index}`,
-    drillId: 'virtual-freethrows-auto',
-    title: 'Tirs Lliures de Recuperació Activa',
-    category: 'Tiro' as DrillCategory,
-    concept: 'REC. ACTIVA',
-    duration: 4,
-    setupInstructions: 'Llançaments de lliures per l’equip (en parelles, 10 llançaments cadascun).',
-    description: 'Llançament de tirs lliures en condicions de fatiga acumulada simulada.',
-    notes: '',
-    boardState: { paths: [], pins: [] },
-    objectives: ['Sota fatiga extrema', 'Tècnica de tir lliure'],
-    isVirtual: true,
-    virtualType: 'freethrows' as const,
-    realIndex: index
-  });
-
-  // For M == 1, insert first hydration break at the start of the session
-  if (M === 1) {
-    result.push(createHydrationBlock(0, 'Inici'));
-  }
-
-  enhancedReal.forEach((drill, i) => {
-    result.push(drill);
-
-    // Free throws every 2 active exercises (after drill 2, 4, 6, etc.), but not at the very end of session
-    if ((i + 1) % 2 === 0 && i < M - 1) {
-      result.push(createFreeThrowsBlock(i));
-    }
-
-    // Hydration twice per session
-    if (M === 1) {
-      result.push(createHydrationBlock(0, 'Final'));
-    } else if (M === 2) {
-      if (i === 0) {
-        result.push(createHydrationBlock(0, 'Part 1'));
-      } else if (i === 1) {
-        result.push(createHydrationBlock(1, 'Part 2'));
-      }
-    } else {
-      if (i === h1) {
-        result.push(createHydrationBlock(i, 'Part 1'));
-      } else if (i === h2) {
-        result.push(createHydrationBlock(i, 'Part 2'));
-      }
-    }
-  });
-
-  return result;
 }
 
 interface SessionPlannerProps {
@@ -192,6 +135,7 @@ export default function SessionPlanner({
   const [activeNoteEditId, setActiveNoteEditId] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [plannerCategoryFilter, setPlannerCategoryFilter] = useState<string>('Tots');
   const [plannerSearchQuery, setPlannerSearchQuery] = useState<string>('');
   const [drillQuickNotes, setDrillQuickNotes] = useState<Record<string, string>>({});
@@ -261,6 +205,11 @@ export default function SessionPlanner({
     });
   };
 
+  // Helper to translate visible real drill index to its actual index in session.drills
+  const getSessionDrillIndex = (realIdx: number): number => {
+    return realIdx;
+  };
+
   // Handle removing drill from session
   const handleRemoveDrill = (index: number) => {
     const updatedDrills = session.drills.filter((_, idx) => idx !== index);
@@ -298,16 +247,19 @@ export default function SessionPlanner({
 
   // Reorder drills in session
   const moveDrill = (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === session.drills.length - 1) return;
+    const numDrills = session.drills.length;
 
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === numDrills - 1) return;
+
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+
     const updatedDrills = [...session.drills];
     
     // Swap
     const temp = updatedDrills[index];
-    updatedDrills[index] = updatedDrills[targetIndex];
-    updatedDrills[targetIndex] = temp;
+    updatedDrills[index] = updatedDrills[targetIdx];
+    updatedDrills[targetIdx] = temp;
 
     onChangeSession({
       ...session,
@@ -319,6 +271,7 @@ export default function SessionPlanner({
   // Drag and drop reordering
   const handleDragReorder = (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
+
     const updatedDrills = [...session.drills];
     const [draggedItem] = updatedDrills.splice(fromIndex, 1);
     updatedDrills.splice(toIndex, 0, draggedItem);
@@ -328,6 +281,58 @@ export default function SessionPlanner({
       drills: updatedDrills,
       totalDuration: updatedDrills.reduce((acc, d) => acc + d.duration, 0)
     });
+  };
+
+  // Touch-drag support for mobile reordering
+  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+    const target = e.target as HTMLElement;
+    // Don't drag if touching interactive components
+    if (
+      target.closest('button') || 
+      target.closest('input') || 
+      target.closest('textarea') || 
+      target.closest('select') ||
+      target.closest('a')
+    ) {
+      return;
+    }
+    setDraggedIndex(index);
+    setDragOverIndex(index);
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (draggedIndex === null) return;
+    const touch = e.touches[0];
+    
+    // Determine the element under the user's finger
+    const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetItem = elem?.closest('[data-index]');
+    if (targetItem) {
+      const targetIndex = parseInt(targetItem.getAttribute('data-index') || '', 10);
+      if (!isNaN(targetIndex) && targetIndex !== dragOverIndex) {
+        setDragOverIndex(targetIndex);
+      }
+    }
+    
+    // Prevent screen scroll only if dragging from the dedicated grip handle or when dragging is active
+    if (touchStartY !== null) {
+      const diffY = Math.abs(touch.clientY - touchStartY);
+      if (diffY > 5) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      handleDragReorder(draggedIndex, dragOverIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setTouchStartY(null);
   };
 
   // Load Presets tailored specifically for Junior A Catalan League
@@ -757,7 +762,11 @@ export default function SessionPlanner({
                     <div
                       id={sd.id}
                       key={`${sd.drillId}-${realIdx}`}
+                      data-index={realIdx}
                       draggable={!isAuto}
+                      onTouchStart={isAuto ? undefined : (e) => handleTouchStart(e, realIdx)}
+                      onTouchMove={isAuto ? undefined : handleTouchMove}
+                      onTouchEnd={isAuto ? undefined : handleTouchEnd}
                       onDragStart={isAuto ? undefined : (e) => {
                         e.dataTransfer.setData('text/plain', String(realIdx));
                         e.dataTransfer.effectAllowed = 'move';
@@ -791,7 +800,7 @@ export default function SessionPlanner({
                             : 'border-l-emerald-500 bg-slate-50'
                       } ${
                         !isAuto && draggedIndex === realIdx 
-                          ? 'opacity-40 border-slate-300 border-dashed bg-slate-50' 
+                          ? 'opacity-40 border-slate-300 border-dashed bg-slate-50 touch-none' 
                           : !isAuto && dragOverIndex === realIdx 
                             ? 'border-orange-500 scale-[1.01] bg-orange-50/40' 
                             : 'bg-slate-50 border-slate-200 hover:border-orange-400'
@@ -802,7 +811,10 @@ export default function SessionPlanner({
                         {!isAuto ? (
                           <div 
                             title="Arrastra per reordenar"
-                            className="flex items-center text-slate-400 hover:text-orange-600 bg-slate-100 p-1.5 rounded transition cursor-grab active:cursor-grabbing shrink-0"
+                            className="flex items-center text-slate-400 hover:text-orange-600 bg-slate-100 p-1.5 rounded transition cursor-grab active:cursor-grabbing shrink-0 touch-none"
+                            onTouchStart={(e) => handleTouchStart(e, realIdx)}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
                           >
                             <GripVertical size={15} />
                           </div>
@@ -979,7 +991,11 @@ export default function SessionPlanner({
                   <div
                     id={`session-drill-item-${realIdx}`}
                     key={`${sd.drillId}-${realIdx}`}
+                    data-index={realIdx}
                     draggable
+                    onTouchStart={(e) => handleTouchStart(e, realIdx)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                     onDragStart={(e) => {
                       e.dataTransfer.setData('text/plain', String(realIdx));
                       e.dataTransfer.effectAllowed = 'move';
@@ -1005,7 +1021,7 @@ export default function SessionPlanner({
                     }}
                     className={`border border-l-4 rounded-md p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 transition shadow-xs group cursor-grab active:cursor-grabbing ${
                       draggedIndex === realIdx 
-                        ? 'opacity-40 border-slate-300 border-dashed bg-slate-50' 
+                        ? 'opacity-40 border-slate-300 border-dashed bg-slate-50 touch-none' 
                         : dragOverIndex === realIdx 
                           ? 'border-orange-500 scale-[1.01] bg-orange-50/40' 
                           : colors.cardClass
@@ -1015,7 +1031,10 @@ export default function SessionPlanner({
                       {/* Drag Grip Handle */}
                       <div 
                         title="Arrastra per reordenar"
-                        className="flex items-center text-slate-400 hover:text-orange-600 bg-slate-100 p-1.5 rounded transition cursor-grab active:cursor-grabbing shrink-0"
+                        className="flex items-center text-slate-400 hover:text-orange-600 bg-slate-100 p-1.5 rounded transition cursor-grab active:cursor-grabbing shrink-0 touch-none"
+                        onTouchStart={(e) => handleTouchStart(e, realIdx)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
                       >
                         <GripVertical size={15} />
                       </div>
@@ -1345,14 +1364,14 @@ export default function SessionPlanner({
                   <div
                     id={`quick-drill-item-${drill.id}`}
                     key={drill.id}
-                    className={`p-3 border rounded transition flex flex-col justify-between gap-2.5 group shadow-xs hover:shadow-2xs ${colors.cardClass}`}
+                    className={`p-3.5 border rounded-lg transition flex flex-col justify-between gap-3 group shadow-xs hover:shadow-md ${colors.cardClass}`}
                   >
                     <div className="flex items-start gap-3 w-full">
                       {/* Tactical Board Miniature Preview Graphic */}
                       <div 
                         onClick={() => onPreviewDrill(drill)}
                         title="Clica per veure en gran el manual tàctic"
-                        className="w-20 xs:w-24 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
+                        className="w-28 xs:w-32 sm:w-36 md:w-20 lg:w-24 xl:w-28 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
                       >
                         <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                       </div>
@@ -1368,34 +1387,34 @@ export default function SessionPlanner({
                               {drill.concept}
                             </span>
                           )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onToggleFavorite) onToggleFavorite(drill.id);
-                          }}
-                          className={`p-1 rounded-full transition cursor-pointer border-none bg-transparent hover:scale-110 ml-auto flex items-center justify-center ${
-                            favoriteDrillIds.includes(drill.id)
-                              ? 'text-amber-500'
-                              : 'text-slate-300 hover:text-amber-400'
-                          }`}
-                          title={favoriteDrillIds.includes(drill.id) ? 'Treure de preferits' : 'Marcar com a preferit'}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onToggleFavorite) onToggleFavorite(drill.id);
+                            }}
+                            className={`p-1 rounded-full transition cursor-pointer border-none bg-transparent hover:scale-110 ml-auto flex items-center justify-center ${
+                              favoriteDrillIds.includes(drill.id)
+                                ? 'text-amber-500'
+                                : 'text-slate-300 hover:text-amber-400'
+                            }`}
+                            title={favoriteDrillIds.includes(drill.id) ? 'Treure de preferits' : 'Marcar com a preferit'}
+                          >
+                            <Star size={12} fill={favoriteDrillIds.includes(drill.id) ? 'currentColor' : 'none'} />
+                          </button>
+                          <span className="text-[10px] text-slate-505 font-mono font-bold flex items-center gap-1">
+                            <Clock size={10} className="text-slate-400" />
+                            {drill.duration}′
+                          </span>
+                        </div>
+                        <h4 
+                          onClick={() => onPreviewDrill(drill)}
+                          title="Clica per veure el manual tàctic"
+                          className="text-sm sm:text-base md:text-xs xl:text-sm font-black text-slate-900 uppercase tracking-tight leading-snug group-hover:text-orange-600 hover:underline cursor-pointer transition-colors break-words whitespace-normal"
                         >
-                          <Star size={12} fill={favoriteDrillIds.includes(drill.id) ? 'currentColor' : 'none'} />
-                        </button>
-                        <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1">
-                          <Clock size={10} className="text-slate-400" />
-                          {drill.duration}′
-                        </span>
+                          {drill.title}
+                        </h4>
                       </div>
-                      <h4 
-                        onClick={() => onPreviewDrill(drill)}
-                        title="Clica per veure el manual tàctic"
-                        className="text-xs font-black text-slate-800 uppercase tracking-tight leading-snug group-hover:text-orange-600 hover:underline cursor-pointer transition-colors truncate"
-                      >
-                        {drill.title}
-                      </h4>
-                    </div>
 
                     <div className="flex flex-col gap-1 shrink-0">
                       <button
