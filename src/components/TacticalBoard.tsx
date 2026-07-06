@@ -1161,6 +1161,16 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 pinBorder = '#000000';
               }
 
+              // Offset ball slightly if it is anchored to or sits on top of a player so it doesn't cover their number
+              const isBallAnchored = p.type === 'ball' && (
+                !!p.anchoredTo || 
+                pins.some(other => (other.type === 'attacker' || other.type === 'defender') && Math.hypot(p.x - other.x, p.y - other.y) < 1.2)
+              );
+              const isCurrentlyDraggingBall = activePinId === p.id;
+              
+              const renderX = (isBallAnchored && !isCurrentlyDraggingBall) ? p.x + 1.8 : p.x;
+              const renderY = (isBallAnchored && !isCurrentlyDraggingBall) ? p.y - 1.8 : p.y;
+
               return (
                 <g
                   key={p.id}
@@ -1189,8 +1199,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   {/* Highlight ring for selected pin */}
                   {selectedPinId === p.id && (
                     <circle
-                      cx={p.x}
-                      cy={p.y}
+                      cx={renderX}
+                      cy={renderY}
                       r={radius + 1.2}
                       fill="none"
                       stroke="#ef4444"
@@ -1203,8 +1213,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                     <>
                       {/* Cone dropshadow (oval) */}
                       <ellipse
-                        cx={p.x}
-                        cy={p.y + radius * 0.9}
+                        cx={renderX}
+                        cy={renderY + radius * 0.9}
                         rx={radius * 1.3}
                         ry={radius * 0.4}
                         fill="#000000"
@@ -1213,9 +1223,9 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                       
                       {/* Cone base (dark orange heavy rubber bottom) */}
                       <path
-                        d={`M ${p.x - radius * 1.3} ${p.y + radius * 0.9} 
-                            L ${p.x + radius * 1.3} ${p.y + radius * 0.9} 
-                            A ${radius * 1.3} ${radius * 0.4} 0 0 1 ${p.x - radius * 1.3} ${p.y + radius * 0.9} Z`}
+                        d={`M ${renderX - radius * 1.3} ${renderY + radius * 0.9} 
+                            L ${renderX + radius * 1.3} ${renderY + radius * 0.9} 
+                            A ${radius * 1.3} ${radius * 0.4} 0 0 1 ${renderX - radius * 1.3} ${renderY + radius * 0.9} Z`}
                         fill="#c2410c"
                         stroke="#1e293b"
                         strokeWidth={0.3}
@@ -1223,9 +1233,9 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
                       {/* Main Triangle Body (Vibrant safety Orange) */}
                       <path
-                        d={`M ${p.x} ${p.y - radius * 1.2} 
-                            L ${p.x + radius * 0.95} ${p.y + radius * 0.8} 
-                            A ${radius * 0.95} ${radius * 0.3} 0 0 1 ${p.x - radius * 0.95} ${p.y + radius * 0.8} Z`}
+                        d={`M ${renderX} ${renderY - radius * 1.2} 
+                            L ${renderX + radius * 0.95} ${renderY + radius * 0.8} 
+                            A ${radius * 0.95} ${radius * 0.3} 0 0 1 ${renderX - radius * 0.95} ${renderY + radius * 0.8} Z`}
                         fill="#ea580c"
                         stroke="#1e293b"
                         strokeWidth={0.4}
@@ -1233,10 +1243,10 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
                       {/* White stripe in the middle (reflective tape) */}
                       <path
-                        d={`M ${p.x - radius * 0.35} ${p.y - radius * 0.2}
-                            L ${p.x + radius * 0.35} ${p.y - radius * 0.2}
-                            L ${p.x + radius * 0.6} ${p.y + radius * 0.3}
-                            L ${p.x - radius * 0.6} ${p.y + radius * 0.3} Z`}
+                        d={`M ${renderX - radius * 0.35} ${renderY - radius * 0.2}
+                            L ${renderX + radius * 0.35} ${renderY - radius * 0.2}
+                            L ${renderX + radius * 0.6} ${renderY + radius * 0.3}
+                            L ${renderX - radius * 0.6} ${renderY + radius * 0.3} Z`}
                         fill="#ffffff"
                         stroke="#1e293b"
                         strokeWidth={0.25}
@@ -1246,8 +1256,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                     <>
                       {/* Subtle dropshadow under standard pins */}
                       <circle
-                        cx={p.x}
-                        cy={p.y + 0.5}
+                        cx={renderX}
+                        cy={renderY + 0.5}
                         r={radius}
                         fill="#000000"
                         opacity={0.15}
@@ -1255,8 +1265,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
                       {/* Pin outer body ring */}
                       <circle
-                        cx={p.x}
-                        cy={p.y}
+                        cx={renderX}
+                        cy={renderY}
                         r={radius}
                         fill={pinBg}
                         stroke={pinBorder}
@@ -1265,8 +1275,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
                       {/* Labels on pins */}
                       <text
-                        x={p.x}
-                        y={p.y}
+                        x={renderX}
+                        y={renderY}
                         dy="0.33em"
                         fontSize={p.type === 'ball' ? '1.8px' : '2.5px'}
                         fontWeight="bold"
@@ -1307,16 +1317,16 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                       }}
                     >
                       <circle
-                        cx={p.x + radius + 1.0}
-                        cy={p.y - radius - 1.0}
+                        cx={renderX + radius + 1.0}
+                        cy={renderY - radius - 1.0}
                         r={1.2}
                         fill="#ef4444"
                         stroke="#ffffff"
                         strokeWidth={0.3}
                       />
                       <text
-                        x={p.x + radius + 1.0}
-                        y={p.y - radius - 1.0}
+                        x={renderX + radius + 1.0}
+                        y={renderY - radius - 1.0}
                         dy="0.33em"
                         fontSize="1.6px"
                         fontWeight="black"
