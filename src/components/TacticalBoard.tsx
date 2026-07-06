@@ -202,8 +202,22 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
     }
   }, [boardState?.courtType]);
 
-  const pins = boardState.pins || DEFAULT_PINS;
-  const paths = boardState.paths || [];
+  const rawPins = boardState.pins || DEFAULT_PINS;
+  const rawPaths = boardState.paths || [];
+
+  // Automatically normalize and unify paths so that old/incorrect exercises look perfectly clean and standardized
+  const paths = rawPaths.map(p => {
+    let color = p.color || '#eab308';
+    if (color === '#000000' || color === 'black') {
+      if (p.type === 'dotted') color = '#0ea5e9'; // Pass
+      else if (p.type === 'dashed') color = '#ef4444'; // Run/Defense
+      else if (p.type === 'zigzag') color = '#f97316'; // Dribble
+      else color = '#eab308'; // Cut/Attack
+    }
+    return { ...p, color };
+  });
+
+  const pins = rawPins;
 
   const updateBoard = (update: Partial<BoardState>) => {
     onChange({
@@ -302,15 +316,18 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
     } else {
       // Drawing mode
       e.preventDefault();
-      let color = '#000000'; // Black for official Catalan tactical manual
+      let color = '#eab308'; // Amber for attacker cuts/runs by default
       let type: 'solid' | 'dashed' | 'dotted' | 'zigzag' = 'solid';
 
       if (mode === 'draw_pass') {
         type = 'dotted';
+        color = '#0ea5e9'; // Blue for passes
       } else if (mode === 'draw_run') {
         type = 'dashed';
+        color = '#ef4444'; // Red for defenders or runs
       } else if (mode === 'draw_dribble') {
         type = 'zigzag';
+        color = '#f97316'; // Orange for dribbles
       }
 
       const newPath: BoardPath = {
@@ -1046,11 +1063,11 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 {!readOnly && (
                   <path
                      d={dPath}
-                     stroke={mode === 'eraser' ? 'rgba(239, 68, 68, 0.45)' : 'transparent'}
-                     strokeWidth={mode === 'eraser' ? 5.0 : 3.0}
+                     stroke={mode === 'eraser' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(0, 0, 0, 0.001)'}
+                     strokeWidth={8.0}
                      fill="none"
                      style={{ pointerEvents: 'stroke' }}
-                     className={`cursor-pointer ${mode === 'eraser' ? 'hover:stroke-red-650 animate-pulse' : 'hover:stroke-orange-500/20'}`}
+                     className={`cursor-pointer ${mode === 'eraser' ? 'hover:stroke-rose-650 animate-pulse' : 'hover:stroke-orange-500/10'}`}
                      onClick={(e) => {
                        e.stopPropagation();
                        if (mode === 'eraser') {
