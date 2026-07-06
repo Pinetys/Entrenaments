@@ -18,8 +18,8 @@ function getZigzagPath(points: { x: number; y: number }[]): string {
   const resampled: {x: number, y: number, nx: number, ny: number}[] = [];
   let accumulatedDist = 0;
   let nextTarget = 0;
-  const step = 2.0; // Wave width
-  const amplitude = 1.0; // Wave peak altitude (bote zig-zag)
+  const step = 1.2; // Wave width
+  const amplitude = 0.6; // Wave peak altitude (bote zig-zag)
   
   resampled.push({
     x: points[0].x,
@@ -934,10 +934,10 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   key={colorName}
                   id={`arrow-${colorName}`}
                   viewBox="0 0 10 10"
-                  refX="6.5"
+                  refX="6.0"
                   refY="5"
-                  markerWidth="9"
-                  markerHeight="9"
+                  markerWidth="7"
+                  markerHeight="7"
                   orient="auto-start-reverse"
                 >
                   <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={hex} />
@@ -1047,7 +1047,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   <path
                      d={dPath}
                      stroke={mode === 'eraser' ? 'rgba(239, 68, 68, 0.45)' : 'transparent'}
-                     strokeWidth={mode === 'eraser' ? 6.0 : 4.0}
+                     strokeWidth={mode === 'eraser' ? 5.0 : 3.0}
                      fill="none"
                      style={{ pointerEvents: 'stroke' }}
                      className={`cursor-pointer ${mode === 'eraser' ? 'hover:stroke-red-650 animate-pulse' : 'hover:stroke-orange-500/20'}`}
@@ -1075,7 +1075,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 <path
                   d={dPath}
                   stroke={p.color || '#000000'}
-                  strokeWidth={p.type === 'zigzag' ? 1.4 : 1.8}
+                  strokeWidth={p.type === 'zigzag' ? 0.6 : 0.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
@@ -1106,7 +1106,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                         idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`,
                       '')}
                   stroke={currentPath.color || '#000000'}
-                  strokeWidth={currentPath.type === 'zigzag' ? 1.4 : 1.8}
+                  strokeWidth={currentPath.type === 'zigzag' ? 0.6 : 0.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
