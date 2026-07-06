@@ -103,8 +103,21 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   const [boardType, setBoardType] = useState<'half' | 'full'>(boardState?.courtType || 'half');
   const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'eraser'>('move');
   const [activePinId, setActivePinId] = useState<string | null>(null);
+  const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState<BoardPath | null>(null);
   const [pathToDeleteId, setPathToDeleteId] = useState<string | null>(null);
+  
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    isDraggingRef.current = activePinId !== null;
+  }, [activePinId]);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setSelectedPinId(null);
+    }
+  }, [boardState]);
 
   // States for touch-based zoom & pan on mobile/desktop
   const [zoom, setZoom] = useState<number>(1);
@@ -282,6 +295,9 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       if (targetPinId) {
         e.stopPropagation();
         setActivePinId(targetPinId);
+        setSelectedPinId(targetPinId);
+      } else {
+        setSelectedPinId(null);
       }
     } else {
       // Drawing mode
@@ -625,9 +641,29 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       {/* Chip Management Panel */}
       {!readOnly && (
         <div id="pizarra-elements-panel" className="flex flex-wrap items-center justify-between gap-1.5 py-1 px-2.5 bg-slate-50 border-b border-slate-200 text-[10px] select-none">
-          <div className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
+          <div className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
             <span>⚙️</span>
             <span>Fitxes:</span>
+            {selectedPinId && (
+              <button
+                type="button"
+                onClick={() => {
+                  const updatedPins = pins.filter(p => p.id !== selectedPinId);
+                  const finalPins = updatedPins.map(pin => 
+                    pin.type === 'ball' && pin.anchoredTo === selectedPinId 
+                      ? { ...pin, anchoredTo: undefined } 
+                      : pin
+                  );
+                  updateBoard({ pins: finalPins });
+                  setSelectedPinId(null);
+                }}
+                className="ml-1 px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-sm text-[8px] font-black uppercase tracking-wider cursor-pointer flex items-center gap-0.5 transition active:scale-95"
+                title="Eliminar fitxa seleccionada"
+              >
+                <Trash2 size={8} />
+                <span>Borrar seleccionada</span>
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Attackers control */}
@@ -744,7 +780,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
             {/* Cones control */}
             <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
-              <span className="text-[9px] font-bold text-slate-600 font-sans">Conus (▲):</span>
+              <span className="text-[9px] font-bold text-orange-650 font-sans">Conus (Cone Taronja):</span>
               <button
                 type="button"
                 onClick={() => {
@@ -760,7 +796,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               >
                 -
               </button>
-              <span className="w-3 text-center font-mono font-bold text-yellow-600 text-[9px]">
+              <span className="w-3 text-center font-mono font-bold text-orange-650 text-[9px]">
                 {pins.filter(p => p.type === 'cone').length}
               </span>
               <button
@@ -1024,6 +1060,15 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                          setPathToDeleteId(p.id);
                        }
                      }}
+                     onTouchStart={(e) => {
+                       e.stopPropagation();
+                       if (mode === 'eraser') {
+                         const updatedPaths = paths.filter(item => item.id !== p.id);
+                         updateBoard({ paths: updatedPaths });
+                       } else {
+                         setPathToDeleteId(p.id);
+                       }
+                     }}
                      title="Clica per eliminar aquest traç"
                   />
                 )}
@@ -1124,38 +1169,147 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                     updateBoard({ pins: finalPins });
                   }}
                 >
-                  {/* Subtle dropshadow under pins */}
-                  <circle
-                    cx={p.x}
-                    cy={p.y + 0.5}
-                    r={radius}
-                    fill="#000000"
-                    opacity={0.15}
-                  />
+                  {/* Highlight ring for selected pin */}
+                  {selectedPinId === p.id && (
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={radius + 1.2}
+                      fill="none"
+                      stroke="#ef4444"
+                      strokeWidth={0.5}
+                      strokeDasharray="1, 1"
+                    />
+                  )}
 
-                  {/* Pin outer body ring */}
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={radius}
-                    fill={pinBg}
-                    stroke={pinBorder}
-                    strokeWidth={0.5}
-                  />
+                  {p.type === 'cone' ? (
+                    <>
+                      {/* Cone dropshadow (oval) */}
+                      <ellipse
+                        cx={p.x}
+                        cy={p.y + radius * 0.9}
+                        rx={radius * 1.3}
+                        ry={radius * 0.4}
+                        fill="#000000"
+                        opacity={0.25}
+                      />
+                      
+                      {/* Cone base (dark orange heavy rubber bottom) */}
+                      <path
+                        d={`M ${p.x - radius * 1.3} ${p.y + radius * 0.9} 
+                            L ${p.x + radius * 1.3} ${p.y + radius * 0.9} 
+                            A ${radius * 1.3} ${radius * 0.4} 0 0 1 ${p.x - radius * 1.3} ${p.y + radius * 0.9} Z`}
+                        fill="#c2410c"
+                        stroke="#1e293b"
+                        strokeWidth={0.3}
+                      />
 
-                  {/* Labels on pins */}
-                  <text
-                    x={p.x}
-                    y={p.y}
-                    dy="0.33em"
-                    fontSize={p.type === 'ball' ? '1.8px' : p.type === 'cone' ? '2.1px' : '2.5px'}
-                    fontWeight="bold"
-                    fontFamily="Inter, system-ui, sans-serif"
-                    fill={pinText}
-                    textAnchor="middle"
-                  >
-                    {p.type === 'attacker' ? `O${p.label}` : p.type === 'defender' ? `X${p.label}` : p.label}
-                  </text>
+                      {/* Main Triangle Body (Vibrant safety Orange) */}
+                      <path
+                        d={`M ${p.x} ${p.y - radius * 1.2} 
+                            L ${p.x + radius * 0.95} ${p.y + radius * 0.8} 
+                            A ${radius * 0.95} ${radius * 0.3} 0 0 1 ${p.x - radius * 0.95} ${p.y + radius * 0.8} Z`}
+                        fill="#ea580c"
+                        stroke="#1e293b"
+                        strokeWidth={0.4}
+                      />
+
+                      {/* White stripe in the middle (reflective tape) */}
+                      <path
+                        d={`M ${p.x - radius * 0.35} ${p.y - radius * 0.2}
+                            L ${p.x + radius * 0.35} ${p.y - radius * 0.2}
+                            L ${p.x + radius * 0.6} ${p.y + radius * 0.3}
+                            L ${p.x - radius * 0.6} ${p.y + radius * 0.3} Z`}
+                        fill="#ffffff"
+                        stroke="#1e293b"
+                        strokeWidth={0.25}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* Subtle dropshadow under standard pins */}
+                      <circle
+                        cx={p.x}
+                        cy={p.y + 0.5}
+                        r={radius}
+                        fill="#000000"
+                        opacity={0.15}
+                      />
+
+                      {/* Pin outer body ring */}
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={radius}
+                        fill={pinBg}
+                        stroke={pinBorder}
+                        strokeWidth={0.5}
+                      />
+
+                      {/* Labels on pins */}
+                      <text
+                        x={p.x}
+                        y={p.y}
+                        dy="0.33em"
+                        fontSize={p.type === 'ball' ? '1.8px' : '2.5px'}
+                        fontWeight="bold"
+                        fontFamily="Inter, system-ui, sans-serif"
+                        fill={pinText}
+                        textAnchor="middle"
+                      >
+                        {p.type === 'attacker' ? `O${p.label}` : p.type === 'defender' ? `X${p.label}` : p.label}
+                      </text>
+                    </>
+                  )}
+
+                  {/* Floating close/delete button for the selected pin */}
+                  {selectedPinId === p.id && !readOnly && (
+                    <g
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const updatedPins = pins.filter(pin => pin.id !== p.id);
+                        const finalPins = updatedPins.map(pin => 
+                          pin.type === 'ball' && pin.anchoredTo === p.id 
+                            ? { ...pin, anchoredTo: undefined } 
+                            : pin
+                        );
+                        updateBoard({ pins: finalPins });
+                        setSelectedPinId(null);
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        const updatedPins = pins.filter(pin => pin.id !== p.id);
+                        const finalPins = updatedPins.map(pin => 
+                          pin.type === 'ball' && pin.anchoredTo === p.id 
+                            ? { ...pin, anchoredTo: undefined } 
+                            : pin
+                        );
+                        updateBoard({ pins: finalPins });
+                        setSelectedPinId(null);
+                      }}
+                    >
+                      <circle
+                        cx={p.x + radius + 1.0}
+                        cy={p.y - radius - 1.0}
+                        r={1.2}
+                        fill="#ef4444"
+                        stroke="#ffffff"
+                        strokeWidth={0.3}
+                      />
+                      <text
+                        x={p.x + radius + 1.0}
+                        y={p.y - radius - 1.0}
+                        dy="0.33em"
+                        fontSize="1.6px"
+                        fontWeight="black"
+                        fill="#ffffff"
+                        textAnchor="middle"
+                      >
+                        ×
+                      </text>
+                    </g>
+                  )}
                 </g>
               );
             })}
