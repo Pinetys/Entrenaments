@@ -477,6 +477,7 @@ export default function DrillDatabase({
   const [boardState, setBoardState] = useState<BoardState>({ paths: [], pins: [] });
   const [boardStates, setBoardStates] = useState<BoardState[]>([{ paths: [], pins: [] }]);
   const [activePhaseIndex, setActivePhaseIndex] = useState<number>(0);
+  const [showDeletePhaseConfirm, setShowDeletePhaseConfirm] = useState<boolean>(false);
   const [isDrawingModeOnly, setIsDrawingModeOnly] = useState<boolean>(false);
 
   const handleCloneDrill = (drill: Drill) => {
@@ -664,7 +665,10 @@ export default function DrillDatabase({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setActivePhaseIndex(idx)}
+                      onClick={() => {
+                        setActivePhaseIndex(idx);
+                        setShowDeletePhaseConfirm(false);
+                      }}
                       className={`px-3 py-1 text-xs font-black uppercase tracking-wider rounded-sm cursor-pointer transition ${
                         activePhaseIndex === idx
                           ? 'bg-orange-500 text-white shadow-xs'
@@ -686,6 +690,7 @@ export default function DrillDatabase({
                       };
                       setBoardStates([...boardStates, clonedBS]);
                       setActivePhaseIndex(boardStates.length);
+                      setShowDeletePhaseConfirm(false);
                       if (triggerToast) triggerToast(`Grafisme ${boardStates.length + 1} afegit amb èxit.`);
                     }}
                     className="px-2.5 py-1 bg-slate-800 text-white hover:bg-slate-900 rounded-sm text-[10px] font-black uppercase tracking-wider ml-auto cursor-pointer"
@@ -693,20 +698,41 @@ export default function DrillDatabase({
                     + Afegir Grafisme
                   </button>
                   {boardStates.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm('Vols eliminar aquest grafisme de la llista d\'esquemes?')) {
-                          const updated = boardStates.filter((_, i) => i !== activePhaseIndex);
-                          setBoardStates(updated);
-                          setActivePhaseIndex(Math.max(0, activePhaseIndex - 1));
-                          if (triggerToast) triggerToast('S\'ha eliminat el grafisme actiu.');
-                        }
-                      }}
-                      className="px-2.5 py-1 bg-red-650 hover:bg-red-750 text-white rounded-sm text-[10px] font-black uppercase tracking-wider cursor-pointer"
-                    >
-                      ✘ Eliminar Grafisme
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {!showDeletePhaseConfirm ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowDeletePhaseConfirm(true)}
+                          className="px-2.5 py-1 bg-red-650 hover:bg-red-750 text-white rounded-sm text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                        >
+                          ✘ Eliminar Grafisme
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1 bg-rose-50 p-1 border border-rose-200 rounded-sm">
+                          <span className="text-[9px] text-rose-700 font-bold px-1 uppercase tracking-tight">Vols eliminar-lo?</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = boardStates.filter((_, i) => i !== activePhaseIndex);
+                              setBoardStates(updated);
+                              setActivePhaseIndex(Math.max(0, activePhaseIndex - 1));
+                              setShowDeletePhaseConfirm(false);
+                              if (triggerToast) triggerToast('S\'ha eliminat el grafisme actiu.');
+                            }}
+                            className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-sm text-[9px] font-black uppercase cursor-pointer"
+                          >
+                            Sí
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowDeletePhaseConfirm(false)}
+                            className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-sm text-[9px] font-black uppercase cursor-pointer"
+                          >
+                            No
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 

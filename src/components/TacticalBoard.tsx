@@ -947,39 +947,39 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
           {/* BOTTOM COURT (Main half court) */}
           {/* Area Paint with slight high-class technical dash background */}
-          <rect x="35" y="70" width="30" height="27" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
+          <rect x="35" y="77.5" width="30" height="19.5" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
           {/* Free throw circle top */}
-          <path d="M 35 70 A 15 15 0 0 1 65 70" fill="none" stroke="#000000" strokeWidth="0.8" />
+          <path d="M 35 77.5 A 15 8.2 0 0 1 65 77.5" fill="none" stroke="#000000" strokeWidth="0.8" />
           {/* Free throw circle bottom (dashed) */}
-          <path d="M 35 70 A 15 15 0 0 0 65 70" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
+          <path d="M 35 77.5 A 15 8.2 0 0 0 65 77.5" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
           {/* Backboard & Rim */}
-          <line x1="42" y1="92" x2="58" y2="92" stroke="#000000" strokeWidth="1.0" />
-          <line x1="50" y1="92" x2="50" y2="94.5" stroke="#000000" strokeWidth="1.0" />
-          <circle cx="50" cy="89.5" r="2.5" fill="none" stroke="#000000" strokeWidth="1.0" /> {/* Rim */}
+          <line x1="44" y1="93" x2="56" y2="93" stroke="#000000" strokeWidth="1.0" />
+          <line x1="50" y1="93" x2="50" y2="97" stroke="#000000" strokeWidth="1.0" />
+          <circle cx="50" cy="91.2" r="1.8" fill="none" stroke="#000000" strokeWidth="1.0" /> {/* Rim */}
 
           {/* Three point line (International / FIBA compliant scale) */}
-          <path d="M 3 83.5 L 9.5 83.5 A 40.5 40.5 0 0 0 90.5 83.5 L 97 83.5" fill="none" stroke="#000000" strokeWidth="0.8" />
+          <path d="M 8.5 97 L 8.5 86.5 A 41.5 22.5 0 0 1 91.5 86.5 L 91.5 97" fill="none" stroke="#000000" strokeWidth="0.8" />
           {/* Restricted area arc */}
-          <path d="M 44.5 90 A 5.5 5.5 0 0 1 55.5 90" fill="none" stroke="#000000" strokeWidth="0.7" />
+          <path d="M 43.5 91.2 A 6.5 4.0 0 0 1 56.5 91.2" fill="none" stroke="#000000" strokeWidth="0.7" />
 
           {/* TOP COURT */}
           {boardType === 'full' && (
             <g>
               {/* Restricted area with classic paint stain */}
-              <rect x="35" y="3" width="30" height="27" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
+              <rect x="35" y="3" width="30" height="19.5" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
               {/* Free throw circle bottom */}
-              <path d="M 35 30 A 15 15 0 0 0 65 30" fill="none" stroke="#000000" strokeWidth="0.8" />
+              <path d="M 35 22.5 A 15 8.2 0 0 0 65 22.5" fill="none" stroke="#000000" strokeWidth="0.8" />
               {/* Free throw circle top (dashed) */}
-              <path d="M 35 30 A 15 15 0 0 1 65 30" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
+              <path d="M 35 22.5 A 15 8.2 0 0 1 65 22.5" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
               {/* Backboard & Rim */}
-              <line x1="42" y1="8" x2="58" y2="8" stroke="#000000" strokeWidth="1.0" />
-              <line x1="50" y1="8" x2="50" y2="5.5" stroke="#000000" strokeWidth="1.0" />
-              <circle cx="50" cy="10.5" r="2.5" fill="none" stroke="#000000" strokeWidth="1.0" />
+              <line x1="44" y1="7" x2="56" y2="7" stroke="#000000" strokeWidth="1.0" />
+              <line x1="50" y1="7" x2="50" y2="3" stroke="#000000" strokeWidth="1.0" />
+              <circle cx="50" cy="8.8" r="1.8" fill="none" stroke="#000000" strokeWidth="1.0" />
 
               {/* Three point line */}
-              <path d="M 3 16.5 L 9.5 16.5 A 40.5 40.5 0 0 1 90.5 16.5 L 97 16.5" fill="none" stroke="#000000" strokeWidth="0.8" />
+              <path d="M 8.5 3 L 8.5 13.5 A 41.5 22.5 0 0 0 91.5 13.5 L 91.5 3" fill="none" stroke="#000000" strokeWidth="0.8" />
               {/* Restricted area arc */}
-              <path d="M 44.5 10 A 5.5 5.5 0 0 0 55.5 10" fill="none" stroke="#000000" strokeWidth="0.7" />
+              <path d="M 43.5 8.8 A 6.5 4.0 0 0 0 56.5 8.8" fill="none" stroke="#000000" strokeWidth="0.7" />
             </g>
           )}
 

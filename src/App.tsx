@@ -266,6 +266,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [previewDrill, setPreviewDrill] = useState<Drill | null>(null);
+  const [planIdToDelete, setPlanIdToDelete] = useState<string | null>(null);
 
   // Completions list with localStorage persistence
   const [completions, setCompletions] = useState<SessionCompletion[]>(() => {
@@ -975,16 +976,22 @@ export default function App() {
 
   const handleDeleteWeeklyPlan = (planId: string) => {
     if (weeklyPlans.length <= 1) {
-      alert('Sempre has de tenir almenys una planificació activa a la pantalla.');
+      triggerToast('Sempre has de tenir almenys una planificació activa a la pantalla.');
       return;
     }
     const planToDelete = weeklyPlans.find(p => p.id === planId);
     if (!planToDelete) return;
 
-    if (confirm(`Estàs completament segur que vols eliminar definitivament la planificació "${planToDelete.name}"?\nTots els seus entrenaments i observacions es perdran.`)) {
+    setPlanIdToDelete(planId);
+  };
+
+  const confirmDeleteWeeklyPlan = () => {
+    if (!planIdToDelete) return;
+    const planToDelete = weeklyPlans.find(p => p.id === planIdToDelete);
+    if (planToDelete) {
       setWeeklyPlans(prev => {
-        const remainingPlans = prev.filter(p => p.id !== planId);
-        if (selectedWeeklyPlanId === planId) {
+        const remainingPlans = prev.filter(p => p.id !== planIdToDelete);
+        if (selectedWeeklyPlanId === planIdToDelete) {
           const fallbackPlan = remainingPlans[0];
           setSelectedWeeklyPlanId(fallbackPlan.id);
         }
@@ -992,6 +999,7 @@ export default function App() {
       });
       triggerToast(`Planificació "${planToDelete.name}" eliminada correctament.`);
     }
+    setPlanIdToDelete(null);
   };
 
   // Plan scheduler callbacks
@@ -1664,6 +1672,41 @@ export default function App() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* FLOATING CONFIRM PLAN DELETE MODAL */}
+      {planIdToDelete && (() => {
+        const planToDelete = weeklyPlans.find(p => p.id === planIdToDelete);
+        return (
+          <div id="delete-plan-modal-backdrop" className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50 backdrop-blur-xs select-none">
+            <div className="bg-[#fdfbf7] border-2 border-slate-200 rounded-3xl shadow-2xl p-6 max-w-sm w-full relative space-y-4 text-center animate-in fade-in zoom-in duration-150">
+              <span className="text-3xl block">⚠️</span>
+              <h3 className="text-base font-black text-slate-800 uppercase tracking-wider">Eliminar planificació de temporada?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                Estàs completament segur que vols eliminar definitivament la planificació <span className="text-rose-600 font-extrabold">"{planToDelete?.name}"</span>?<br/>
+                Tots els seus entrenaments i observacions es perdran per sempre.
+              </p>
+              <div className="flex items-center gap-3 justify-center pt-2">
+                <button
+                  type="button"
+                  id="btn-confirm-delete-plan-yes"
+                  onClick={confirmDeleteWeeklyPlan}
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-xs"
+                >
+                  Sí, eliminar
+                </button>
+                <button
+                  type="button"
+                  id="btn-confirm-delete-plan-no"
+                  onClick={() => setPlanIdToDelete(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                >
+                  No, mantenir
+                </button>
+              </div>
             </div>
           </div>
         );

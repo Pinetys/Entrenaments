@@ -141,6 +141,8 @@ export default function SessionPlanner({
   const [drillQuickNotes, setDrillQuickNotes] = useState<Record<string, string>>({});
   const [showDuplicateDropdown, setShowDuplicateDropdown] = useState(false);
   const [drillToDelete, setDrillToDelete] = useState<Drill | null>(null);
+  const [showClearSessionConfirm, setShowClearSessionConfirm] = useState(false);
+  const [duplicateTargetSession, setDuplicateTargetSession] = useState<{ sourceId: string; targetId: string; targetNum: number; drillsCount: number } | null>(null);
 
   // State for show print preview mode
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -394,12 +396,18 @@ export default function SessionPlanner({
   };
 
   const clearSession = () => {
-    if (confirm('¿Quieres vaciar completamente todo el plan de entrenamiento seleccionado?')) {
-      onChangeSession({
-        ...session,
-        drills: [],
-        totalDuration: 0
-      });
+    setShowClearSessionConfirm(true);
+  };
+
+  const confirmClearSession = () => {
+    onChangeSession({
+      ...session,
+      drills: [],
+      totalDuration: 0
+    });
+    setShowClearSessionConfirm(false);
+    if (triggerToast) {
+      triggerToast('🧹 S\'ha buidat completament la sessió d\'entrenament.');
     }
   };
 
@@ -509,12 +517,16 @@ export default function SessionPlanner({
                               key={target.id}
                               onClick={() => {
                                 if (drillsCount > 0) {
-                                  if (!confirm(`S'eliminaran els ${drillsCount} exercicis actuals de la "Sessió ${target.num}". Vols prosseguir?`)) {
-                                    return;
-                                  }
+                                  setDuplicateTargetSession({
+                                    sourceId: session.id,
+                                    targetId: target.id,
+                                    targetNum: target.num,
+                                    drillsCount
+                                  });
+                                } else {
+                                  onDuplicateSession(session.id, target.id);
+                                  setShowDuplicateDropdown(false);
                                 }
-                                onDuplicateSession(session.id, target.id);
-                                setShowDuplicateDropdown(false);
                               }}
                               className="w-full text-left px-2 py-1 bg-white hover:bg-orange-50 font-medium text-slate-700 border border-slate-100 hover:border-orange-100 flex items-center justify-between text-xs transition cursor-pointer rounded"
                             >
@@ -1914,6 +1926,72 @@ export default function SessionPlanner({
               <button
                 type="button"
                 onClick={() => setDrillToDelete(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
+              >
+                Cancel·lar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM CONFIRMATION DIALOG FOR CLEAR SESSION */}
+      {showClearSessionConfirm && (
+        <div className="fixed inset-0 bg-slate-950/75 flex items-center justify-center p-4 z-50 backdrop-blur-xs select-none">
+          <div className="bg-[#fdfbf7] border border-slate-100 rounded-3xl shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in fade-in zoom-in duration-150 text-center">
+            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-2xl">🧹</span>
+            </div>
+            <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Buidar Sessió?</h3>
+            <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+              Vols buidar completament tot el plan d'entrenament seleccionat? Tots els exercicis programats es trauran d'aquesta sessió.
+            </p>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={confirmClearSession}
+                className="flex-1 py-2.5 bg-rose-650 hover:bg-rose-750 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
+              >
+                Sí, buidar
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowClearSessionConfirm(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
+              >
+                Cancel·lar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM CONFIRMATION DIALOG FOR SESSION DUPLICATION OVERWRITE */}
+      {duplicateTargetSession && (
+        <div className="fixed inset-0 bg-slate-950/75 flex items-center justify-center p-4 z-50 backdrop-blur-xs select-none">
+          <div className="bg-[#fdfbf7] border border-slate-100 rounded-3xl shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in fade-in zoom-in duration-150 text-center">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Sobreescriure Sessió {duplicateTargetSession.targetNum}?</h3>
+            <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+              S'eliminaran els <span className="text-rose-650 font-bold">{duplicateTargetSession.drillsCount} exercicis</span> actuals de la "Sessió {duplicateTargetSession.targetNum}" per duplicar aquesta sessió. Vols prosseguir?
+            </p>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onDuplicateSession(duplicateTargetSession.sourceId, duplicateTargetSession.targetId);
+                  setDuplicateTargetSession(null);
+                  setShowDuplicateDropdown(false);
+                }}
+                className="flex-1 py-2.5 bg-rose-650 hover:bg-rose-750 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
+              >
+                Sí, sobreescriure
+              </button>
+              <button
+                type="button"
+                onClick={() => setDuplicateTargetSession(null)}
                 className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
               >
                 Cancel·lar
