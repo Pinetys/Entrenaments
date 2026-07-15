@@ -126,6 +126,7 @@ export default function App() {
   });
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const lastSavedTimeStrRef = useRef<string | null>(null);
+  const lastSeenStateStringRef = useRef<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem('basket_planner_coach_profile', JSON.stringify(coachProfile));
@@ -355,6 +356,35 @@ export default function App() {
   const [mobilePairingCode, setMobilePairingCode] = useState<string | null>(null);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
 
+  const latestStateRef = useRef<{
+    drills: Drill[];
+    weeklyPlans: WeeklyPlan[];
+    selectedWeeklyPlanId: string;
+    selectedSessionId: string;
+    completions: any[];
+    favoriteDrillIds: string[];
+    coachProfile: CoachProfile;
+  }>({
+    drills: [],
+    weeklyPlans: [],
+    selectedWeeklyPlanId: '',
+    selectedSessionId: '',
+    completions: [],
+    favoriteDrillIds: [],
+    coachProfile: DEFAULT_COACH_PROFILE
+  });
+
+  // Keep latestStateRef updated on every render
+  latestStateRef.current = {
+    drills,
+    weeklyPlans,
+    selectedWeeklyPlanId,
+    selectedSessionId,
+    completions,
+    favoriteDrillIds,
+    coachProfile
+  };
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -391,19 +421,16 @@ export default function App() {
       loadFromCloud(codeToUse)
         .then(cloudData => {
           if (cloudData) {
-            setDrills(prevLocal => {
-              const cloudDrills = cloudData.drills || [];
-              if (cloudDrills.length === 0) return prevLocal;
-              
-              // MERGE: Keep any locally added custom drills that are not in the cloud
-              const merged = [...cloudDrills];
-              prevLocal.forEach(localDrill => {
-                if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
-                  merged.push(localDrill);
-                }
-              });
-              return merged;
+            const cloudDrills = cloudData.drills || [];
+            const localDrills = latestStateRef.current.drills;
+            const mergedDrills = [...cloudDrills];
+            localDrills.forEach(localDrill => {
+              if (localDrill.isCustom && !mergedDrills.some(cd => cd.id === localDrill.id)) {
+                mergedDrills.push(localDrill);
+              }
             });
+
+            setDrills(mergedDrills);
 
             if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
             if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
@@ -420,6 +447,17 @@ export default function App() {
               setLastSynced(new Date());
               lastSavedTimeStrRef.current = null;
             }
+
+            lastSeenStateStringRef.current = JSON.stringify({
+              drills: mergedDrills,
+              weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans : latestStateRef.current.weeklyPlans,
+              selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
+              selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
+              completions: cloudData.completions || latestStateRef.current.completions,
+              favoriteDrillIds: cloudData.favoriteDrillIds || latestStateRef.current.favoriteDrillIds,
+              coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
+            });
+
             triggerToast('🔄 Dades sincronitzades correctament des del núvol!');
           } else {
             // Document doesn't exist yet, we will save the current data for it
@@ -446,20 +484,35 @@ export default function App() {
   useEffect(() => {
     if (!hasLoadedFromCloud || !syncCode) return;
 
+    const currentState = {
+      drills,
+      weeklyPlans,
+      selectedWeeklyPlanId,
+      selectedSessionId,
+      completions,
+      favoriteDrillIds,
+      coachProfile
+    };
+    const currentStateString = JSON.stringify(currentState);
+
+    // If local state hasn't changed relative to what was last saved or loaded from the cloud, SKIP saving!
+    if (lastSeenStateStringRef.current === currentStateString) {
+      return;
+    }
+
+    // Initialize lastSeenStateStringRef on first mutation check if it is somehow empty
+    if (!lastSeenStateStringRef.current) {
+      lastSeenStateStringRef.current = currentStateString;
+      return;
+    }
+
     const timer = setTimeout(async () => {
       setIsSyncing(true);
       try {
-        const savedTimeStr = await saveToCloud(syncCode, {
-          drills,
-          weeklyPlans,
-          selectedWeeklyPlanId,
-          selectedSessionId,
-          completions,
-          favoriteDrillIds,
-          coachProfile
-        });
+        const savedTimeStr = await saveToCloud(syncCode, currentState);
         setLastSynced(new Date(savedTimeStr));
         lastSavedTimeStrRef.current = savedTimeStr;
+        lastSeenStateStringRef.current = currentStateString;
         setSyncError(null);
       } catch (e: any) {
         console.warn('Auto-save to cloud failed:', e);
@@ -486,24 +539,20 @@ export default function App() {
         return;
       }
 
-      // If we are actively saving (isSyncing is true), let's skip to avoid overwrite loops
-      if (isSyncing) return;
+      // Update local state from cloud using the latest non-stale state from latestStateRef
+      const currentLocalDrills = latestStateRef.current.drills;
+      let mergedDrills = currentLocalDrills;
 
-      // Update local state from cloud
       if (cloudData.drills && cloudData.drills.length > 0) {
-        setDrills(prevLocal => {
-          const cloudDrills = cloudData.drills || [];
-          if (cloudDrills.length === 0) return prevLocal;
-          
-          // MERGE: Keep any locally added custom drills that are not in the cloud
-          const merged = [...cloudDrills];
-          prevLocal.forEach(localDrill => {
-            if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
-              merged.push(localDrill);
-            }
-          });
-          return merged;
+        const cloudDrills = cloudData.drills || [];
+        const merged = [...cloudDrills];
+        currentLocalDrills.forEach(localDrill => {
+          if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
+            merged.push(localDrill);
+          }
         });
+        mergedDrills = merged;
+        setDrills(merged);
       }
 
       if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
@@ -533,13 +582,26 @@ export default function App() {
         setLastSynced(fallbackNow);
         lastSavedTimeStrRef.current = fallbackNow.toISOString();
       }
+
+      // Important: Update lastSeenStateStringRef to the exact applied state to block redundant auto-saves
+      const appliedState = {
+        drills: mergedDrills,
+        weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans : latestStateRef.current.weeklyPlans,
+        selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
+        selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
+        completions: cloudData.completions || latestStateRef.current.completions,
+        favoriteDrillIds: cloudData.favoriteDrillIds || latestStateRef.current.favoriteDrillIds,
+        coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
+      };
+      
+      lastSeenStateStringRef.current = JSON.stringify(appliedState);
       
       // Silent in-background synchronization (no continuous toasts to prevent UX noise)
       console.log('🔄 Sincronització en segon pla completada correctament.');
     });
 
     return () => unsubscribe();
-  }, [syncCode, hasLoadedFromCloud, isSyncing]);
+  }, [syncCode, hasLoadedFromCloud]);
 
   // Real HTML5 Notification Scheduler to alert the coach 10 minutes prior to training session start
   useEffect(() => {
@@ -614,19 +676,16 @@ export default function App() {
     try {
       const cloudData = await loadFromCloud(sanitizedCode);
       if (cloudData) {
-        setDrills(prevLocal => {
-          const cloudDrills = cloudData.drills || [];
-          if (cloudDrills.length === 0) return prevLocal;
-          
-          // MERGE: Keep any locally added custom drills that are not in the cloud
-          const merged = [...cloudDrills];
-          prevLocal.forEach(localDrill => {
-            if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
-              merged.push(localDrill);
-            }
-          });
-          return merged;
+        const cloudDrills = cloudData.drills || [];
+        const localDrills = latestStateRef.current.drills;
+        const mergedDrills = [...cloudDrills];
+        localDrills.forEach(localDrill => {
+          if (localDrill.isCustom && !mergedDrills.some(cd => cd.id === localDrill.id)) {
+            mergedDrills.push(localDrill);
+          }
         });
+
+        setDrills(mergedDrills);
 
         if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
         if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
@@ -646,6 +705,17 @@ export default function App() {
           setLastSynced(new Date());
           lastSavedTimeStrRef.current = null;
         }
+
+        lastSeenStateStringRef.current = JSON.stringify({
+          drills: mergedDrills,
+          weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans : latestStateRef.current.weeklyPlans,
+          selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
+          selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
+          completions: cloudData.completions || latestStateRef.current.completions,
+          favoriteDrillIds: cloudData.favoriteDrillIds || latestStateRef.current.favoriteDrillIds,
+          coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
+        });
+
         setShowSyncModal(false);
         triggerToast('🔄 Sincronització completada amb èxit! Dades recuperades.');
       } else {
