@@ -100,6 +100,40 @@ const DEFAULT_PINS: BoardPin[] = [
   { id: 'coach1', label: 'E', x: 8, y: 85, type: 'coach' },
 ];
 
+function getPointAtProgress(points: { x: number; y: number }[], t: number): { x: number; y: number } {
+  if (points.length === 0) return { x: 50, y: 50 };
+  if (points.length === 1) return points[0];
+  if (t <= 0) return points[0];
+  if (t >= 1) return points[points.length - 1];
+
+  const segmentLengths: number[] = [];
+  let totalLength = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const dist = Math.hypot(points[i+1].x - points[i].x, points[i+1].y - points[i].y);
+    segmentLengths.push(dist);
+    totalLength += dist;
+  }
+
+  if (totalLength === 0) return points[0];
+
+  const targetDist = t * totalLength;
+  let accumulated = 0;
+  for (let i = 0; i < segmentLengths.length; i++) {
+    const len = segmentLengths[i];
+    if (accumulated + len >= targetDist) {
+      const segmentT = (targetDist - accumulated) / len;
+      const p1 = points[i];
+      const p2 = points[i+1];
+      return {
+        x: p1.x + (p2.x - p1.x) * segmentT,
+        y: p1.y + (p2.y - p1.y) * segmentT
+      };
+    }
+    accumulated += len;
+  }
+  return points[points.length - 1];
+}
+
 export default function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [boardType, setBoardType] = useState<'half' | 'full'>(boardState?.courtType || 'half');
@@ -109,6 +143,56 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   const [currentPath, setCurrentPath] = useState<BoardPath | null>(null);
   const [pathToDeleteId, setPathToDeleteId] = useState<string | null>(null);
   
+  // Tactical Animation States
+  const [isPlayingAnimation, setIsPlayingAnimation] = useState(false);
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  const startTacticalAnimation = () => {
+    setIsPlayingAnimation(true);
+    setAnimationProgress(0);
+    startTimeRef.current = performance.now();
+    
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    
+    const animate = (time: number) => {
+      if (!startTimeRef.current) return;
+      const elapsed = time - startTimeRef.current;
+      const duration = 2400; // 2.4s for full play
+      const progress = Math.min(elapsed / duration, 1);
+      
+      setAnimationProgress(progress);
+      
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        setIsPlayingAnimation(false);
+      }
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  const stopTacticalAnimation = () => {
+    setIsPlayingAnimation(false);
+    setAnimationProgress(0);
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
   const isDraggingRef = useRef(false);
 
   useEffect(() => {
@@ -952,6 +1036,34 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
       {/* SVG Canvas Board */}
       <div className={`relative w-full ${boardType === 'full' ? 'aspect-square' : 'aspect-[100/52]'} bg-white cursor-crosshair overflow-hidden touch-none select-none border border-slate-300`}>
+        {/* Play Animation Overlay Button */}
+        {paths.length > 0 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isPlayingAnimation) {
+                stopTacticalAnimation();
+              } else {
+                startTacticalAnimation();
+              }
+            }}
+            className="absolute top-2.5 right-2.5 bg-slate-900/95 border border-orange-500/40 text-white hover:bg-slate-800 rounded-xl px-3 py-1.5 text-[10.5px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-xl active:scale-95 transition z-10 cursor-pointer"
+          >
+            {isPlayingAnimation ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                <span>Aturar Animació</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={11} className="text-amber-400 animate-pulse" />
+                <span>Animar Trajectòries</span>
+              </>
+            )}
+          </button>
+        )}
+
         {/* Custom Confirmation Overlay for Path Deletion */}
         {pathToDeleteId && (
           <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
@@ -1172,6 +1284,65 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   markerEnd={`url(#arrow-${markerId})`}
                   style={{ pointerEvents: 'none' }}
                 />
+
+                {/* ANIMATED PULSING PLAYER AND PASSING BALL PATH TRAJECTORIES */}
+                {(() => {
+                  if (!isPlayingAnimation) return null;
+                  const animPt = getPointAtProgress(p.points, animationProgress);
+                  if (!animPt) return null;
+
+                  return (
+                    <g style={{ pointerEvents: 'none' }}>
+                      {/* Outer ping halo */}
+                      <circle
+                        cx={animPt.x}
+                        cy={animPt.y}
+                        r={p.type === 'dotted' ? 2.5 : 3.5}
+                        fill={p.color || '#eab308'}
+                        opacity={0.35}
+                        className="animate-pulse"
+                      />
+                      
+                      {p.type === 'dotted' ? (
+                        // Dotted lines represent a high speed basketball pass!
+                        <text
+                          x={animPt.x}
+                          y={animPt.y}
+                          dy="0.32em"
+                          fontSize="3.6px"
+                          textAnchor="middle"
+                        >
+                          🏀
+                        </text>
+                      ) : (
+                        // Solid/dashed/zigzag represent cuts, runs and dribbles
+                        <g>
+                          <circle
+                            cx={animPt.x}
+                            cy={animPt.y}
+                            r={1.3}
+                            fill={p.color || '#eab308'}
+                            stroke="#ffffff"
+                            strokeWidth={0.35}
+                            className="shadow-md"
+                          />
+                          {p.type === 'zigzag' && (
+                            // Add a mini ball next to a dribbling player
+                            <text
+                              x={animPt.x + 1.6}
+                              y={animPt.y - 1.2}
+                              dy="0.3em"
+                              fontSize="1.8px"
+                              textAnchor="middle"
+                            >
+                              🏀
+                            </text>
+                          )}
+                        </g>
+                      )}
+                    </g>
+                  );
+                })()}
               </g>
             );
           })}

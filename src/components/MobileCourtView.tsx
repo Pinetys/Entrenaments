@@ -94,12 +94,80 @@ export default function MobileCourtView({
   // Active diagram navigation inside exercises
   const [activeBoardIndex, setActiveBoardIndex] = useState(0);
 
+  // Intensity stopwatch and effort peak tracking states
+  const [intensityElapsed, setIntensityElapsed] = useState(0);
+  const [intensityTimerRunning, setIntensityTimerRunning] = useState(false);
+  const [selectedIntensityLevel, setSelectedIntensityLevel] = useState<number>(3);
+  const [intensityPeaks, setIntensityPeaks] = useState<Record<string, { peakTime: string; intensityLabel: string; level: number }>>({});
+  const [toast, setToast] = useState<string | null>(null);
+
+  const triggerLocalToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => {
+      setToast((prev) => prev === msg ? null : prev);
+    }, 2500);
+  };
+
+  // Load registered intensity peaks on session change
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`basket_planner_intensity_peaks_${session.id}`);
+      if (stored) {
+        setIntensityPeaks(JSON.parse(stored));
+      } else {
+        setIntensityPeaks({});
+      }
+    } catch (e) {
+      console.warn("Failed to load intensity peaks from localStorage", e);
+    }
+    setIntensityElapsed(0);
+    setIntensityTimerRunning(false);
+  }, [session.id]);
+
+  // Propagate main timer execution to intensity stopwatch automatically
+  useEffect(() => {
+    setIntensityTimerRunning(timerRunning);
+  }, [timerRunning]);
+
+  const handleMarkPeakEffort = () => {
+    const peakTimeStr = formatTime(intensityElapsed);
+    const labelMap: Record<number, string> = {
+      1: 'Baix 🍃',
+      2: 'Moderat 🟡',
+      3: 'Alta Intensitat 🟠',
+      4: 'Molt Alta (Llàctic) 🔴',
+      5: 'Màxim Esforç (Pic) 💀'
+    };
+    
+    const newPeak = {
+      peakTime: peakTimeStr,
+      intensityLabel: labelMap[selectedIntensityLevel] || 'Alta',
+      level: selectedIntensityLevel
+    };
+
+    const updated = {
+      ...intensityPeaks,
+      [activeDrill.id]: newPeak
+    };
+
+    setIntensityPeaks(updated);
+    localStorage.setItem(`basket_planner_intensity_peaks_${session.id}`, JSON.stringify(updated));
+    triggerLocalToast(`🔥 Pic d'esforç registrat a les ${peakTimeStr}!`);
+    playSynthesizedWhistle();
+  };
+
   // Active training drill resolving with physical water breaks and active shooting loops
   const drillsInSession = getEnhancedSessionDrills(session.drills, drills);
 
   // Safely clamp activeDrillIndex to ensure no index out of bounds crashes
   const safeActiveIndex = Math.min(Math.max(0, activeDrillIndex), Math.max(0, drillsInSession.length - 1));
   const activeDrill = drillsInSession[safeActiveIndex];
+
+  // Sync intensity timers when transitioning between active drills
+  useEffect(() => {
+    setIntensityElapsed(0);
+    setIntensityTimerRunning(timerRunning);
+  }, [safeActiveIndex]);
 
   // Extract all available diagrams/phases for the active drill
   const activeDrillAny = activeDrill as any;
@@ -234,10 +302,14 @@ export default function MobileCourtView({
           return prev - 1;
         });
       }
+
+      if (intensityTimerRunning) {
+        setIntensityElapsed((prev) => prev + 1);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timerRunning, sessionTimerRunning, restTimerRunning, activeDrillIndex]);
+  }, [timerRunning, sessionTimerRunning, restTimerRunning, activeDrillIndex, intensityTimerRunning]);
 
   if (drillsInSession.length === 0) {
     return (
@@ -742,6 +814,147 @@ export default function MobileCourtView({
           );
         })()}
 
+        {/* INTENSITY MONITORING & PEAK EFFORT CONTROL */}
+        {!activeDrill.isVirtual && (
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-orange-500/20 rounded-2xl p-4.5 space-y-3 shadow-xl relative overflow-hidden">
+            {/* Decorative background pulse glow */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm animate-pulse">🔥</span>
+                <div>
+                  <h4 className="text-[10px] uppercase font-extrabold text-orange-400 tracking-wider font-mono">
+                    Control d'Intensitat i Esforç
+                  </h4>
+                  <span className="text-[9px] text-slate-400 block -mt-0.5">
+                    Registra el pic màxim de rendiment actiu
+                  </span>
+                </div>
+              </div>
+              
+              {/* Status indicator */}
+              {intensityPeaks[activeDrill.id] ? (
+                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-[8px] font-bold font-mono tracking-wide animate-pulse">
+                  ⚡ PIC ENREGISTRAT
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full text-[8px] font-bold font-mono tracking-wide">
+                  SENSE MARCAR
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              {/* Counting stopwatch */}
+              <div className="flex flex-col">
+                <span className="text-[8px] uppercase font-bold text-slate-400 tracking-wider font-mono">Temps de Treball Actiu</span>
+                <div className="flex items-baseline gap-1.5 mt-0.5">
+                  <span className="text-3xl font-black font-mono tracking-tighter text-white">
+                    {formatTime(intensityElapsed)}
+                  </span>
+                  <span className="text-[9px] text-slate-500 font-bold font-mono uppercase">Cronòmetre</span>
+                </div>
+              </div>
+
+              {/* Manual stopwatch override controls */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIntensityTimerRunning(!intensityTimerRunning)}
+                  className={`p-2 rounded-xl transition active:scale-95 flex items-center justify-center cursor-pointer ${
+                    intensityTimerRunning ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  }`}
+                  title={intensityTimerRunning ? "Pausar cronòmetre d'intensitat" : "Iniciar cronòmetre d'intensitat"}
+                >
+                  {intensityTimerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIntensityElapsed(0);
+                    setIntensityTimerRunning(false);
+                  }}
+                  className="p-2 bg-slate-850 hover:bg-slate-800 text-slate-450 hover:text-slate-200 rounded-xl transition active:scale-95 cursor-pointer flex items-center justify-center"
+                  title="Reiniciar cronòmetre d'intensitat"
+                >
+                  <RotateCcw size={12} />
+                </button>
+              </div>
+            </div>
+
+            {/* Intensity Level selector */}
+            <div className="space-y-1.5 bg-slate-950/40 p-2.5 rounded-xl border border-slate-850">
+              <div className="flex items-center justify-between text-[9px] font-sans font-bold uppercase tracking-wider">
+                <span className="text-slate-400">Nivell de pic previst:</span>
+                <span className="text-orange-400 font-extrabold font-mono">
+                  {selectedIntensityLevel === 1 && '🟢 BAIX (Regeneratiu)'}
+                  {selectedIntensityLevel === 2 && '🟡 MODERAT (Aeròbic)'}
+                  {selectedIntensityLevel === 3 && '🟠 ALTA INTENSITAT'}
+                  {selectedIntensityLevel === 4 && '🔴 MOLT ALTA (Llàctic)'}
+                  {selectedIntensityLevel === 5 && '💀 MÀXIM ESFORÇ (Pic)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 justify-between">
+                {[1, 2, 3, 4, 5].map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setSelectedIntensityLevel(lvl)}
+                    className={`flex-1 py-1 text-[10px] font-black rounded-lg transition-all duration-150 border active:scale-95 cursor-pointer ${
+                      selectedIntensityLevel === lvl
+                        ? 'bg-orange-500 text-slate-950 border-orange-400 font-black scale-[1.03] shadow-md shadow-orange-500/10'
+                        : 'bg-slate-900 border-slate-850 text-slate-400 hover:bg-slate-800 hover:text-slate-250'
+                    }`}
+                  >
+                    {lvl} {lvl === 5 ? '🔥' : lvl === 1 ? '🍃' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mark Peak Effort Trigger Button */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={handleMarkPeakEffort}
+                className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-orange-500/15 hover:shadow-orange-500/25"
+              >
+                <span>🔥 MARCAR PIC D'ESFORÇ EXERCICI</span>
+              </button>
+            </div>
+
+            {/* Recorded Peak details */}
+            {intensityPeaks[activeDrill.id] && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl px-3.5 py-2 text-xs flex items-center justify-between text-orange-200 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">⏱️</span>
+                  <div>
+                    <span className="text-[9px] text-slate-400 block font-bold uppercase tracking-wider leading-none">Pic d'esforç registrat</span>
+                    <span className="text-[11px] font-semibold mt-0.5 block">
+                      Assolit al minut <strong className="font-black text-orange-400 font-mono text-xs">{intensityPeaks[activeDrill.id].peakTime}</strong> amb intensitat <strong className="font-extrabold text-white">{intensityPeaks[activeDrill.id].intensityLabel}</strong>.
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = { ...intensityPeaks };
+                    delete updated[activeDrill.id];
+                    setIntensityPeaks(updated);
+                    localStorage.setItem(`basket_planner_intensity_peaks_${session.id}`, JSON.stringify(updated));
+                    triggerLocalToast("🗑️ Pic d'esforç esborrat.");
+                  }}
+                  className="text-slate-400 hover:text-rose-400 font-extrabold transition text-[11px] px-1.5 py-1 cursor-pointer"
+                  title="Eliminar registre de pic"
+                >
+                  Esborrar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* TACTICAL BOARD DISPLAY OR SPECIAL POSTER FOR VIRTUAL PAUSES */}
         {activeDrill.isVirtual ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-inner min-h-64 flex flex-col justify-center items-center">
@@ -956,6 +1169,12 @@ export default function MobileCourtView({
       )}
 
       {/* SESSION EDITOR DRAWER IN MOBILE VIEW REMOVED FOR PISTA READ-ONLY MODE */}
+      {toast && (
+        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-orange-500/40 text-white font-sans font-extrabold px-5 py-3 rounded-full shadow-2xl flex items-center gap-2 z-[9999] animate-in fade-in slide-in-from-bottom-3 duration-200 backdrop-blur-md">
+          <span className="text-orange-400 animate-bounce">🔥</span>
+          <span className="text-[11px] uppercase tracking-wide">{toast}</span>
+        </div>
+      )}
     </div>
   );
 }
