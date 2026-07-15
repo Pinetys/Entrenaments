@@ -33,6 +33,7 @@ interface MobileCourtViewProps {
   onToggleCompleteSession?: (sessionId: string) => void;
   activePlanId?: string;
   syncCode?: string;
+  isLinked?: boolean;
   onOpenSync?: () => void;
   isSyncing?: boolean;
   lastSynced?: Date | null;
@@ -50,6 +51,7 @@ export default function MobileCourtView({
   onToggleCompleteSession,
   activePlanId = 'plan-default',
   syncCode = '',
+  isLinked = false,
   onOpenSync,
   isSyncing = false,
   lastSynced = null
@@ -363,24 +365,25 @@ export default function MobileCourtView({
           </span>
         </div>
 
-        {syncCode ? (
+        {syncCode && isLinked ? (
           <button
             type="button"
             onClick={onOpenSync}
             className="px-2.5 py-1 rounded bg-slate-900 border border-emerald-500 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-widest flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
-            title="Codi de Sincronització Actiu. Prem per gestionar."
+            title="Sincronització Núvol Activa. Codi vinculat."
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="font-mono">{syncCode}</span>
           </button>
         ) : (
           <button
             type="button"
             onClick={onOpenSync}
-            className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-[9px] font-black text-white tracking-widest flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse border border-red-500 shadow-lg shadow-red-500/30"
+            className="px-2.5 py-1 rounded bg-amber-950/85 border border-amber-500 hover:bg-amber-900 text-[9px] font-black text-amber-300 tracking-widest flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse shadow-lg shadow-amber-500/15"
+            title="Estat Local. Prem per vincular amb l'ordinador per sincronitzar exercicis."
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
-            <span>VINCULAR</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+            <span>VINCULAR MÒBIL</span>
           </button>
         )}
 

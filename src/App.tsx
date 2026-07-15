@@ -115,6 +115,13 @@ export default function App() {
     return '';
   });
 
+  const [isLinked, setIsLinked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('basket_planner_sync_code_manually_entered') === 'true';
+    } catch (e) {}
+    return false;
+  });
+
   const [hasLoadedFromCloud, setHasLoadedFromCloud] = useState<boolean>(false);
 
   const [coachProfile, setCoachProfile] = useState<CoachProfile>(() => {
@@ -407,12 +414,13 @@ export default function App() {
       }
       codeToUse = sanitized;
       setSyncCode(sanitized);
+      setIsLinked(true);
       localStorage.setItem('basket_planner_sync_code', sanitized);
       localStorage.setItem('basket_planner_sync_code_manually_entered', 'true');
       
-      // Clean up URL parameter to avoid bookmark/refresh loops with old parameters
+      // Clean up URL parameter to avoid bookmark/refresh loops with old parameters, but preserve hash parameter so hash router doesn't break
       try {
-        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.hash;
         window.history.replaceState({ path: newUrl }, '', newUrl);
       } catch (e) {}
     }
@@ -698,6 +706,7 @@ export default function App() {
         if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
         
         setSyncCode(sanitizedCode);
+        setIsLinked(true);
         localStorage.setItem('basket_planner_sync_code', sanitizedCode);
         localStorage.setItem('basket_planner_sync_code_manually_entered', 'true');
         setHasLoadedFromCloud(true);
@@ -758,11 +767,13 @@ export default function App() {
   };
 
   const handleUnlinkSyncCode = () => {
-    setSyncCode('');
-    localStorage.removeItem('basket_planner_sync_code');
+    const newCode = generateSyncCode();
+    setSyncCode(newCode);
+    setIsLinked(false);
+    localStorage.setItem('basket_planner_sync_code', newCode);
     localStorage.removeItem('basket_planner_sync_code_manually_entered');
     setLastSynced(null);
-    triggerToast('🔌 Codi de sincronització desvinculat.');
+    triggerToast('🔌 Codi desvinculat. S’ha creat un nou codi local.');
   };
 
   // Force save to cloud manually with robust bidirectional synchronization merging local and cloud updates safely
@@ -1594,6 +1605,7 @@ export default function App() {
               onToggleCompleteSession={(sessId) => handleToggleCompleteSession(activePlan?.id || 'plan-default', sessId)}
               activePlanId={activePlan?.id || 'plan-default'}
               syncCode={syncCode}
+              isLinked={isLinked}
               onOpenSync={handleOpenSyncModal}
               isSyncing={isSyncing}
               lastSynced={lastSynced}
@@ -1772,6 +1784,18 @@ export default function App() {
 
               <div className="border-t border-slate-105 pt-4 space-y-3">
                 <h4 className="text-xs font-bold text-slate-700">Enllaçar un altre dispositiu o recuperar dades</h4>
+                
+                {/* DETAILED PAIRING ASSISTANT TIP CARD */}
+                <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3 text-[10px] text-amber-900 leading-relaxed space-y-1">
+                  <p className="font-bold">💡 Vols veure els exercicis de l'ordinador al teu mòbil?</p>
+                  <ol className="list-decimal list-inside space-y-0.5 text-amber-800 font-sans">
+                    <li>Obre el planificador al teu <span className="font-semibold">ordinador</span>.</li>
+                    <li>Prem la icona del <span className="font-semibold">núvol groc/taronja</span> (dalt a la dreta).</li>
+                    <li>Anota el codi de 4 lletres que hi apareix (Ex: <strong className="font-mono">ABCD</strong>).</li>
+                    <li>Escriu aquest codi de l'ordinador aquí sota i prem <span className="font-semibold">Enllaçar</span>.</li>
+                  </ol>
+                </div>
+
                 <p className="text-[10px] text-slate-450 leading-relaxed font-sans">
                   Escriu el codi de sincronització de l'altre dispositiu per connectar-los. Pots escriure el codi sencer (Ex: <strong>PINETY-ABCD</strong>) o només les darreres 4 lletres (Ex: <strong>ABCD</strong>):
                 </p>
