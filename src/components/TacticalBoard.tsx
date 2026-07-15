@@ -103,7 +103,7 @@ const DEFAULT_PINS: BoardPin[] = [
 export default function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [boardType, setBoardType] = useState<'half' | 'full'>(boardState?.courtType || 'half');
-  const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'eraser'>('move');
+  const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'draw_shoot' | 'eraser'>('move');
   const [activePinId, setActivePinId] = useState<string | null>(null);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState<BoardPath | null>(null);
@@ -330,6 +330,9 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       } else if (mode === 'draw_dribble') {
         type = 'zigzag';
         color = '#f97316'; // Orange for dribbles
+      } else if (mode === 'draw_shoot') {
+        type = 'solid';
+        color = '#22c55e'; // Green for shots
       }
 
       const newPath: BoardPath = {
@@ -608,6 +611,19 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             >
               <Brush size={11} />
               Botar
+            </button>
+
+            <button
+              id="btn-mode-shoot"
+              type="button"
+              title="Llançament / Tiro a canasta (Línia Verda amb Doble Fletxa)"
+              onClick={() => setMode('draw_shoot')}
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'draw_shoot' ? 'bg-emerald-500 border-emerald-500 text-white font-bold' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <Brush size={11} />
+              Tiro
             </button>
 
             <button
@@ -1003,13 +1019,17 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   key={colorName}
                   id={`arrow-${colorName}`}
                   viewBox="0 0 10 10"
-                  refX="6.0"
+                  refX={colorName === 'green' ? "8.0" : "6.0"}
                   refY="5"
                   markerWidth="7"
                   markerHeight="7"
                   orient="auto-start-reverse"
                 >
-                  <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={hex} />
+                  {colorName === 'green' ? (
+                    <path d="M 0 1.5 L 5.5 5 L 0 8.5 z M 4.0 1.5 L 9.5 5 L 4.0 8.5 z" fill={hex} />
+                  ) : (
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={hex} />
+                  )}
                 </marker>
               );
             })}
