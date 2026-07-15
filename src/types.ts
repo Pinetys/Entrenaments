@@ -12,7 +12,7 @@ export interface BoardPin {
   label: string;
   x: number; // percentage 0 - 100
   y: number; // percentage 0 - 100
-  type: 'attacker' | 'defender' | 'ball' | 'cone';
+  type: 'attacker' | 'defender' | 'ball' | 'cone' | 'coach';
   anchoredTo?: string;
 }
 

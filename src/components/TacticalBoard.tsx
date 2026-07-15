@@ -96,6 +96,8 @@ const DEFAULT_PINS: BoardPin[] = [
   // Cones
   { id: 'cone1', label: '▲', x: 15, y: 50, type: 'cone' },
   { id: 'cone2', label: '▲', x: 85, y: 50, type: 'cone' },
+  // Coach (Entrenador)
+  { id: 'coach1', label: 'E', x: 8, y: 85, type: 'coach' },
 ];
 
 export default function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
@@ -401,7 +403,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           let minDist = 6.0;
 
           pins.forEach(p => {
-            if (p.type === 'attacker' || p.type === 'defender') {
+            if (p.type === 'attacker' || p.type === 'defender' || p.type === 'coach') {
               const d = Math.hypot(p.x - draggedPin.x, p.y - draggedPin.y);
               if (d < minDist) {
                 minDist = d;
@@ -425,8 +427,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 : p
             );
           }
-        } else if (draggedPin.type === 'attacker' || draggedPin.type === 'defender') {
-          // If we drag a player, check if there is an unanchored ball close to them. If yes, snap the ball!
+        } else if (draggedPin.type === 'attacker' || draggedPin.type === 'defender' || draggedPin.type === 'coach') {
+          // If we drag a player or coach, check if there is an unanchored ball close to them. If yes, snap the ball!
           let nearestBall: BoardPin | null = null;
           let minBallDist = 6.0;
 
@@ -836,6 +838,56 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               </button>
             </div>
 
+            {/* Coach (Entrenador) control */}
+            <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
+              <span className="text-[9px] font-bold text-emerald-600 font-sans">Entrenador (E):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const coaches = pins.filter(p => p.type === 'coach');
+                  if (coaches.length > 0) {
+                    const lastCoach = coaches[coaches.length - 1];
+                    const updatedPins = pins.filter(p => p.id !== lastCoach.id);
+                    const finalPins = updatedPins.map(p => 
+                      p.type === 'ball' && p.anchoredTo === lastCoach.id ? { ...p, anchoredTo: undefined } : p
+                    );
+                    updateBoard({ pins: finalPins });
+                    if (selectedPinId === lastCoach.id) {
+                      setSelectedPinId(null);
+                    }
+                  }
+                }}
+                disabled={pins.filter(p => p.type === 'coach').length === 0}
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
+                title="Treure entrenador"
+              >
+                -
+              </button>
+              <span className="w-3 text-center font-mono font-bold text-emerald-600 text-[9px]">
+                {pins.filter(p => p.type === 'coach').length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const coaches = pins.filter(p => p.type === 'coach');
+                  const nextLabel = coaches.length === 0 ? 'E' : `E${coaches.length + 1}`;
+                  const defaultY = boardType === 'half' ? 70 : 45;
+                  const newCoach: BoardPin = {
+                    id: 'coach_' + crypto.randomUUID(),
+                    label: nextLabel,
+                    x: 8 + (coaches.length % 5) * 8,
+                    y: defaultY + Math.floor(coaches.length / 5) * 5,
+                    type: 'coach'
+                  };
+                  updateBoard({ pins: [...pins, newCoach] });
+                }}
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
+                title="Afegir entrenador"
+              >
+                +
+              </button>
+            </div>
+
             {/* Ball control */}
             <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
               <span className="text-[9px] font-bold text-slate-600 font-sans">Pilotes (🏀):</span>
@@ -1159,12 +1211,17 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 pinText = '#ffffff';
                 radius = 1.8; // Scaled up from 1.2 to be easily noticeable
                 pinBorder = '#000000';
+              } else if (p.type === 'coach') {
+                pinBg = '#10b981'; // Vibrant emerald green for the coach
+                pinText = '#ffffff';
+                radius = 2.4; // Same size as other active players/defenders
+                pinBorder = '#047857'; // Darker emerald border
               }
 
               // Offset ball slightly if it is anchored to or sits on top of a player so it doesn't cover their number
               const isBallAnchored = p.type === 'ball' && (
                 !!p.anchoredTo || 
-                pins.some(other => (other.type === 'attacker' || other.type === 'defender') && Math.hypot(p.x - other.x, p.y - other.y) < 1.2)
+                pins.some(other => (other.type === 'attacker' || other.type === 'defender' || other.type === 'coach') && Math.hypot(p.x - other.x, p.y - other.y) < 1.2)
               );
               const isCurrentlyDraggingBall = activePinId === p.id;
               
