@@ -127,6 +127,7 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const lastSavedTimeStrRef = useRef<string | null>(null);
   const lastSeenStateStringRef = useRef<string | null>(null);
+  const ignoreNextAutoSaveRef = useRef<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem('basket_planner_coach_profile', JSON.stringify(coachProfile));
@@ -458,6 +459,7 @@ export default function App() {
               coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
             });
 
+            ignoreNextAutoSaveRef.current = true;
             triggerToast('🔄 Dades sincronitzades correctament des del núvol!');
           } else {
             // Document doesn't exist yet, we will save the current data for it
@@ -495,14 +497,14 @@ export default function App() {
     };
     const currentStateString = JSON.stringify(currentState);
 
-    // If local state hasn't changed relative to what was last saved or loaded from the cloud, SKIP saving!
-    if (lastSeenStateStringRef.current === currentStateString) {
+    if (ignoreNextAutoSaveRef.current) {
+      ignoreNextAutoSaveRef.current = false;
+      lastSeenStateStringRef.current = currentStateString;
       return;
     }
 
-    // Initialize lastSeenStateStringRef on first mutation check if it is somehow empty
-    if (!lastSeenStateStringRef.current) {
-      lastSeenStateStringRef.current = currentStateString;
+    // If local state hasn't changed relative to what was last saved or loaded from the cloud, SKIP saving!
+    if (lastSeenStateStringRef.current === currentStateString) {
       return;
     }
 
@@ -595,6 +597,7 @@ export default function App() {
       };
       
       lastSeenStateStringRef.current = JSON.stringify(appliedState);
+      ignoreNextAutoSaveRef.current = true;
       
       // Silent in-background synchronization (no continuous toasts to prevent UX noise)
       console.log('🔄 Sincronització en segon pla completada correctament.');
@@ -716,6 +719,7 @@ export default function App() {
           coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
         });
 
+        ignoreNextAutoSaveRef.current = true;
         setShowSyncModal(false);
         triggerToast('🔄 Sincronització completada amb èxit! Dades recuperades.');
       } else {
@@ -741,7 +745,8 @@ export default function App() {
         selectedWeeklyPlanId,
         selectedSessionId,
         completions,
-        favoriteDrillIds
+        favoriteDrillIds,
+        coachProfile
       }).then((savedTimeStr) => {
         setLastSynced(new Date(savedTimeStr));
       }).catch(e => {
@@ -760,27 +765,76 @@ export default function App() {
     triggerToast('🔌 Codi de sincronització desvinculat.');
   };
 
-  // Force save to cloud manually
+  // Force save to cloud manually with robust bidirectional synchronization merging local and cloud updates safely
   const handleForceSaveToCloud = async () => {
     if (!syncCode || !hasLoadedFromCloud) return;
     setIsSyncing(true);
     try {
-      const savedTimeStr = await saveToCloud(syncCode, {
-        drills,
-        weeklyPlans,
+      // 1. Fetch latest cloud state first to avoid overwriting newer data
+      const cloudData = await loadFromCloud(syncCode);
+      
+      let mergedDrills = drills;
+      let mergedPlans = weeklyPlans;
+      let mergedCompletions = completions;
+      let mergedFavs = favoriteDrillIds;
+      let mergedProfile = coachProfile;
+
+      if (cloudData) {
+        // 2. Bidirectional Merge: Drills (Union of both lists by id)
+        const cloudDrills = cloudData.drills || [];
+        const uniqueLocalDrills = drills.filter(ld => !cloudDrills.some(cd => cd.id === ld.id));
+        mergedDrills = [...cloudDrills, ...uniqueLocalDrills];
+
+        // 3. Bidirectional Merge: Weekly Plans
+        const cloudPlans = cloudData.weeklyPlans || [];
+        const uniqueLocalPlans = weeklyPlans.filter(lp => !cloudPlans.some(cp => cp.id === lp.id));
+        mergedPlans = [...cloudPlans, ...uniqueLocalPlans];
+
+        // 4. Bidirectional Merge: Completions
+        const cloudCompletions = cloudData.completions || [];
+        const uniqueLocalCompletions = completions.filter(lc => !cloudCompletions.some(cc => cc.id === lc.id));
+        mergedCompletions = [...cloudCompletions, ...uniqueLocalCompletions];
+
+        // 5. Bidirectional Merge: Favorites
+        const cloudFavs = cloudData.favoriteDrillIds || [];
+        mergedFavs = Array.from(new Set([...cloudFavs, ...favoriteDrillIds]));
+
+        // 6. Merge Coach Profile
+        mergedProfile = cloudData.coachProfile || coachProfile;
+      }
+
+      // 7. Push merged state back to cloud
+      const currentState = {
+        drills: mergedDrills,
+        weeklyPlans: mergedPlans,
         selectedWeeklyPlanId,
         selectedSessionId,
-        completions,
-        favoriteDrillIds
-      });
+        completions: mergedCompletions,
+        favoriteDrillIds: mergedFavs,
+        coachProfile: mergedProfile
+      };
+
+      const savedTimeStr = await saveToCloud(syncCode, currentState);
+      
+      // 8. Update local state with the merged version
+      ignoreNextAutoSaveRef.current = true;
+      setDrills(mergedDrills);
+      setWeeklyPlans(mergedPlans);
+      setCompletions(mergedCompletions);
+      setFavoriteDrillIds(mergedFavs);
+      setCoachProfile(mergedProfile);
+
       setLastSynced(new Date(savedTimeStr));
+      lastSavedTimeStrRef.current = savedTimeStr;
+      lastSeenStateStringRef.current = JSON.stringify(currentState);
       setSyncError(null);
-      triggerToast('☁️ Dades desades al núvol correctament!');
+      
+      triggerToast('🔄 Sincronització completada amb èxit! Dades fusionades.');
     } catch (e: any) {
       console.error(e);
       const errMsg = e?.message || String(e);
       setSyncError(errMsg);
-      triggerToast(`❌ Error al desar al núvol: ${errMsg.substring(0, 45)}...`);
+      triggerToast(`❌ Error al sincronitzar: ${errMsg.substring(0, 45)}...`);
     } finally {
       setIsSyncing(false);
     }

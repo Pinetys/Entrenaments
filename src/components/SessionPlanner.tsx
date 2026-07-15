@@ -84,6 +84,7 @@ export function getEnhancedSessionDrills(
       objectives: originalDrill?.objectives || [],
       playersNeeded: originalDrill?.playersNeeded || 0,
       boardState: originalDrill?.boardState || { paths: [], pins: [] },
+      boardStates: originalDrill?.boardStates,
       originalDuration: originalDrill?.duration || 10,
       duration: drillDuration,
       isVirtual: false,
