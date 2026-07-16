@@ -288,8 +288,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
     }
   }, [boardState?.courtType]);
 
-  const rawPins = boardState.pins || DEFAULT_PINS;
-  const rawPaths = boardState.paths || [];
+  const rawPins = boardState?.pins || DEFAULT_PINS;
+  const rawPaths = boardState?.paths || [];
 
   // Automatically normalize and unify paths so that old/incorrect exercises look perfectly clean and standardized
   const paths = rawPaths.map(p => {
@@ -315,7 +315,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
   // Initialize pins if empty
   useEffect(() => {
-    if (!boardState.pins || boardState.pins.length === 0) {
+    if (boardState && (!boardState.pins || boardState.pins.length === 0)) {
       onChange({
         paths: boardState.paths || [],
         pins: DEFAULT_PINS,
@@ -1036,33 +1036,6 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
       {/* SVG Canvas Board */}
       <div className={`relative w-full ${boardType === 'full' ? 'aspect-square' : 'aspect-[100/52]'} bg-white cursor-crosshair overflow-hidden touch-none select-none border border-slate-300`}>
-        {/* Play Animation Overlay Button */}
-        {paths.length > 0 && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isPlayingAnimation) {
-                stopTacticalAnimation();
-              } else {
-                startTacticalAnimation();
-              }
-            }}
-            className="absolute top-2.5 right-2.5 bg-slate-900/95 border border-orange-500/40 text-white hover:bg-slate-800 rounded-xl px-3 py-1.5 text-[10.5px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-xl active:scale-95 transition z-10 cursor-pointer"
-          >
-            {isPlayingAnimation ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                <span>Aturar Animació</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={11} className="text-amber-400 animate-pulse" />
-                <span>Animar Trajectòries</span>
-              </>
-            )}
-          </button>
-        )}
 
         {/* Custom Confirmation Overlay for Path Deletion */}
         {pathToDeleteId && (
@@ -1607,6 +1580,37 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           </div>
         )}
       </div>
+
+      {/* Much smaller, clean play animation button outside the graphic */}
+      {paths.length > 0 && (
+        <div className="flex justify-end mt-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isPlayingAnimation) {
+                stopTacticalAnimation();
+              } else {
+                startTacticalAnimation();
+              }
+            }}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-sm border border-amber-500/30"
+            title={isPlayingAnimation ? "Aturar Animació de Trajectòries" : "Animar Trajectòries"}
+          >
+            {isPlayingAnimation ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                <span>Aturar</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={9} className="text-amber-100 animate-pulse" />
+                <span>Animar</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

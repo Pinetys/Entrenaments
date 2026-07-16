@@ -62,6 +62,7 @@ export default function MobileCourtView({
   const [isMotionMode, setIsMotionMode] = useState(false);
   const [editorSearchText, setEditorSearchText] = useState('');
   const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
+  const [showSyncCallout, setShowSyncCallout] = useState(true);
 
   // Network connection status for completely offline Modo Pista support
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -412,6 +413,26 @@ export default function MobileCourtView({
           )}
         </button>
       </div>
+
+      {/* DISMISSIBLE SYNC REMINDER CALLOUT */}
+      {!isLinked && showSyncCallout && (
+        <div className="bg-gradient-to-r from-amber-600/25 to-orange-600/25 border-b border-amber-500/20 px-4 py-2.5 text-[10px] leading-relaxed flex items-start gap-2 relative animate-in slide-in-from-top duration-300 select-none">
+          <span className="text-xs select-none">💡</span>
+          <div className="flex-1 space-y-0.5">
+            <p className="font-bold text-amber-300">Vols veure els teus exercicis de l'ordinador?</p>
+            <p className="text-slate-300 font-sans">
+              El mòbil està en mode local. Prem <strong className="text-amber-300">"VINCULAR MÒBIL"</strong> a dalt o escaneja el codi QR del planificador de l'ordinador per enllaçar-los a l'instant!
+            </p>
+          </div>
+          <button 
+            onClick={() => setShowSyncCallout(false)}
+            className="p-1 -mr-1 text-slate-400 hover:text-white rounded-full transition cursor-pointer"
+            title="Tancar avís"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {/* HEADER BAR FOR MOBILE */}
       <div id="mobile-header" className="px-5 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0">
