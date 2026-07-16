@@ -977,10 +977,10 @@ export default function DrillDatabase({
                 <div
                   id={`drill-card-${drill.id}`}
                   key={drill.id}
-                  className={`bg-white border rounded-sm transition p-3 md:p-5 flex flex-row md:flex-row gap-3 md:gap-5 group items-start shadow-sm ${colors.cardClass}`}
+                  className={`bg-white border rounded-sm transition p-3 md:p-5 flex flex-col sm:flex-row gap-4 md:gap-5 group items-start shadow-sm ${colors.cardClass}`}
                 >
                   {/* Micro diagram static render or thumbnail */}
-                  <div className="drill-card-graphic w-36 h-36 md:w-64 md:h-auto bg-white border border-slate-200 rounded shadow-sm overflow-hidden shrink-0 p-0.5 md:p-1 relative hover:shadow-xs transition duration-150">
+                  <div className="drill-card-graphic w-full max-w-xs sm:max-w-none mx-auto sm:mx-0 sm:w-44 md:w-64 bg-white border border-slate-200 rounded shadow-sm overflow-hidden shrink-0 p-0.5 md:p-1 relative hover:shadow-xs transition duration-150">
                     <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
                     {drill.boardStates && drill.boardStates.length > 1 && (
                       <div className="absolute bottom-1.5 right-1.5 bg-slate-800 text-[8px] text-white font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest font-mono">
