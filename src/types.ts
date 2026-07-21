@@ -36,6 +36,7 @@ export interface Drill {
   boardState: BoardState;
   boardStates?: BoardState[]; // Multi-graphics for complex exercises
   isCustom?: boolean;
+  isOver15?: boolean; // For drills recommended for > 15 years old
 }
 
 export interface TrainingSession {

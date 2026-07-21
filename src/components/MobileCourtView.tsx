@@ -821,8 +821,16 @@ export default function MobileCourtView({
                 }`}>
                   Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′) • 📖 Ver manual
                 </span>
-                <h3 className="text-base xs:text-lg font-black text-white tracking-tight leading-snug group-hover:text-orange-400 transition break-words whitespace-normal drop-shadow-sm uppercase">
-                  {activeDrill.title}
+                <h3 className="text-base xs:text-lg font-black text-white tracking-tight leading-snug group-hover:text-orange-400 transition break-words whitespace-normal drop-shadow-sm uppercase flex items-center justify-center gap-1.5 flex-wrap">
+                  <span>{activeDrill.title}</span>
+                  {(() => {
+                    const orig = drills.find(d => d.id === activeDrill.drillId);
+                    return orig?.isOver15 ? (
+                      <span className="text-rose-400 bg-rose-950/65 border border-rose-500/40 text-[9.5px] font-black px-2 py-0.5 rounded-full select-none inline-flex items-center gap-0.5 uppercase tracking-wider font-mono">
+                        🚫 +15
+                      </span>
+                    ) : null;
+                  })()}
                 </h3>
               </div>
 

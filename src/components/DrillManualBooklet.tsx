@@ -92,9 +92,16 @@ export default function DrillManualBooklet({ drill, onClose }: DrillManualBookle
 
             {/* BIG VINTAGE HANDBOOK TITLE BLOCK */}
             <div className="space-y-2">
-              <h2 className="text-[#1e293b] text-xs font-black tracking-widest uppercase font-mono border border-slate-200 bg-[#f4ebd9] px-2 py-0.5 rounded-sm w-max">
-                EXERCICI {exerciseNumber}
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-[#1e293b] text-xs font-black tracking-widest uppercase font-mono border border-slate-200 bg-[#f4ebd9] px-2 py-0.5 rounded-sm w-max">
+                  EXERCICI {exerciseNumber}
+                </h2>
+                {drill.isOver15 && (
+                  <span className="text-rose-700 bg-rose-50 border border-rose-200 text-[9px] font-black px-2 py-0.5 rounded-full select-none flex items-center gap-1 uppercase tracking-wider">
+                    🚫 +15 ANYS
+                  </span>
+                )}
+              </div>
               <h1 className="text-2xl md:text-3xl font-black text-[#0f172a] uppercase tracking-tight leading-tight">
                 {drill.title}
               </h1>

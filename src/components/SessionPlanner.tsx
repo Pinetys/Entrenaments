@@ -1080,6 +1080,11 @@ export default function SessionPlanner({
                               {sd.concept}
                             </span>
                           )}
+                          {(drillObj as any).isOver15 && (
+                            <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-150 flex items-center select-none font-mono" title="Majors de 15 anys">
+                              🚫 +15
+                            </span>
+                          )}
                           <span className="text-[10px] text-slate-400 font-mono font-bold">Ordre #{realIdx + 1}</span>
                         </div>
                         
@@ -1399,6 +1404,11 @@ export default function SessionPlanner({
                             {drill.concept && (
                               <span className={`px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${colors.conceptClass}`}>
                                 {drill.concept}
+                              </span>
+                            )}
+                            {drill.isOver15 && (
+                              <span className="px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-150 flex items-center select-none font-mono" title="Majors de 15 anys">
+                                🚫 +15
                               </span>
                             )}
                             <button

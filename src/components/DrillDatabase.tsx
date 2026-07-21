@@ -474,6 +474,7 @@ export default function DrillDatabase({
   const [setupInstructions, setSetupInstructions] = useState('');
   const [playersNeeded, setPlayersNeeded] = useState(8);
   const [materialsString, setMaterialsString] = useState('');
+  const [isOver15, setIsOver15] = useState(false);
   const [boardState, setBoardState] = useState<BoardState>({ paths: [], pins: [] });
   const [boardStates, setBoardStates] = useState<BoardState[]>([{ paths: [], pins: [] }]);
   const [activePhaseIndex, setActivePhaseIndex] = useState<number>(0);
@@ -507,6 +508,7 @@ export default function DrillDatabase({
     setSetupInstructions('');
     setPlayersNeeded(8);
     setMaterialsString('');
+    setIsOver15(false);
     setBoardState({ paths: [], pins: [] });
     setBoardStates([{ paths: [], pins: [] }]);
     setActivePhaseIndex(0);
@@ -528,6 +530,7 @@ export default function DrillDatabase({
     setSetupInstructions(drill.setupInstructions || '');
     setPlayersNeeded(drill.playersNeeded || 8);
     setMaterialsString(drill.materials.join(', '));
+    setIsOver15(!!drill.isOver15);
     setBoardState(drill.boardState || { paths: [], pins: [] });
     const initialStates = drill.boardStates && drill.boardStates.length > 0 
       ? drill.boardStates 
@@ -575,7 +578,8 @@ export default function DrillDatabase({
       materials: cleanMaterials,
       boardState: boardStates[0] || boardState,
       boardStates: boardStates,
-      isCustom: true
+      isCustom: true,
+      isOver15: isOver15
     };
 
     if (editDrillId) {
@@ -864,6 +868,21 @@ export default function DrillDatabase({
                 </div>
               </div>
 
+              {/* Checkbox for Ages over 15 */}
+              <div className="flex items-center gap-2.5 bg-rose-50/50 border border-rose-100 p-2.5 rounded-sm">
+                <input
+                  id="form-drill-over15"
+                  type="checkbox"
+                  checked={isOver15}
+                  onChange={(e) => setIsOver15(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer accent-rose-600"
+                />
+                <label htmlFor="form-drill-over15" className="text-xs font-semibold text-rose-800 cursor-pointer select-none flex items-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-5 h-5 bg-rose-600 text-white rounded-full text-[9px] font-extrabold select-none">🚫</span>
+                  <span>Només apte per a majors de 15 anys (+15)</span>
+                </label>
+              </div>
+
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Objectius de l'Exercici (Un per línia)</label>
                 <textarea
@@ -1000,6 +1019,11 @@ export default function DrillDatabase({
                           {drill.concept && (
                             <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider ${colors.conceptClass}`}>
                               {drill.concept}
+                            </span>
+                          )}
+                          {drill.isOver15 && (
+                            <span className="px-1.5 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-150 flex items-center gap-0.5 select-none font-mono" title="Aquest exercici només és per a majors de 15 anys">
+                              🚫 +15 ANYS
                             </span>
                           )}
                         </div>
