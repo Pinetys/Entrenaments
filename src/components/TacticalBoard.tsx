@@ -726,13 +726,13 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             <button
               id="btn-mode-handoff"
               type="button"
-              title="Símbol de Mà a Mà / Hand-off (Clica a la pista per col·locar el símbol)"
+              title="Grafisme de Mà a Mà / Hand-off (Clica a la pista per col·locar el grafisme)"
               onClick={() => setMode('draw_handoff')}
               className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
                 mode === 'draw_handoff' ? 'bg-amber-600 border-amber-600 text-white font-bold' : 'bg-white border-slate-200 text-amber-700 hover:bg-amber-50'
               }`}
             >
-              <span className="text-[11px] leading-none">🤝</span>
+              <RotateCcw size={11} className="rotate-90" />
               Mà a mà
             </button>
 
@@ -1016,7 +1016,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
             {/* Hand-off (Mà a mà) symbol control */}
             <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
-              <span className="text-[9px] font-bold text-amber-700 font-sans">Mà a mà (🤝):</span>
+              <span className="text-[9px] font-bold text-amber-700 font-sans">Mà a mà:</span>
               <button
                 type="button"
                 onClick={() => {
@@ -1505,60 +1505,41 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                   )}
 
                   {p.type === 'handoff' ? (
-                    <>
-                      {/* Hand-off (Mà a mà) Badge background dropshadow */}
-                      <circle
-                        cx={renderX}
-                        cy={renderY + 0.5}
-                        r={radius}
-                        fill="#000000"
-                        opacity={0.18}
-                      />
-                      {/* Outer badge circle */}
-                      <circle
-                        cx={renderX}
-                        cy={renderY}
-                        r={radius}
-                        fill="#fff7ed"
-                        stroke="#ea580c"
-                        strokeWidth={0.55}
-                      />
-                      {/* Inner dashed ring */}
-                      <circle
-                        cx={renderX}
-                        cy={renderY}
-                        r={radius - 0.4}
-                        fill="none"
-                        stroke="#f97316"
-                        strokeWidth={0.25}
-                        strokeDasharray="0.8, 0.8"
-                      />
-                      {/* Hand-off symbol icon */}
+                    <g>
+                      {/* White stroke underlay for high contrast over court lines & paint */}
+                      <g fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity={0.95}>
+                        <path d={`M ${renderX - 3.2} ${renderY + 0.8} C ${renderX - 3.2} ${renderY - 2.5}, ${renderX + 0.8} ${renderY - 3.2}, ${renderX + 2.2} ${renderY - 0.8}`} />
+                        <path d={`M ${renderX + 3.2} ${renderY - 0.8} C ${renderX + 3.2} ${renderY + 2.5}, ${renderX - 0.8} ${renderY + 3.2}, ${renderX - 2.2} ${renderY + 0.8}`} />
+                      </g>
+
+                      {/* Primary action lines - Crisp vector stroke in tactical amber/orange */}
+                      <g fill="none" stroke="#ea580c" strokeWidth="0.85" strokeLinecap="round" strokeLinejoin="round">
+                        <path d={`M ${renderX - 3.2} ${renderY + 0.8} C ${renderX - 3.2} ${renderY - 2.5}, ${renderX + 0.8} ${renderY - 3.2}, ${renderX + 2.2} ${renderY - 0.8}`} />
+                        <path d={`M ${renderX + 3.2} ${renderY - 0.8} C ${renderX + 3.2} ${renderY + 2.5}, ${renderX - 0.8} ${renderY + 3.2}, ${renderX - 2.2} ${renderY + 0.8}`} />
+                      </g>
+
+                      {/* Arrow heads at loop terminals */}
+                      <polygon points={`${renderX + 2.2},${renderY - 0.8} ${renderX + 0.8},${renderY - 1.8} ${renderX + 2.4},${renderY - 2.2}`} fill="#ea580c" />
+                      <polygon points={`${renderX - 2.2},${renderY + 0.8} ${renderX - 0.8},${renderY + 1.8} ${renderX - 2.4},${renderY + 2.2}`} fill="#ea580c" />
+
+                      {/* Central exchange node dot */}
+                      <circle cx={renderX} cy={renderY} r={0.75} fill="#ea580c" stroke="#ffffff" strokeWidth={0.3} />
+
+                      {/* Tactical action label text below */}
                       <text
                         x={renderX}
-                        y={renderY - 0.2}
-                        dy="0.33em"
-                        fontSize="2.4px"
-                        fontWeight="bold"
-                        fill="#c2410c"
-                        textAnchor="middle"
-                      >
-                        🤝
-                      </text>
-                      {/* Text label underneath */}
-                      <text
-                        x={renderX}
-                        y={renderY + radius + 1.2}
+                        y={renderY + 3.8}
                         dy="0.3em"
-                        fontSize="1.3px"
+                        fontSize="1.1px"
                         fontWeight="900"
                         fontFamily="system-ui, sans-serif"
-                        fill="#c2410c"
+                        fill="#ea580c"
                         textAnchor="middle"
+                        letterSpacing="0.05em"
                       >
                         MÀ A MÀ
                       </text>
-                    </>
+                    </g>
                   ) : p.type === 'cone' ? (
                     <>
                       {/* Cone dropshadow (oval) */}
