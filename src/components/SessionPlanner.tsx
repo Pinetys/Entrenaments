@@ -18,11 +18,14 @@ import {
   Search,
   Filter,
   Printer,
-  Star
+  Star,
+  BookOpen,
+  Bookmark
 } from 'lucide-react';
-import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan } from '../types';
+import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan, SessionTemplate } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
+import SessionTemplatesModal from './SessionTemplatesModal';
 
 export function getEnhancedSessionDrills(
   sessionDrills: { drillId: string; duration: number; notes?: string }[],
@@ -111,6 +114,12 @@ interface SessionPlannerProps {
   triggerToast?: (msg: string) => void;
   favoriteDrillIds?: string[];
   onToggleFavorite?: (drillId: string) => void;
+  sessionTemplates?: SessionTemplate[];
+  onApplyTemplateToSession?: (template: SessionTemplate, targetSessionId: string) => void;
+  onSaveCurrentSessionAsTemplate?: (name: string, category: string, description?: string) => void;
+  onCreateTemplateFromScratch?: (newTpl: Omit<SessionTemplate, 'id'>) => void;
+  onDeleteTemplate?: (templateId: string) => void;
+  onOpenMatchNotes?: (dateIndex?: number) => void;
 }
 
 export default function SessionPlanner({ 
@@ -130,8 +139,15 @@ export default function SessionPlanner({
   onDeleteDrill,
   triggerToast,
   favoriteDrillIds = [],
-  onToggleFavorite
+  onToggleFavorite,
+  sessionTemplates = [],
+  onApplyTemplateToSession,
+  onSaveCurrentSessionAsTemplate,
+  onCreateTemplateFromScratch,
+  onDeleteTemplate,
+  onOpenMatchNotes
 }: SessionPlannerProps) {
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [sessionNotes, setSessionNotes] = useState<string>('');
   const [activeNoteEditId, setActiveNoteEditId] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -340,6 +356,12 @@ export default function SessionPlanner({
 
   // Load Presets tailored specifically for Junior A Catalan League
   const loadPreset = (presetType: 'balanced' | 'defensive' | 'preMatch') => {
+    if (session.drills.length > 0) {
+      if (!window.confirm(`Estàs segur que vols eliminar els ${session.drills.length} exercicis actuals d'aquesta sessió per carregar el preset?`)) {
+        return;
+      }
+    }
+
     let presetDrills: { drillId: string; duration: number; notes: string }[] = [];
 
     if (presetType === 'balanced') {
@@ -550,6 +572,18 @@ export default function SessionPlanner({
                   )}
                 </div>
 
+                {onOpenMatchNotes && (
+                  <button
+                    id="btn-open-match-notes-planner"
+                    type="button"
+                    onClick={() => onOpenMatchNotes()}
+                    className="px-3 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black rounded-sm text-xs tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition border border-transparent shadow-xs"
+                    title="Obrir anotacions i observacions del partit del microcicle"
+                  >
+                    <NotebookPen size={14} /> Anotacions de Partit 🏀
+                  </button>
+                )}
+
                 <button
                   id="btn-pdf-session-active"
                   type="button"
@@ -559,6 +593,18 @@ export default function SessionPlanner({
                 >
                   <Printer size={14} /> Generar PDF / Imprimir 🖨️
                 </button>
+
+                {session.drills.length > 0 && (
+                  <button
+                    id="btn-clear-session-drills-top"
+                    type="button"
+                    onClick={clearSession}
+                    className="px-3 py-2 bg-red-50 hover:bg-red-100 active:scale-95 text-red-700 hover:text-red-800 font-extrabold rounded-sm text-xs tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition border border-red-200 shadow-xs"
+                    title="Eliminar tots els exercicis i buidar la plantilla d'aquesta sessió"
+                  >
+                    <Trash2 size={14} /> Eliminar Plantilla de la Sessió
+                  </button>
+                )}
               </div>
             </div>
 
@@ -583,14 +629,49 @@ export default function SessionPlanner({
                 />
               </div>
 
-              {/* Quick Presets Selection */}
+              {/* Quick Presets & Templates Library Selection */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block mr-1">PRE-DISSENYATS:</span>
+                <button
+                  id="btn-open-session-templates-library"
+                  type="button"
+                  onClick={() => setShowTemplatesModal(true)}
+                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black rounded-md text-xs tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition shadow-xs border border-transparent"
+                  title="Obrir la biblioteca de plantilles d'entrenaments guardats per carregar o traslladar a qualsevol sessió"
+                >
+                  <BookOpen size={14} />
+                  <span>Biblioteca de Plantilles</span>
+                </button>
+
+                <button
+                  id="btn-save-current-session-template"
+                  type="button"
+                  onClick={() => setShowTemplatesModal(true)}
+                  className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-amber-400 font-extrabold rounded-md text-xs tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs border border-slate-800"
+                  title="Desar la sessió actual com a plantilla a la biblioteca"
+                >
+                  <Bookmark size={13} />
+                  <span>Desar com a Plantilla</span>
+                </button>
+
+                {session.drills.length > 0 && (
+                  <button
+                    id="btn-clear-session-drills-bar"
+                    type="button"
+                    onClick={clearSession}
+                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 active:scale-95 text-red-700 font-extrabold rounded-md text-xs tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs border border-red-200"
+                    title="Buidar / Eliminar tots els exercicis d'aquesta sessió"
+                  >
+                    <Trash2 size={13} />
+                    <span>Buidar Sessió</span>
+                  </button>
+                )}
+
+                <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block mx-1">PRE-DISSENYATS:</span>
                 <button
                   id="btn-preset-balanced"
                   type="button"
                   onClick={() => loadPreset('balanced')}
-                  className="px-3 py-1.5 bg-slate-950 text-white hover:bg-slate-850 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-transparent shadow-xs"
+                  className="px-2.5 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
                 >
                   Balanced
                 </button>
@@ -598,7 +679,7 @@ export default function SessionPlanner({
                   id="btn-preset-defensive"
                   type="button"
                   onClick={() => loadPreset('defensive')}
-                  className="px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
+                  className="px-2.5 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
                 >
                   Defensiu
                 </button>
@@ -606,7 +687,7 @@ export default function SessionPlanner({
                   id="btn-preset-prematch"
                   type="button"
                   onClick={() => loadPreset('preMatch')}
-                  className="px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
+                  className="px-2.5 py-1.5 bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 active:scale-95 rounded-sm text-xs font-bold tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
                 >
                   Pre-Partit
                 </button>
@@ -2011,6 +2092,30 @@ export default function SessionPlanner({
           </div>
         </div>
       )}
+
+      {/* SESSION TEMPLATES LIBRARY MODAL */}
+      <SessionTemplatesModal
+        isOpen={showTemplatesModal}
+        onClose={() => setShowTemplatesModal(false)}
+        templates={sessionTemplates}
+        drills={drills}
+        activePlan={activePlan}
+        activeSession={session}
+        allSessions={allSessions}
+        onApplyTemplateToSession={(tpl, targetId) => {
+          if (onApplyTemplateToSession) onApplyTemplateToSession(tpl, targetId);
+        }}
+        onSaveCurrentSessionAsTemplate={(name, cat, desc) => {
+          if (onSaveCurrentSessionAsTemplate) onSaveCurrentSessionAsTemplate(name, cat, desc);
+        }}
+        onCreateTemplateFromScratch={(newTpl) => {
+          if (onCreateTemplateFromScratch) onCreateTemplateFromScratch(newTpl);
+        }}
+        onDeleteTemplate={(tplId) => {
+          if (onDeleteTemplate) onDeleteTemplate(tplId);
+        }}
+        triggerToast={triggerToast}
+      />
     </div>
   );
 }

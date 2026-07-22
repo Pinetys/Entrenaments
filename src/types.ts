@@ -52,6 +52,29 @@ export interface TrainingSession {
   scheduledTime?: string; // ISO string or YYYY-MM-DDTHH:MM
 }
 
+export interface QuarterNotes {
+  q1?: string;
+  q2?: string;
+  q3?: string;
+  q4?: string;
+  ot?: string;
+}
+
+export interface MatchAnnotation {
+  id: string;
+  dateIndex: number; // 0..27 (day index in 28-day microcycle grid)
+  matchDate?: string; // e.g. "Setmana 1 - Dissabte"
+  opponent?: string; // e.g. "CB Manresa"
+  isHome?: boolean; // true = Local, false = Visitant
+  ourScore?: string | number;
+  opponentScore?: string | number;
+  quarterNotes?: QuarterNotes;
+  generalNotes?: string;
+  tacticalKeyPoints?: string[];
+  tags?: string[];
+  updatedAt?: string;
+}
+
 export interface WeeklyPlan {
   id: string;
   name: string;
@@ -64,6 +87,7 @@ export interface WeeklyPlan {
   dia6?: TrainingSession;
   dia7?: TrainingSession;
   dia8?: TrainingSession;
+  matchAnnotations?: Record<string, MatchAnnotation>; // key is dateIndex string (e.g. "5", "6", etc.)
 }
 
 export interface AppState {
@@ -79,4 +103,19 @@ export interface SessionCompletion {
   planId: string;
   sessionId: string;
   completedAt: string;
+}
+
+export interface SessionTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  category: string; // 'Atac' | 'Defensa' | 'Transició' | 'Físico' | 'Combinat'
+  totalDuration: number;
+  drills: {
+    drillId: string;
+    duration: number;
+    notes?: string;
+  }[];
+  isCustom?: boolean;
+  createdAt?: string;
 }

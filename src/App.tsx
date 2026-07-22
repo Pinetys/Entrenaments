@@ -22,14 +22,17 @@ import {
   Cloud,
   Database,
   Camera,
-  User
+  User,
+  NotebookPen
 } from 'lucide-react';
-import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion } from './types';
+import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation } from './types';
+import { DEFAULT_SESSION_TEMPLATES } from './data/defaultTemplates';
 import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import CoachProfileModal from './components/CoachProfileModal';
+import MatchAnnotationsModal from './components/MatchAnnotationsModal';
 import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
@@ -277,6 +280,40 @@ export default function App() {
   const [previewDrill, setPreviewDrill] = useState<Drill | null>(null);
   const [planIdToDelete, setPlanIdToDelete] = useState<string | null>(null);
 
+  // Match annotations state
+  const [showMatchModal, setShowMatchModal] = useState<boolean>(false);
+  const [selectedMatchDateIndex, setSelectedMatchDateIndex] = useState<number>(5);
+
+  const handleSaveMatchAnnotation = (dateIndex: number, annotation: MatchAnnotation) => {
+    setWeeklyPlans(prevPlans => prevPlans.map(plan => {
+      if (plan.id === selectedWeeklyPlanId) {
+        const existing = plan.matchAnnotations || {};
+        return {
+          ...plan,
+          matchAnnotations: {
+            ...existing,
+            [dateIndex.toString()]: annotation
+          }
+        };
+      }
+      return plan;
+    }));
+  };
+
+  const handleDeleteMatchAnnotation = (dateIndex: number) => {
+    setWeeklyPlans(prevPlans => prevPlans.map(plan => {
+      if (plan.id === selectedWeeklyPlanId) {
+        const existing = { ...(plan.matchAnnotations || {}) };
+        delete existing[dateIndex.toString()];
+        return {
+          ...plan,
+          matchAnnotations: existing
+        };
+      }
+      return plan;
+    }));
+  };
+
   // Completions list with localStorage persistence
   const [completions, setCompletions] = useState<SessionCompletion[]>(() => {
     try {
@@ -308,6 +345,87 @@ export default function App() {
     }
     return [];
   });
+
+  // Session templates library state
+  const [sessionTemplates, setSessionTemplates] = useState<SessionTemplate[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.sessionTemplates && parsed.sessionTemplates.length > 0) {
+          return parsed.sessionTemplates;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading sessionTemplates from localstorage', e);
+    }
+    return DEFAULT_SESSION_TEMPLATES;
+  });
+
+  const handleApplyTemplateToSession = (template: SessionTemplate, targetSessionId: string) => {
+    setSessions((prevSessions: Record<string, TrainingSession>) => {
+      const currentSess = prevSessions[targetSessionId] || {
+        id: targetSessionId,
+        name: `Sessió ${targetSessionId}`,
+        dayOfWeek: 'Martes',
+        totalDuration: 0,
+        drills: []
+      };
+
+      const newDrills = template.drills.map(d => ({
+        drillId: d.drillId,
+        duration: d.duration,
+        notes: d.notes || ''
+      }));
+
+      const totalDuration = newDrills.reduce((acc, curr) => acc + curr.duration, 0);
+
+      return {
+        ...prevSessions,
+        [targetSessionId]: {
+          ...currentSess,
+          drills: newDrills,
+          totalDuration
+        }
+      };
+    });
+  };
+
+  const handleSaveCurrentSessionAsTemplate = (name: string, category: string, description?: string) => {
+    const activeSession = sessions[selectedSessionId] || sessions['dia1'];
+    if (!activeSession || activeSession.drills.length === 0) return;
+
+    const newTemplate: SessionTemplate = {
+      id: `tpl-custom-${Date.now()}`,
+      name,
+      category,
+      description: description || '',
+      totalDuration: activeSession.drills.reduce((a, b) => a + (b.duration || 10), 0),
+      drills: activeSession.drills.map(d => ({
+        drillId: d.drillId,
+        duration: d.duration || 10,
+        notes: d.notes || ''
+      })),
+      isCustom: true,
+      createdAt: new Date().toISOString()
+    };
+
+    setSessionTemplates(prev => [newTemplate, ...prev]);
+  };
+
+  const handleCreateTemplateFromScratch = (newTplData: Omit<SessionTemplate, 'id'>) => {
+    const newTemplate: SessionTemplate = {
+      ...newTplData,
+      id: `tpl-custom-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+
+    setSessionTemplates(prev => [newTemplate, ...prev]);
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    setSessionTemplates(prev => prev.filter(t => t.id !== templateId));
+  };
 
   const handleToggleFavoriteDrill = (drillId: string) => {
     setFavoriteDrillIds(prev => {
@@ -1463,6 +1581,18 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    onClick={() => {
+                      setSelectedMatchDateIndex(5);
+                      setShowMatchModal(true);
+                    }}
+                    className="py-1 px-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    title="Obrir anotacions de partit en directe o post-partit"
+                  >
+                    <NotebookPen size={13} />
+                    <span>Anotacions de Partit 🏀</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
                     className="py-1 px-3 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5 transition cursor-pointer"
                   >
@@ -1476,7 +1606,7 @@ export default function App() {
 
               {isCalendarExpanded && (
                 <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-200">
-                  <p className="text-[10px] text-slate-500 font-bold">Fes clic en un dimarts o dijous actius per canviar de dia d'entrenament a l'instant:</p>
+                  <p className="text-[10px] text-slate-500 font-bold">Fes clic als dies d'entrenament (dimarts/dijous) o als caps de setmana per obrir les anotacions del partit:</p>
                   <div className="grid grid-cols-7 gap-1 md:gap-1.5">
                     {/* Header days */}
                     {['Dil', 'Dim', 'Dmc', 'Dij', 'Div', 'Dis', 'Diu'].map(dayName => (
@@ -1508,6 +1638,9 @@ export default function App() {
                         else if (weekIndex === 3) { sessionCode = 'dia8'; sessionNum = 8; }
                       }
 
+                      const matchItem = activePlan.matchAnnotations?.[i.toString()];
+                      const hasMatchData = Boolean(matchItem);
+
                       let bgStyle = "bg-slate-50 text-slate-700 hover:bg-slate-100";
                       let borderStyle = "border border-slate-200";
                       let content = null;
@@ -1529,11 +1662,23 @@ export default function App() {
                           </div>
                         );
                       } else if (isWeekend) {
-                        bgStyle = "bg-slate-100/70 text-slate-400 font-medium";
+                        bgStyle = hasMatchData
+                          ? "bg-amber-500 text-white shadow-xs font-bold scale-[1.01] hover:bg-amber-600"
+                          : "bg-amber-50/80 hover:bg-amber-100/95 text-amber-900";
+                        borderStyle = hasMatchData
+                          ? "border border-amber-600 ring-2 ring-amber-300 font-extrabold"
+                          : "border border-amber-300 border-dashed";
                         content = (
-                          <span className="text-[6px] uppercase font-bold text-slate-500 font-mono mt-1 block leading-none">
-                            FCBQ 🏆
-                          </span>
+                          <div className="mt-0.5 flex flex-col items-center">
+                            <span className={`text-[7px] uppercase tracking-tight font-black truncate max-w-full px-1 py-0.5 rounded ${hasMatchData ? 'bg-amber-950 text-amber-100' : 'bg-amber-200/90 text-amber-950'}`}>
+                              {matchItem?.opponent ? `🏆 vs ${matchItem.opponent}` : '🏆 PARTIT'}
+                            </span>
+                            <span className="text-[6px] font-mono font-bold mt-0.5 block leading-none">
+                              {matchItem?.ourScore !== undefined && matchItem?.opponentScore !== undefined
+                                ? `${matchItem.ourScore}-${matchItem.opponentScore}`
+                                : hasMatchData ? '📝 Anotat' : '📝 Anotar'}
+                            </span>
+                          </div>
                         );
                       } else {
                         content = (
@@ -1547,6 +1692,12 @@ export default function App() {
                           onClick={() => {
                             if (sessionCode) {
                               setSelectedSessionId(sessionCode);
+                            } else if (isWeekend) {
+                              setSelectedMatchDateIndex(i);
+                              setShowMatchModal(true);
+                            } else {
+                              setSelectedMatchDateIndex(i);
+                              setShowMatchModal(true);
                             }
                           }}
                           className={`p-1 min-h-[36px] sm:min-h-[40px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
@@ -1579,6 +1730,15 @@ export default function App() {
               triggerToast={triggerToast}
               favoriteDrillIds={favoriteDrillIds}
               onToggleFavorite={handleToggleFavoriteDrill}
+              sessionTemplates={sessionTemplates}
+              onApplyTemplateToSession={handleApplyTemplateToSession}
+              onSaveCurrentSessionAsTemplate={handleSaveCurrentSessionAsTemplate}
+              onCreateTemplateFromScratch={handleCreateTemplateFromScratch}
+              onDeleteTemplate={handleDeleteTemplate}
+              onOpenMatchNotes={(dateIdx) => {
+                setSelectedMatchDateIndex(dateIdx !== undefined ? dateIdx : 5);
+                setShowMatchModal(true);
+              }}
             />
           </div>
         ) : activeView === 'database' ? (
@@ -1887,6 +2047,19 @@ export default function App() {
             triggerToast('✅ Canvis al perfil de l’entrenador actualitzats!');
           }}
           onClose={() => setShowProfileModal(false)}
+        />
+      )}
+
+      {/* MATCH ANNOTATIONS MODAL */}
+      {showMatchModal && (
+        <MatchAnnotationsModal
+          isOpen={showMatchModal}
+          onClose={() => setShowMatchModal(false)}
+          activePlan={activePlan}
+          initialDateIndex={selectedMatchDateIndex}
+          onSaveAnnotation={handleSaveMatchAnnotation}
+          onDeleteAnnotation={handleDeleteMatchAnnotation}
+          triggerToast={triggerToast}
         />
       )}
 
