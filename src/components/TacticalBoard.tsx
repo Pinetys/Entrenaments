@@ -137,7 +137,7 @@ function getPointAtProgress(points: { x: number; y: number }[], t: number): { x:
 export default function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [boardType, setBoardType] = useState<'half' | 'full'>(boardState?.courtType || 'half');
-  const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'draw_shoot' | 'eraser'>('move');
+  const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'draw_shoot' | 'draw_handoff' | 'eraser'>('move');
   const [activePinId, setActivePinId] = useState<string | null>(null);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState<BoardPath | null>(null);
@@ -399,6 +399,19 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       } else {
         setSelectedPinId(null);
       }
+    } else if (mode === 'draw_handoff') {
+      // Stamp a "Mà a mà" (Hand-off) symbol pin directly at clicked court position
+      e.preventDefault();
+      const newHandoff: BoardPin = {
+        id: 'handoff_' + crypto.randomUUID(),
+        label: '🤝',
+        x: coords.x,
+        y: coords.y,
+        type: 'handoff'
+      };
+      updateBoard({ pins: [...pins, newHandoff] });
+      setMode('move');
+      return;
     } else {
       // Drawing mode
       e.preventDefault();
@@ -711,6 +724,19 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
             </button>
 
             <button
+              id="btn-mode-handoff"
+              type="button"
+              title="Símbol de Mà a Mà / Hand-off (Clica a la pista per col·locar el símbol)"
+              onClick={() => setMode('draw_handoff')}
+              className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
+                mode === 'draw_handoff' ? 'bg-amber-600 border-amber-600 text-white font-bold' : 'bg-white border-slate-200 text-amber-700 hover:bg-amber-50'
+              }`}
+            >
+              <span className="text-[11px] leading-none">🤝</span>
+              Mà a mà
+            </button>
+
+            <button
               id="btn-mode-eraser"
               type="button"
               title="Goma d'esborrar (Clica a sobre d'un traç o d'un jugador per eliminar-lo)"
@@ -983,6 +1009,49 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 }}
                 className="w-4 h-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
                 title="Afegir entrenador"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Hand-off (Mà a mà) symbol control */}
+            <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
+              <span className="text-[9px] font-bold text-amber-700 font-sans">Mà a mà (🤝):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const handoffs = pins.filter(p => p.type === 'handoff');
+                  if (handoffs.length > 0) {
+                    const lastHandoff = handoffs[handoffs.length - 1];
+                    updateBoard({ pins: pins.filter(p => p.id !== lastHandoff.id) });
+                  }
+                }}
+                disabled={pins.filter(p => p.type === 'handoff').length === 0}
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
+                title="Treure un símbol de Mà a mà"
+              >
+                -
+              </button>
+              <span className="w-3 text-center font-mono font-bold text-amber-700 text-[9px]">
+                {pins.filter(p => p.type === 'handoff').length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const handoffs = pins.filter(p => p.type === 'handoff');
+                  const defaultY = boardType === 'half' ? 70 : 45;
+                  const newHandoff: BoardPin = {
+                    id: 'handoff_' + crypto.randomUUID(),
+                    label: '🤝',
+                    x: 48 + (handoffs.length % 5) * 6,
+                    y: defaultY + Math.floor(handoffs.length / 5) * 5,
+                    type: 'handoff'
+                  };
+                  updateBoard({ pins: [...pins, newHandoff] });
+                }}
+                disabled={pins.filter(p => p.type === 'handoff').length >= 10}
+                className="w-4 h-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:hover:bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold flex items-center justify-center cursor-pointer transition text-[9px]"
+                title="Afegir un símbol de Mà a mà"
               >
                 +
               </button>
@@ -1380,6 +1449,11 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                 pinText = '#ffffff';
                 radius = 2.4; // Same size as other active players/defenders
                 pinBorder = '#047857'; // Darker emerald border
+              } else if (p.type === 'handoff') {
+                pinBg = '#fff7ed';
+                pinText = '#ea580c';
+                radius = 2.6;
+                pinBorder = '#f97316';
               }
 
               // Offset ball slightly if it is anchored to or sits on top of a player so it doesn't cover their number
@@ -1430,7 +1504,62 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                     />
                   )}
 
-                  {p.type === 'cone' ? (
+                  {p.type === 'handoff' ? (
+                    <>
+                      {/* Hand-off (Mà a mà) Badge background dropshadow */}
+                      <circle
+                        cx={renderX}
+                        cy={renderY + 0.5}
+                        r={radius}
+                        fill="#000000"
+                        opacity={0.18}
+                      />
+                      {/* Outer badge circle */}
+                      <circle
+                        cx={renderX}
+                        cy={renderY}
+                        r={radius}
+                        fill="#fff7ed"
+                        stroke="#ea580c"
+                        strokeWidth={0.55}
+                      />
+                      {/* Inner dashed ring */}
+                      <circle
+                        cx={renderX}
+                        cy={renderY}
+                        r={radius - 0.4}
+                        fill="none"
+                        stroke="#f97316"
+                        strokeWidth={0.25}
+                        strokeDasharray="0.8, 0.8"
+                      />
+                      {/* Hand-off symbol icon */}
+                      <text
+                        x={renderX}
+                        y={renderY - 0.2}
+                        dy="0.33em"
+                        fontSize="2.4px"
+                        fontWeight="bold"
+                        fill="#c2410c"
+                        textAnchor="middle"
+                      >
+                        🤝
+                      </text>
+                      {/* Text label underneath */}
+                      <text
+                        x={renderX}
+                        y={renderY + radius + 1.2}
+                        dy="0.3em"
+                        fontSize="1.3px"
+                        fontWeight="900"
+                        fontFamily="system-ui, sans-serif"
+                        fill="#c2410c"
+                        textAnchor="middle"
+                      >
+                        MÀ A MÀ
+                      </text>
+                    </>
+                  ) : p.type === 'cone' ? (
                     <>
                       {/* Cone dropshadow (oval) */}
                       <ellipse
