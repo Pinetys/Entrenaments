@@ -729,7 +729,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               title="Grafisme de Mà a Mà / Hand-off (Clica a la pista per col·locar el grafisme)"
               onClick={() => setMode('draw_handoff')}
               className={`py-1 px-2 rounded-md transition flex items-center gap-1 text-[10px] border ${
-                mode === 'draw_handoff' ? 'bg-amber-600 border-amber-600 text-white font-bold' : 'bg-white border-slate-200 text-amber-700 hover:bg-amber-50'
+                mode === 'draw_handoff' ? 'bg-purple-600 border-purple-600 text-white font-bold' : 'bg-white border-slate-200 text-purple-700 hover:bg-purple-50'
               }`}
             >
               <RotateCcw size={11} className="rotate-90" />
@@ -1016,7 +1016,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
             {/* Hand-off (Mà a mà) symbol control */}
             <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
-              <span className="text-[9px] font-bold text-amber-700 font-sans">Mà a mà:</span>
+              <span className="text-[9px] font-bold text-purple-700 font-sans">Mà a mà:</span>
               <button
                 type="button"
                 onClick={() => {
@@ -1032,7 +1032,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
               >
                 -
               </button>
-              <span className="w-3 text-center font-mono font-bold text-amber-700 text-[9px]">
+              <span className="w-3 text-center font-mono font-bold text-purple-700 text-[9px]">
                 {pins.filter(p => p.type === 'handoff').length}
               </span>
               <button
@@ -1512,18 +1512,18 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                         <path d={`M ${renderX + 3.2} ${renderY - 0.8} C ${renderX + 3.2} ${renderY + 2.5}, ${renderX - 0.8} ${renderY + 3.2}, ${renderX - 2.2} ${renderY + 0.8}`} />
                       </g>
 
-                      {/* Primary action lines - Crisp vector stroke in tactical amber/orange */}
-                      <g fill="none" stroke="#ea580c" strokeWidth="0.85" strokeLinecap="round" strokeLinejoin="round">
+                      {/* Primary action lines - Crisp vector stroke in tactical vibrant purple */}
+                      <g fill="none" stroke="#9333ea" strokeWidth="0.85" strokeLinecap="round" strokeLinejoin="round">
                         <path d={`M ${renderX - 3.2} ${renderY + 0.8} C ${renderX - 3.2} ${renderY - 2.5}, ${renderX + 0.8} ${renderY - 3.2}, ${renderX + 2.2} ${renderY - 0.8}`} />
                         <path d={`M ${renderX + 3.2} ${renderY - 0.8} C ${renderX + 3.2} ${renderY + 2.5}, ${renderX - 0.8} ${renderY + 3.2}, ${renderX - 2.2} ${renderY + 0.8}`} />
                       </g>
 
                       {/* Arrow heads at loop terminals */}
-                      <polygon points={`${renderX + 2.2},${renderY - 0.8} ${renderX + 0.8},${renderY - 1.8} ${renderX + 2.4},${renderY - 2.2}`} fill="#ea580c" />
-                      <polygon points={`${renderX - 2.2},${renderY + 0.8} ${renderX - 0.8},${renderY + 1.8} ${renderX - 2.4},${renderY + 2.2}`} fill="#ea580c" />
+                      <polygon points={`${renderX + 2.2},${renderY - 0.8} ${renderX + 0.8},${renderY - 1.8} ${renderX + 2.4},${renderY - 2.2}`} fill="#9333ea" />
+                      <polygon points={`${renderX - 2.2},${renderY + 0.8} ${renderX - 0.8},${renderY + 1.8} ${renderX - 2.4},${renderY + 2.2}`} fill="#9333ea" />
 
                       {/* Central exchange node dot */}
-                      <circle cx={renderX} cy={renderY} r={0.75} fill="#ea580c" stroke="#ffffff" strokeWidth={0.3} />
+                      <circle cx={renderX} cy={renderY} r={0.75} fill="#9333ea" stroke="#ffffff" strokeWidth={0.3} />
 
                       {/* Tactical action label text below */}
                       <text
@@ -1533,7 +1533,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
                         fontSize="1.1px"
                         fontWeight="900"
                         fontFamily="system-ui, sans-serif"
-                        fill="#ea580c"
+                        fill="#7e22ce"
                         textAnchor="middle"
                         letterSpacing="0.05em"
                       >
