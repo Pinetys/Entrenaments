@@ -23,16 +23,19 @@ import {
   Database,
   Camera,
   User,
-  NotebookPen
+  NotebookPen,
+  Users
 } from 'lucide-react';
-import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation } from './types';
+import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player } from './types';
 import { DEFAULT_SESSION_TEMPLATES } from './data/defaultTemplates';
+import { DEFAULT_JUNIOR_PLAYERS } from './data/defaultPlayers';
 import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import CoachProfileModal from './components/CoachProfileModal';
 import MatchAnnotationsModal from './components/MatchAnnotationsModal';
+import PlayerRosterModal from './components/PlayerRosterModal';
 import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
@@ -280,6 +283,41 @@ export default function App() {
   const [previewDrill, setPreviewDrill] = useState<Drill | null>(null);
   const [planIdToDelete, setPlanIdToDelete] = useState<string | null>(null);
 
+  // Player roster and evaluation state
+  const [players, setPlayers] = useState<Player[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.players && Array.isArray(parsed.players) && parsed.players.length > 0) {
+          return parsed.players;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading players from localStorage', e);
+    }
+    return DEFAULT_JUNIOR_PLAYERS;
+  });
+
+  const [showPlayerRosterModal, setShowPlayerRosterModal] = useState<boolean>(false);
+
+  const handleAddPlayer = (newPlayer: Omit<Player, 'id'>) => {
+    const created: Player = {
+      ...newPlayer,
+      id: `player-${Date.now()}`,
+      updatedAt: new Date().toISOString()
+    };
+    setPlayers(prev => [...prev, created]);
+  };
+
+  const handleUpdatePlayer = (id: string, updated: Partial<Player>) => {
+    setPlayers(prev => prev.map(p => p.id === id ? { ...p, ...updated, updatedAt: new Date().toISOString() } : p));
+  };
+
+  const handleDeletePlayer = (id: string) => {
+    setPlayers(prev => prev.filter(p => p.id !== id));
+  };
+
   // Match annotations state
   const [showMatchModal, setShowMatchModal] = useState<boolean>(false);
   const [selectedMatchDateIndex, setSelectedMatchDateIndex] = useState<number>(5);
@@ -490,6 +528,7 @@ export default function App() {
     completions: any[];
     favoriteDrillIds: string[];
     coachProfile: CoachProfile;
+    players: Player[];
   }>({
     drills: [],
     weeklyPlans: [],
@@ -497,7 +536,8 @@ export default function App() {
     selectedSessionId: '',
     completions: [],
     favoriteDrillIds: [],
-    coachProfile: DEFAULT_COACH_PROFILE
+    coachProfile: DEFAULT_COACH_PROFILE,
+    players: []
   });
 
   // Keep latestStateRef updated on every render
@@ -508,7 +548,8 @@ export default function App() {
     selectedSessionId,
     completions,
     favoriteDrillIds,
-    coachProfile
+    coachProfile,
+    players
   };
 
   const triggerToast = (msg: string) => {
@@ -619,9 +660,15 @@ export default function App() {
       selectedSessionId,
       completions,
       favoriteDrillIds,
-      coachProfile
+      coachProfile,
+      players
     };
     const currentStateString = JSON.stringify(currentState);
+
+    // Also persist to localStorage for instant client reload and Render resilience
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
+    } catch (e) {}
 
     if (ignoreNextAutoSaveRef.current) {
       ignoreNextAutoSaveRef.current = false;
@@ -651,7 +698,7 @@ export default function App() {
     }, 2000); // reduced timeout to 2 seconds for faster cloud backup response
 
     return () => clearTimeout(timer);
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, syncCode, hasLoadedFromCloud]);
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, syncCode, hasLoadedFromCloud]);
 
   // Listen for real-time changes from the cloud (Firestore onSnapshot)
   useEffect(() => {
@@ -700,6 +747,9 @@ export default function App() {
       }
       if (cloudData.coachProfile) {
         setCoachProfile(cloudData.coachProfile);
+      }
+      if (cloudData.players && Array.isArray(cloudData.players)) {
+        setPlayers(cloudData.players);
       }
 
       if (cloudData.updatedAt) {
@@ -1389,6 +1439,17 @@ export default function App() {
             </span>
 
             <button
+              id="btn-header-players"
+              onClick={() => setShowPlayerRosterModal(true)}
+              title="Plantilla de Jugadors i Valoracions Junior A"
+              className="py-1.5 md:py-2 px-3.5 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
+            >
+              <Users size={14} className="text-orange-400" />
+              <span className="hidden sm:inline">Jugadors ({players.length})</span>
+              <span className="sm:hidden">Jugadors</span>
+            </button>
+
+            <button
               id="btn-header-share"
               onClick={handleGenerateShareCode}
               className="py-1.5 md:py-2 px-3.5 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
@@ -2059,6 +2120,19 @@ export default function App() {
           initialDateIndex={selectedMatchDateIndex}
           onSaveAnnotation={handleSaveMatchAnnotation}
           onDeleteAnnotation={handleDeleteMatchAnnotation}
+          triggerToast={triggerToast}
+        />
+      )}
+
+      {/* PLAYER ROSTER & EVALUATIONS MODAL */}
+      {showPlayerRosterModal && (
+        <PlayerRosterModal
+          isOpen={showPlayerRosterModal}
+          onClose={() => setShowPlayerRosterModal(false)}
+          players={players}
+          onAddPlayer={handleAddPlayer}
+          onUpdatePlayer={handleUpdatePlayer}
+          onDeletePlayer={handleDeletePlayer}
           triggerToast={triggerToast}
         />
       )}

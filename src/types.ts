@@ -90,12 +90,40 @@ export interface WeeklyPlan {
   matchAnnotations?: Record<string, MatchAnnotation>; // key is dateIndex string (e.g. "5", "6", etc.)
 }
 
+export interface Player {
+  id: string;
+  number: number;
+  name: string;
+  position: 'Base' | 'Escorta' | 'Ala' | 'Ala-Pivot' | 'Pivot';
+  role?: 'Quintet Inicial' | 'Rotació Principal' | 'Especialista' | 'Júnior Desenvolupament';
+  height?: string;
+  averageMinutes?: number;
+  ratings?: {
+    shooting?: number; // 1-10
+    defense?: number; // 1-10
+    tacticalIQ?: number; // 1-10
+    physical?: number; // 1-10
+    leadership?: number; // 1-10
+  };
+  strengths?: string[];
+  areasToImprove?: string[];
+  notes?: string;
+  statsSummary?: {
+    ppg?: number;
+    rpg?: number;
+    apg?: number;
+    threePointPct?: number;
+  };
+  updatedAt?: string;
+}
+
 export interface AppState {
   drills: Drill[];
   weeklyPlans: WeeklyPlan[];
   selectedWeeklyPlanId: string;
   selectedSessionId: string;
   activeView: string;
+  players?: Player[];
 }
 
 export interface SessionCompletion {

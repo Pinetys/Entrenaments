@@ -31,6 +31,7 @@ export interface SyncData {
   updatedAt: string;
   syncCode: string;
   coachProfile?: CoachProfile;
+  players?: any[];
 }
 
 // Function to generate a random 6-character alphanumeric code

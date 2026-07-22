@@ -194,14 +194,52 @@ export default function MobileCourtView({
     }
   }, [drillsInSession.length, activeDrillIndex]);
 
-  // Sync Timer when active drill changes (uses stable, primitive parameters to prevent timer reset glitches)
+  // Sync Timer when active drill changes (unless restored from localStorage)
+  const isFirstMountRef = useRef(true);
   useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      try {
+        const saved = localStorage.getItem(`basket_planner_court_state_${session.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed.activeDrillIndex === 'number') {
+            setActiveDrillIndex(parsed.activeDrillIndex);
+            if (typeof parsed.timeLeft === 'number' && parsed.timeLeft > 0) {
+              setTimeLeft(parsed.timeLeft);
+            } else if (activeDrill) {
+              setTimeLeft(activeDrill.duration * 60);
+            }
+            if (typeof parsed.sessionTimeLeft === 'number' && parsed.sessionTimeLeft > 0) {
+              setSessionTimeLeft(parsed.sessionTimeLeft);
+            }
+            return;
+          }
+        }
+      } catch (e) {}
+    }
+
     if (activeDrill) {
       setTimeLeft(activeDrill.duration * 60);
       setTimerRunning(false);
       setShowFinishedToast(false);
     }
   }, [safeActiveIndex, activeDrill?.id]);
+
+  // Persist court view progress to localStorage for offline / Render keep-alive resilience
+  useEffect(() => {
+    if (!session?.id) return;
+    try {
+      const stateToPersist = {
+        activeDrillIndex: safeActiveIndex,
+        timeLeft,
+        sessionTimeLeft,
+        timerRunning,
+        updatedAt: Date.now()
+      };
+      localStorage.setItem(`basket_planner_court_state_${session.id}`, JSON.stringify(stateToPersist));
+    } catch (e) {}
+  }, [session?.id, safeActiveIndex, timeLeft, sessionTimeLeft, timerRunning]);
 
   // Audio Whistle synthesiser using Web Audio API (Zero-dependency, works 100% offline & instantly)
   const playSynthesizedWhistle = () => {
