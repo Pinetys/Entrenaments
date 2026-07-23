@@ -31,6 +31,7 @@ import { DEFAULT_SESSION_TEMPLATES } from './data/defaultTemplates';
 import { DEFAULT_JUNIOR_PLAYERS } from './data/defaultPlayers';
 import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
+import DrillCreator from './components/DrillCreator';
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import CoachProfileModal from './components/CoachProfileModal';
@@ -281,6 +282,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [previewDrill, setPreviewDrill] = useState<Drill | null>(null);
+  const [editingDrill, setEditingDrill] = useState<Drill | null>(null);
   const [planIdToDelete, setPlanIdToDelete] = useState<string | null>(null);
 
   // Player roster and evaluation state
@@ -1551,7 +1553,7 @@ export default function App() {
               <button
                 id="tab-planner"
                 onClick={() => setActiveView('planner')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
                   activeView === 'planner' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -1564,7 +1566,7 @@ export default function App() {
               <button
                 id="tab-database"
                 onClick={() => setActiveView('database')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
                   activeView === 'database' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -1575,16 +1577,32 @@ export default function App() {
               </button>
 
               <button
+                id="tab-creator"
+                onClick={() => {
+                  setEditingDrill(null);
+                  setActiveView('creator');
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                  activeView === 'creator' 
+                    ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Sparkles size={14} className={activeView === 'creator' ? 'text-orange-500' : 'text-slate-500'} />
+                Creador d'Exercicis
+              </button>
+
+              <button
                 id="tab-court-mode"
                 onClick={() => setActiveView('mobile')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-black uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-sm text-xs font-black uppercase tracking-wider transition-all duration-150 ${
                   activeView === 'mobile' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-orange-600 hover:text-orange-850 hover:bg-orange-50'
                 }`}
               >
                 <Smartphone size={14} className="text-orange-500 animate-bounce" />
-                ⚡ Modo Pista (Mòbil)
+                ⚡ Modo Pista
               </button>
             </div>
 
@@ -1806,11 +1824,36 @@ export default function App() {
           <DrillDatabase
             drills={drills}
             onAddDrill={handleAddDrillToDatabase}
-            onEditDrill={handleEditDrillInDatabase}
+            onEditDrill={(drill) => {
+              setEditingDrill(drill);
+              setActiveView('creator');
+            }}
             onDeleteDrill={handleDeleteDrillFromDatabase}
             triggerToast={triggerToast}
             favoriteDrillIds={favoriteDrillIds}
             onToggleFavorite={handleToggleFavoriteDrill}
+            onOpenCreator={(drill) => {
+              setEditingDrill(drill || null);
+              setActiveView('creator');
+            }}
+          />
+        ) : activeView === 'creator' ? (
+          <DrillCreator
+            initialDrill={editingDrill}
+            onSaveDrill={(savedDrill) => {
+              if (drills.some(d => d.id === savedDrill.id)) {
+                handleEditDrillInDatabase(savedDrill);
+              } else {
+                handleAddDrillToDatabase(savedDrill);
+              }
+              setEditingDrill(null);
+              setActiveView('database');
+              triggerToast("Exercici guardat correctament a la biblioteca!");
+            }}
+            onCancel={() => {
+              setEditingDrill(null);
+              setActiveView('database');
+            }}
           />
         ) : (
           <div className={`${isSharedMobile || activeView === 'mobile' ? 'p-0' : 'py-2'}`}>
