@@ -1660,51 +1660,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* 8-Session Selection Bar (Tells coach exactly which session of the month they are editing) */}
-            {activeView === 'planner' && (
-              <div className="flex flex-wrap items-center gap-1 bg-white border border-slate-200 p-1.5 rounded-md shadow-xs self-start md:self-auto max-w-full overflow-x-auto no-scrollbar">
-                <span className="text-[10px] uppercase font-mono font-black text-slate-400 px-2 select-none shrink-0">Sessió Activa:</span>
-                {[
-                  { id: 'dia1', label: 'S1', title: 'Setm. 1 - DiM' },
-                  { id: 'dia2', label: 'S2', title: 'Setm. 1 - DiJ' },
-                  { id: 'dia3', label: 'S3', title: 'Setm. 2 - DiM' },
-                  { id: 'dia4', label: 'S4', title: 'Setm. 2 - DiJ' },
-                  { id: 'dia5', label: 'S5', title: 'Setm. 3 - DiM' },
-                  { id: 'dia6', label: 'S6', title: 'Setm. 3 - DiJ' },
-                  { id: 'dia7', label: 'S7', title: 'Setm. 4 - DiM' },
-                  { id: 'dia8', label: 'S8', title: 'Setm. 4 - DiJ' },
-                ].map((item) => {
-                  const itemSession = sessions[item.id];
-                  const isScheduled = !!itemSession?.scheduledTime;
-                  const isSelected = selectedSessionId === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      id={`btn-session-select-${item.id}`}
-                      onClick={() => setSelectedSessionId(item.id)}
-                      className={`px-2.5 py-1 rounded text-xs font-bold transition-all leading-tight shrink-0 text-center cursor-pointer ${
-                        isSelected
-                          ? 'bg-orange-500 text-white shadow-xs'
-                          : 'text-slate-700 hover:bg-slate-50 border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        <span>{item.label}</span>
-                        {isScheduled && (
-                          <span 
-                            className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-200' : 'bg-emerald-500'}`} 
-                            title="Sessió Planificada" 
-                          />
-                        )}
-                      </div>
-                      <div className={`text-[8px] font-mono tracking-tighter ${isSelected ? 'text-orange-100 font-medium' : 'text-slate-400'}`}>
-                        {item.title}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
         )}
 
@@ -1712,41 +1667,107 @@ export default function App() {
         {activeView === 'planner' ? (
           <div className="space-y-6">
             
-            {/* INTERACTIVE BASKETBALL TRAINING CALENDAR */}
-            <div className="bg-white border border-slate-200 rounded p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="bg-orange-500/10 text-orange-600 p-1.5 rounded-lg flex items-center justify-center">
-                    <Calendar size={15} />
+            {/* UNIFIED CALENDARI DEL MICROCICLE & SESSIÓ ACTIVA CARD */}
+            <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-xs space-y-3.5">
+              
+              {/* Header Row */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-150">
+                <div className="flex items-center gap-2.5">
+                  <div className="bg-orange-500/10 text-orange-600 p-2 rounded-lg flex items-center justify-center shrink-0">
+                    <Calendar size={18} />
                   </div>
                   <div>
-                    <h2 className="text-xs font-black uppercase tracking-widest text-slate-800">Calendari del Microcicle</h2>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Control de sessions de la temporada de Júnior A</p>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900">
+                        Calendari del Microcicle & Sessió Activa
+                      </h2>
+                      <span className="text-[9px] font-mono font-black text-orange-600 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded hidden sm:inline-block">
+                        FCBQ STANDARD
+                      </span>
+                    </div>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">
+                      Gestió centralitzada de sessions d'entrenament i partits del microcicle
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedMatchDateIndex(5);
                       setShowMatchModal(true);
                     }}
-                    className="py-1 px-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    className="py-1.5 px-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold rounded-md text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-xs"
                     title="Obrir anotacions de partit en directe o post-partit"
                   >
                     <NotebookPen size={13} />
                     <span>Anotacions de Partit 🏀</span>
                   </button>
+
                   <button
                     type="button"
                     onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
-                    className="py-1 px-3 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5 transition cursor-pointer"
+                    className="py-1.5 px-3 border border-slate-200 hover:bg-slate-50 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 transition cursor-pointer"
                   >
-                    <span>{isCalendarExpanded ? "▲ Amagar Calendari" : "▼ Mostrar Calendari"}</span>
+                    <span>{isCalendarExpanded ? "▲ Amagar Matriu" : "▼ Mostrar Matriu"}</span>
                   </button>
-                  <span className="text-[9px] font-mono font-black text-orange-600 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded hidden sm:inline-block">
-                    FCBQ STANDARD
+                </div>
+              </div>
+
+              {/* Integrated Active Session Selector Strip */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 bg-slate-50/90 border border-slate-200 p-2.5 rounded-lg">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] uppercase font-mono font-black text-slate-500 px-1 select-none flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                    Sessió Activa:
                   </span>
+                  <span className="text-xs font-black text-orange-700 font-mono bg-orange-100/90 px-2.5 py-1 rounded border border-orange-200/80 shadow-2xs">
+                    S{selectedSessionId.replace('dia', '')} · {sessions[selectedSessionId]?.name || `Setm. ${Math.ceil(parseInt(selectedSessionId.replace('dia','')) / 2)}`}
+                  </span>
+                </div>
+
+                {/* S1..S8 Direct Switcher Buttons */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/80">
+                  {[
+                    { id: 'dia1', label: 'S1', title: 'Setm. 1 - DiM' },
+                    { id: 'dia2', label: 'S2', title: 'Setm. 1 - DiJ' },
+                    { id: 'dia3', label: 'S3', title: 'Setm. 2 - DiM' },
+                    { id: 'dia4', label: 'S4', title: 'Setm. 2 - DiJ' },
+                    { id: 'dia5', label: 'S5', title: 'Setm. 3 - DiM' },
+                    { id: 'dia6', label: 'S6', title: 'Setm. 3 - DiJ' },
+                    { id: 'dia7', label: 'S7', title: 'Setm. 4 - DiM' },
+                    { id: 'dia8', label: 'S8', title: 'Setm. 4 - DiJ' },
+                  ].map((item) => {
+                    const itemSession = sessions[item.id];
+                    const isScheduled = !!itemSession?.scheduledTime;
+                    const isSelected = selectedSessionId === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        id={`btn-session-select-${item.id}`}
+                        onClick={() => setSelectedSessionId(item.id)}
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all leading-tight shrink-0 text-center cursor-pointer ${
+                          isSelected
+                            ? 'bg-orange-500 text-white shadow-xs font-black ring-1 ring-orange-600'
+                            : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/90'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <span>{item.label}</span>
+                          {isScheduled && (
+                            <span 
+                              className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-200' : 'bg-emerald-500'}`} 
+                              title="Sessió Planificada" 
+                            />
+                          )}
+                        </div>
+                        <div className={`text-[8px] font-mono tracking-tighter ${isSelected ? 'text-orange-100 font-medium' : 'text-slate-400'}`}>
+                          {item.title}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
