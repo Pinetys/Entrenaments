@@ -11,6 +11,8 @@ import {
   ShieldAlert, 
   Smartphone,
   CalendarDays,
+  CalendarCheck2,
+  CalendarClock,
   FileCheck2,
   ListRestart,
   GripVertical,
@@ -443,19 +445,40 @@ export default function SessionPlanner({
     return 'from-amber-400 to-amber-500 bg-amber-500';
   };
 
+  const formatScheduledDate = (isoStr?: string) => {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      const day = d.getDate().toString().padStart(2, '0');
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const year = d.getFullYear();
+      const hours = d.getHours().toString().padStart(2, '0');
+      const mins = d.getMinutes().toString().padStart(2, '0');
+      
+      const daysCatalan = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
+      const dayName = daysCatalan[d.getDay()];
+      
+      return `${dayName} ${day}/${month}/${year} · ${hours}:${mins}h`;
+    } catch {
+      return isoStr;
+    }
+  };
+
   return (
     <div id="session-planner-view" className="grid grid-cols-1 xl:grid-cols-12 gap-8">
       
       {/* LEFT: Active Session Scheduler (8 columns) */}
       <div id="active-session-column" className="xl:col-span-8 space-y-6">
         
-        {/* GEOMETRIC PALETTE TIMING CONTROL CARD (COMPACT & RESUMIDA) */}
-        <div className="bg-white border border-slate-200 rounded-sm shadow-xs p-3.5 md:p-4 text-slate-950 relative overflow-hidden">
+        {/* GEOMETRIC PALETTE TIMING CONTROL CARD (COMPACT & PROMINENT DATE) */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-xs p-3 md:p-4 text-slate-950 relative overflow-hidden space-y-3">
           
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          {/* Row 1: Session Badge, Title Input & Actions Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 border-b border-slate-150 pb-2.5">
             {/* Session title & ID badge */}
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="px-2 py-1 bg-orange-500 text-white font-black text-xs rounded-sm font-mono shrink-0">
+              <span className="px-2.5 py-1 bg-orange-500 text-white font-black text-xs rounded font-mono shrink-0 shadow-xs">
                 S{session.id.replace('dia', '')}
               </span>
               <input
@@ -468,7 +491,7 @@ export default function SessionPlanner({
                     name: e.target.value
                   });
                 }}
-                className="text-sm md:text-base font-black text-slate-900 uppercase italic tracking-tight bg-transparent hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-orange-500 px-2 py-1 rounded-sm transition flex-1 min-w-0 truncate"
+                className="text-sm md:text-base font-black text-slate-900 uppercase italic tracking-tight bg-transparent hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-orange-500 px-2 py-1 rounded transition flex-1 min-w-0 truncate"
                 title="Fes clic per reanomenar la sessió"
               />
             </div>
@@ -480,7 +503,7 @@ export default function SessionPlanner({
                   id="btn-duplicate-session"
                   type="button"
                   onClick={() => setShowDuplicateDropdown(!showDuplicateDropdown)}
-                  className={`px-2.5 py-1.5 border rounded-sm text-[11px] font-black tracking-wider uppercase flex items-center gap-1 cursor-pointer transition ${
+                  className={`px-2.5 py-1.5 border rounded-md text-[11px] font-black tracking-wider uppercase flex items-center gap-1 cursor-pointer transition ${
                     showDuplicateDropdown 
                       ? 'bg-orange-500 text-white border-orange-600' 
                       : 'bg-slate-50 text-slate-700 border-slate-250 hover:bg-slate-100'
@@ -545,7 +568,7 @@ export default function SessionPlanner({
                 id="btn-open-session-templates-library"
                 type="button"
                 onClick={() => setShowTemplatesModal(true)}
-                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded-sm text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-slate-250"
+                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-slate-250"
                 title="Plantilles i Presets"
               >
                 <BookOpen size={13} /> Plantilles
@@ -555,7 +578,7 @@ export default function SessionPlanner({
                 id="btn-pdf-session-active"
                 type="button"
                 onClick={() => setShowPrintPreview(true)}
-                className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-black rounded-sm text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
+                className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-black rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
                 title="Imprimir o descarregar PDF de la sessió"
               >
                 <Printer size={13} /> PDF
@@ -566,7 +589,7 @@ export default function SessionPlanner({
                   id="btn-clear-session-drills-top"
                   type="button"
                   onClick={clearSession}
-                  className="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-sm text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-rose-200"
+                  className="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-rose-200"
                   title="Buidar exercicis"
                 >
                   <Trash2 size={13} /> Buidar
@@ -575,60 +598,91 @@ export default function SessionPlanner({
             </div>
           </div>
 
-          {/* Time speed/gauge calculation panel (Discreet minimalist compact version) */}
-          <div className="bg-slate-50/70 border border-slate-200 rounded-lg p-2.5 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs w-full">
-            <div className="flex items-center gap-2 shrink-0 select-none">
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Temps Planificat:</span>
-              <span className={`text-sm font-black font-mono tracking-tight px-2 py-0.5 rounded ${
-                totalTime === TIME_LIMIT 
-                  ? 'bg-emerald-100 text-emerald-700' 
-                  : totalTime > TIME_LIMIT 
-                    ? 'bg-red-100 text-red-700 animate-pulse' 
-                    : 'bg-slate-200 text-slate-800'
-              }`}>
-                {totalTime}′ <span className="text-[10px] opacity-75 font-sans font-semibold">/ 75′</span>
-              </span>
+          {/* Row 2: Prominent Scheduled Date & Planificada Status + Compact Time Progress */}
+          <div className="bg-slate-50/90 border border-slate-200 rounded-lg p-2.5 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            
+            {/* Left: Prominent Scheduled Date Display with "PLANIFICADA" Icon Badge */}
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+              {session.scheduledTime ? (
+                <div className="flex flex-wrap items-center gap-2 bg-emerald-500/10 border border-emerald-300/80 px-2.5 py-1.5 rounded-md text-emerald-950 shadow-2xs">
+                  <div className="flex items-center gap-1 bg-emerald-600 text-white font-black text-[10px] sm:text-xs px-2 py-0.5 rounded uppercase tracking-wider shrink-0 shadow-2xs">
+                    <CalendarCheck2 size={14} className="stroke-[2.5]" />
+                    <span>PLANIFICADA</span>
+                  </div>
+                  <span className="text-xs sm:text-sm font-black text-slate-900 font-mono tracking-tight">
+                    {formatScheduledDate(session.scheduledTime)}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-300/70 text-amber-950 px-2.5 py-1.5 rounded-md shrink-0">
+                  <CalendarClock size={15} className="text-amber-600 shrink-0" />
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">
+                    Pendent de Programar
+                  </span>
+                </div>
+              )}
+
+              {/* Date & Time Picker Control */}
+              <div className="flex items-center gap-1.5 min-w-[210px] sm:w-auto flex-1 sm:flex-initial">
+                <input
+                  type="datetime-local"
+                  value={session.scheduledTime || ''}
+                  onChange={(e) => {
+                    onChangeSession({
+                      ...session,
+                      scheduledTime: e.target.value
+                    });
+                  }}
+                  className="bg-white border border-slate-300 hover:border-orange-400 focus:border-orange-500 px-2.5 py-1 rounded-md text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer w-full shadow-2xs"
+                  title="Fes clic per assignar o modificar la data i hora de la sessió"
+                />
+                {session.scheduledTime && (
+                  <button
+                    type="button"
+                    onClick={() => onChangeSession({ ...session, scheduledTime: undefined })}
+                    className="p-1 text-slate-400 hover:text-rose-600 transition"
+                    title="Esborrar data"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Subtle, thin visual progress meter */}
-            <div className="flex-1 w-full flex items-center gap-3">
-              <div className="flex-grow h-2 bg-slate-200/80 rounded-full overflow-hidden relative border border-slate-250 flex">
+            {/* Right: Ultra-Compact Time Gauge */}
+            <div className="flex items-center justify-between lg:justify-end gap-2.5 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 pt-2 lg:pt-0 lg:pl-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest shrink-0">Temps:</span>
+                <span className={`text-xs font-black font-mono tracking-tight px-2 py-0.5 rounded ${
+                  totalTime === TIME_LIMIT 
+                    ? 'bg-emerald-100 text-emerald-700' 
+                    : totalTime > TIME_LIMIT 
+                      ? 'bg-red-100 text-red-700 animate-pulse' 
+                      : 'bg-slate-200 text-slate-800'
+                }`}>
+                  {totalTime}′ / 75′
+                </span>
+              </div>
+
+              <div className="w-20 sm:w-28 h-2 bg-slate-200 rounded-full overflow-hidden border border-slate-250 flex shrink-0">
                 <div 
                   className={`h-full transition-all duration-300 rounded-full ${getGuageColor()}`}
                   style={{ width: `${Math.min(100, (totalTime / TIME_LIMIT) * 100)}%` }}
                 />
               </div>
 
-              {/* Ultra-compact alert feedback summary */}
-              <div className="shrink-0 font-bold flex items-center gap-2">
-                {totalTime === TIME_LIMIT ? (
-                  <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 uppercase tracking-wider">
-                    <FileCheck2 size={12} className="shrink-0 text-emerald-500 font-bold" /> Perfecte
-                  </span>
-                ) : totalTime > TIME_LIMIT ? (
-                  <span className="text-[10px] text-red-650 font-black flex items-center gap-1 uppercase tracking-wider animate-pulse">
-                    <ShieldAlert size={12} className="shrink-0 text-red-500" /> +{totalTime - TIME_LIMIT}′
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1 uppercase tracking-wider">
-                    <Clock size={12} className="shrink-0 text-slate-450" /> -{TIME_LIMIT - totalTime}′
-                  </span>
-                )}
-
-                {/* Micro Toggle to see details - 100% "disimulado"! */}
-                <button
-                  type="button"
-                  onClick={() => setShowCategoryChart(!showCategoryChart)}
-                  className={`px-1.5 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider transition-colors cursor-pointer select-none shrink-0 ${
-                    showCategoryChart
-                      ? 'bg-slate-300 text-slate-800'
-                      : 'bg-orange-100 hover:bg-orange-200 text-orange-850 border border-orange-200'
-                  }`}
-                  title="Fes clic per veure/ocultar el gràfic de distribució de continguts"
-                >
-                  {showCategoryChart ? 'Tancar gràfic ✕' : 'Distribució 📊'}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowCategoryChart(!showCategoryChart)}
+                className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer select-none shrink-0 ${
+                  showCategoryChart
+                    ? 'bg-slate-300 text-slate-800'
+                    : 'bg-orange-100 hover:bg-orange-200 text-orange-850 border border-orange-200'
+                }`}
+                title="Fes clic per veure/ocultar el gràfic de distribució de continguts"
+              >
+                {showCategoryChart ? '✕' : '📊'}
+              </button>
             </div>
           </div>
 

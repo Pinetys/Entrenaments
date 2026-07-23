@@ -1412,117 +1412,171 @@ export default function App() {
       
       {/* GLOBAL GEOMETRIC BALANCE HEADER */}
       {!isSharedMobile && (
-        <header id="global-header" className={`${activeView === 'mobile' ? 'hidden md:flex' : 'flex'} h-16 bg-white border-b border-slate-200 items-center justify-between px-6 md:px-8 shrink-0 relative z-10 select-none`}>
+        <header id="global-header" className={`${activeView === 'mobile' ? 'hidden md:flex' : 'flex'} flex-col md:flex-row md:h-16 bg-white border-b border-slate-200 justify-between px-3.5 md:px-8 py-2.5 md:py-0 shrink-0 relative z-10 select-none gap-2.5 md:gap-0 md:items-center`}>
           
-          {/* Logo brand & Catalan basket descriptors */}
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 w-11 h-11 rounded-xl flex items-center justify-center text-white relative shadow-md border border-orange-400/20 group">
-              <Dribbble strokeWidth={2.2} size={25} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] animate-[spin_12s_linear_infinite]" />
-              <div className="absolute -bottom-1 -right-1 bg-slate-950 text-white text-[8px] px-1 font-black rounded-full border border-orange-500 scale-90">
-                A
+          {/* Row 1: Logo, Brand Title, Team Subtitle & Profile Avatar */}
+          <div className="flex items-center justify-between w-full md:w-auto gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-white relative shadow-md border border-orange-400/20 group shrink-0">
+                <Dribbble strokeWidth={2.2} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] animate-[spin_12s_linear_infinite] md:w-6 md:h-6" />
+                <div className="absolute -bottom-1 -right-1 bg-slate-950 text-white text-[8px] px-1 font-black rounded-full border border-orange-500 scale-90">
+                  A
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-sm md:text-xl font-black tracking-tighter text-slate-900 leading-none truncate">COACH PINETY</h1>
+                  <span className="bg-orange-500/10 text-orange-600 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">v1.2</span>
+                </div>
+                <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5 leading-none truncate">{coachProfile.team}</p>
               </div>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base md:text-xl font-black tracking-tighter text-slate-900 leading-none">COACH PINETY</h1>
-                <span className="bg-orange-500/10 text-orange-600 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider hidden sm:inline-block">v1.2</span>
-              </div>
-              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5 leading-none">{coachProfile.team}</p>
-            </div>
-          </div>
 
-          {/* Core Controls & Share trigger */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <span className="hidden lg:inline-flex text-[11px] font-bold text-orange-600 uppercase tracking-wider bg-orange-50 px-2.5 py-1 rounded-sm">
-              Temporada 23/24
-            </span>
-            <span className="hidden sm:inline-flex bg-slate-100 px-3 py-1 rounded-full text-xs text-slate-600 font-medium">
-              Sessió de Pista
-            </span>
-
-            <button
-              id="btn-header-players"
-              onClick={() => setShowPlayerRosterModal(true)}
-              title="Plantilla de Jugadors i Valoracions Junior A"
-              className="py-1.5 md:py-2 px-3.5 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
-            >
-              <Users size={14} className="text-orange-400" />
-              <span className="hidden sm:inline">Jugadors ({players.length})</span>
-              <span className="sm:hidden">Jugadors</span>
-            </button>
-
-            <button
-              id="btn-header-share"
-              onClick={handleGenerateShareCode}
-              className="py-1.5 md:py-2 px-3.5 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
-            >
-              <Share2 size={13} />
-              <span className="hidden sm:inline">Pista QR</span>
-              <span className="sm:hidden">QR</span>
-            </button>
-
-            <button
-              id="btn-header-sync"
-              onClick={handleOpenSyncModal}
-              title="Sincronització automàtica Firestore"
-              className="py-1.5 md:py-2 px-3.5 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
-            >
-              <Cloud size={13} className={isSyncing ? "animate-pulse" : ""} />
-              <span className="hidden sm:inline">Núvol Sync</span>
-              <span className="sm:hidden">Sync</span>
-            </button>
-
-            <button
-              id="btn-header-export"
-              onClick={handleExportJson}
-              title="Descarregar còpia del pla"
-              className="p-1.5 md:p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-slate-600 hover:text-slate-900 cursor-pointer active:scale-95 transition shadow-xs"
-            >
-              <Download size={14} />
-            </button>
-
-            <label
-              id="lbl-header-import-file"
-              title="Pujar fitxer de planificació desat"
-              className="p-1.5 md:p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-slate-600 hover:text-slate-950 cursor-pointer active:scale-95 transition shadow-xs"
-            >
-              <Upload size={14} />
-              <input
-                id="file-import-input"
-                type="file"
-                accept=".json"
-                onChange={handleImportJson}
-                className="hidden"
-              />
-            </label>
-
-            {/* User Profile Custom Avatar */}
-            <div className="flex items-center gap-2 border-l border-slate-200 pl-2.5 md:pl-3.5">
+            {/* Mobile Coach Avatar */}
+            <div className="flex md:hidden items-center shrink-0">
               <button
                 type="button"
-                id="btn-coach-profile-avatar"
+                id="btn-coach-profile-avatar-mobile"
                 onClick={() => setShowProfileModal(true)}
-                className="relative group cursor-pointer focus:outline-none"
+                className="relative cursor-pointer focus:outline-none"
                 title="Editar Perfil d'Entrenador"
               >
                 <img
                   src={coachProfile.avatar}
                   alt="Coach Profile Avatar"
                   referrerPolicy="no-referrer"
-                  className="w-9 h-9 rounded-full object-cover border-2 border-orange-500/80 shadow-xs hover:border-orange-600 transition duration-200"
+                  className="w-8 h-8 rounded-full object-cover border-2 border-orange-500 shadow-xs"
                 />
                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-                
-                {/* Profile dropdown tooltip on hover */}
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg py-2 px-3 hidden group-hover:block transition duration-250 z-50 text-left">
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Entrenador Actiu</p>
-                  <p className="text-xs font-bold text-slate-800 mt-0.5 truncate" title={coachProfile.email}>{coachProfile.name}</p>
-                  <p className="text-[9px] font-medium text-slate-500 mt-0.5 truncate">{coachProfile.email}</p>
-                  <div className="border-t border-slate-100 my-1.5" />
-                  <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded text-center mb-1">{coachProfile.level}</p>
-                  <p className="text-[9px] text-center text-slate-400 hover:text-orange-500 transition font-bold uppercase tracking-wider mt-1">Prem per editar ✎</p>
-                </div>
               </button>
+            </div>
+          </div>
+
+          {/* Row 2 on Mobile (Grid of 3 buttons) / Inline controls on Desktop */}
+          <div className="w-full md:w-auto pt-2 md:pt-0 border-t border-slate-150 md:border-none">
+            {/* Mobile 3-column action row */}
+            <div className="grid grid-cols-3 gap-1.5 md:hidden w-full">
+              <button
+                id="btn-header-players-mobile"
+                onClick={() => setShowPlayerRosterModal(true)}
+                title="Plantilla de Jugadors"
+                className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs"
+              >
+                <Users size={13} className="text-orange-400 shrink-0" />
+                <span className="truncate">Jugadors</span>
+              </button>
+
+              <button
+                id="btn-header-share-mobile"
+                onClick={handleGenerateShareCode}
+                title="Compartir QR Pista"
+                className="py-1.5 px-2 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs"
+              >
+                <Share2 size={12} className="shrink-0" />
+                <span className="truncate">Pista QR</span>
+              </button>
+
+              <button
+                id="btn-header-sync-mobile"
+                onClick={handleOpenSyncModal}
+                title="Sincronització Núvol"
+                className="py-1.5 px-2 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs"
+              >
+                <Cloud size={12} className={`shrink-0 ${isSyncing ? "animate-pulse" : ""}`} />
+                <span className="truncate">Sync</span>
+              </button>
+            </div>
+
+            {/* Desktop Action Row */}
+            <div className="hidden md:flex items-center gap-2 md:gap-3">
+              <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wider bg-orange-50 px-2.5 py-1 rounded-sm">
+                Temporada 23/24
+              </span>
+              <span className="bg-slate-100 px-3 py-1 rounded-full text-xs text-slate-600 font-medium">
+                Sessió de Pista
+              </span>
+
+              <button
+                id="btn-header-players"
+                onClick={() => setShowPlayerRosterModal(true)}
+                title="Plantilla de Jugadors i Valoracions Junior A"
+                className="py-1.5 md:py-2 px-3.5 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
+              >
+                <Users size={14} className="text-orange-400" />
+                <span>Jugadors ({players.length})</span>
+              </button>
+
+              <button
+                id="btn-header-share"
+                onClick={handleGenerateShareCode}
+                className="py-1.5 md:py-2 px-3.5 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
+              >
+                <Share2 size={13} />
+                <span>Pista QR</span>
+              </button>
+
+              <button
+                id="btn-header-sync"
+                onClick={handleOpenSyncModal}
+                title="Sincronització automàtica Firestore"
+                className="py-1.5 md:py-2 px-3.5 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
+              >
+                <Cloud size={13} className={isSyncing ? "animate-pulse" : ""} />
+                <span>Núvol Sync</span>
+              </button>
+
+              <button
+                id="btn-header-export"
+                onClick={handleExportJson}
+                title="Descarregar còpia del pla"
+                className="p-1.5 md:p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-slate-600 hover:text-slate-900 cursor-pointer active:scale-95 transition shadow-xs"
+              >
+                <Download size={14} />
+              </button>
+
+              <label
+                id="lbl-header-import-file"
+                title="Pujar fitxer de planificació desat"
+                className="p-1.5 md:p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-md text-slate-600 hover:text-slate-950 cursor-pointer active:scale-95 transition shadow-xs"
+              >
+                <Upload size={14} />
+                <input
+                  id="file-import-input"
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportJson}
+                  className="hidden"
+                />
+              </label>
+
+              {/* User Profile Custom Avatar */}
+              <div className="flex items-center gap-2 border-l border-slate-200 pl-2.5 md:pl-3.5">
+                <button
+                  type="button"
+                  id="btn-coach-profile-avatar"
+                  onClick={() => setShowProfileModal(true)}
+                  className="relative group cursor-pointer focus:outline-none"
+                  title="Editar Perfil d'Entrenador"
+                >
+                  <img
+                    src={coachProfile.avatar}
+                    alt="Coach Profile Avatar"
+                    referrerPolicy="no-referrer"
+                    className="w-9 h-9 rounded-full object-cover border-2 border-orange-500/80 shadow-xs hover:border-orange-600 transition duration-200"
+                  />
+                  <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                  
+                  {/* Profile dropdown tooltip on hover */}
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg py-2 px-3 hidden group-hover:block transition duration-250 z-50 text-left">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Entrenador Actiu</p>
+                    <p className="text-xs font-bold text-slate-800 mt-0.5 truncate" title={coachProfile.email}>{coachProfile.name}</p>
+                    <p className="text-[9px] font-medium text-slate-500 mt-0.5 truncate">{coachProfile.email}</p>
+                    <div className="border-t border-slate-100 my-1.5" />
+                    <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded text-center mb-1">{coachProfile.level}</p>
+                    <p className="text-[9px] text-center text-slate-400 hover:text-orange-500 transition font-bold uppercase tracking-wider mt-1">Prem per editar ✎</p>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -1548,32 +1602,32 @@ export default function App() {
         {activeView !== 'mobile' && (
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
             
-            {/* Visual Tabs selector - Beautifully aligned geometric layout */}
-            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/60 rounded-md select-none self-start">
+            {/* Visual Tabs selector - Beautifully aligned squared geometric grid on mobile */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 p-1.5 bg-slate-200/60 rounded-lg select-none w-full sm:w-auto">
               <button
                 id="tab-planner"
                 onClick={() => setActiveView('planner')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
                   activeView === 'planner' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Calendar size={14} className={activeView === 'planner' ? 'text-orange-500' : 'text-slate-500'} />
-                Planificar Sessions
+                <span className="truncate">Planificar</span>
               </button>
 
               <button
                 id="tab-database"
                 onClick={() => setActiveView('database')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
                   activeView === 'database' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <BookOpen size={14} className={activeView === 'database' ? 'text-orange-500' : 'text-slate-500'} />
-                Biblioteca d'Exercicis
+                <span className="truncate">Biblioteca</span>
               </button>
 
               <button
@@ -1582,27 +1636,27 @@ export default function App() {
                   setEditingDrill(null);
                   setActiveView('creator');
                 }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
                   activeView === 'creator' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Sparkles size={14} className={activeView === 'creator' ? 'text-orange-500' : 'text-slate-500'} />
-                Creador d'Exercicis
+                <span className="truncate">Creador</span>
               </button>
 
               <button
                 id="tab-court-mode"
                 onClick={() => setActiveView('mobile')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-sm text-xs font-black uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all duration-150 ${
                   activeView === 'mobile' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-orange-600 hover:text-orange-850 hover:bg-orange-50'
                 }`}
               >
                 <Smartphone size={14} className="text-orange-500 animate-bounce" />
-                ⚡ Modo Pista
+                <span className="truncate">Modo Pista</span>
               </button>
             </div>
 
@@ -1619,23 +1673,36 @@ export default function App() {
                   { id: 'dia6', label: 'S6', title: 'Setm. 3 - DiJ' },
                   { id: 'dia7', label: 'S7', title: 'Setm. 4 - DiM' },
                   { id: 'dia8', label: 'S8', title: 'Setm. 4 - DiJ' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    id={`btn-session-select-${item.id}`}
-                    onClick={() => setSelectedSessionId(item.id)}
-                    className={`px-2.5 py-1 rounded-sm text-xs font-bold transition-all leading-tight shrink-0 text-center cursor-pointer ${
-                      selectedSessionId === item.id
-                        ? 'bg-orange-500 text-white shadow-xs'
-                        : 'text-slate-700 hover:bg-slate-50 border border-transparent'
-                    }`}
-                  >
-                    <div>{item.label}</div>
-                    <div className={`text-[8px] font-mono tracking-tighter ${selectedSessionId === item.id ? 'text-orange-100 font-medium' : 'text-slate-400'}`}>
-                      {item.title}
-                    </div>
-                  </button>
-                ))}
+                ].map((item) => {
+                  const itemSession = sessions[item.id];
+                  const isScheduled = !!itemSession?.scheduledTime;
+                  const isSelected = selectedSessionId === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      id={`btn-session-select-${item.id}`}
+                      onClick={() => setSelectedSessionId(item.id)}
+                      className={`px-2.5 py-1 rounded text-xs font-bold transition-all leading-tight shrink-0 text-center cursor-pointer ${
+                        isSelected
+                          ? 'bg-orange-500 text-white shadow-xs'
+                          : 'text-slate-700 hover:bg-slate-50 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{item.label}</span>
+                        {isScheduled && (
+                          <span 
+                            className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-200' : 'bg-emerald-500'}`} 
+                            title="Sessió Planificada" 
+                          />
+                        )}
+                      </div>
+                      <div className={`text-[8px] font-mono tracking-tighter ${isSelected ? 'text-orange-100 font-medium' : 'text-slate-400'}`}>
+                        {item.title}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
