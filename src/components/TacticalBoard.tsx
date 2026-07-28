@@ -343,20 +343,22 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
     const pctX = (clientX - rect.left) / rect.width;
     const pctY = (clientY - rect.top) / rect.height;
     
-    let x = pctX * 100;
+    let x = 0;
     let y = 0;
     
     if (boardType === 'full') {
+      x = pctX * 100;
       y = pctY * 100;
     } else {
-      y = 48 + pctY * 52;
+      x = -2 + pctX * 104;
+      y = 35 + pctY * 68;
     }
     
-    const minCalculatedY = boardType === 'full' ? 0 : 48;
+    const minCalculatedY = boardType === 'full' ? 0 : 35;
     
     return { 
-      x: Math.max(0, Math.min(100, x)), 
-      y: Math.max(minCalculatedY, Math.min(100, y)) 
+      x: Math.max(-2, Math.min(102, x)), 
+      y: Math.max(minCalculatedY, Math.min(103, y)) 
     };
   };
 
@@ -1104,7 +1106,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       )}
 
       {/* SVG Canvas Board */}
-      <div className={`relative w-full ${boardType === 'full' ? 'aspect-square' : 'aspect-[100/52]'} bg-white cursor-crosshair overflow-hidden touch-none select-none border border-slate-300`}>
+      <div className={`relative w-full ${boardType === 'full' ? 'aspect-square' : 'aspect-[104/68]'} bg-white cursor-crosshair overflow-hidden touch-none select-none border border-slate-300`}>
 
         {/* Custom Confirmation Overlay for Path Deletion */}
         {pathToDeleteId && (
@@ -1141,7 +1143,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           id="svg-court"
           ref={svgRef}
           className="w-full h-full"
-          viewBox={boardType === 'full' ? "0 0 100 100" : "0 48 100 52"}
+          viewBox={boardType === 'full' ? "0 0 100 100" : "-2 35 104 68"}
           preserveAspectRatio="xMidYMid meet"
           onMouseDown={(e) => handleStart(e)}
           onTouchStart={(e) => {
@@ -1190,7 +1192,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           </defs>
 
           {/* COURT LINES DESIGN - Clinic pure white background */}
-          <rect x="0" y="0" width="100" height="100" fill="#ffffff" />
+          <rect x="-10" y="-10" width="120" height="120" fill="#ffffff" />
           
           {/* Subtle grid lines matching the technical planner blueprint */}
           <g stroke="#e2e8f0" strokeWidth="0.5">
@@ -1422,7 +1424,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
           {/* INTERACTIVE MAGNETIC PINS */}
           {pins
-            .filter(p => boardType === 'full' || p.y >= 45 || p.type === 'cone')
+            .filter(p => boardType === 'full' || p.y >= 32 || p.type === 'cone')
             .map((p) => {
               // High contrast vintage black and white styling (scaled up for high legibility)
               let pinBg = '#ffffff'; // White circle with thin black border for attackers "O"

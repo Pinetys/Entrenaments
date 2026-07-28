@@ -62,7 +62,7 @@ export default function MobileCourtView({
   const [isMotionMode, setIsMotionMode] = useState(false);
   const [editorSearchText, setEditorSearchText] = useState('');
   const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
-  const [showSyncCallout, setShowSyncCallout] = useState(true);
+  const [showSyncCallout, setShowSyncCallout] = useState(false);
 
   // Network connection status for completely offline Modo Pista support
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -241,74 +241,206 @@ export default function MobileCourtView({
     } catch (e) {}
   }, [session?.id, safeActiveIndex, timeLeft, sessionTimeLeft, timerRunning]);
 
-  // Audio Whistle synthesiser using Web Audio API (Zero-dependency, works 100% offline & instantly)
+  // 1. NBA Referee Whistle (Fox 40 Classic Pealess Whistle - Authentic NBA referee pitch & acoustic beat)
   const playSynthesizedWhistle = () => {
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      const now = ctx.currentTime;
       
-      // High pitched double beep representing a referee whistle
-      const playBeep = (delay: number, duration: number, freq: number) => {
-        const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        
-        osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        
-        osc.type = 'triangle'; // rich retro whistle sound
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-        
-        gainNode.gain.setValueAtTime(0, ctx.currentTime + delay);
-        gainNode.gain.linearRampToValueAtTime(0.4, ctx.currentTime + delay + 0.02);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + duration - 0.02);
-        
-        osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + duration);
-      };
-
-      // Play double sharp blast
-      playBeep(0, 0.45, 1200);   // First blast
-      playBeep(0.1, 0.45, 1400);  // overlapping vibrato blast
-      playBeep(0.6, 0.4, 1300);   // Second sharp blast
+      // Dual high frequencies for acoustic trill (2850Hz & 3120Hz -> 270Hz beat frequency)
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      
+      // Amplitude modulation LFO for 30Hz air turbulence vibrato
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      
+      const masterGain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(2980, now);
+      filter.Q.setValueAtTime(3.5, now);
+      
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+      osc1.frequency.setValueAtTime(2850, now);
+      osc2.frequency.setValueAtTime(3120, now);
+      
+      // Air pressure envelope & micro pitch bend
+      osc1.frequency.exponentialRampToValueAtTime(2880, now + 0.05);
+      osc2.frequency.exponentialRampToValueAtTime(3150, now + 0.05);
+      
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(30, now); // 30Hz air trill
+      lfoGain.gain.setValueAtTime(0.25, now);
+      
+      lfo.connect(masterGain.gain);
+      
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(masterGain);
+      masterGain.connect(ctx.destination);
+      
+      // Sharp explosive blast envelope
+      masterGain.gain.setValueAtTime(0, now);
+      masterGain.gain.linearRampToValueAtTime(0.55, now + 0.02);
+      masterGain.gain.setValueAtTime(0.55, now + 0.45);
+      masterGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      
+      osc1.start(now);
+      osc2.start(now);
+      lfo.start(now);
+      
+      osc1.stop(now + 0.55);
+      osc2.stop(now + 0.55);
+      lfo.stop(now + 0.55);
     } catch (e) {
       console.warn("Audio Context blocked or not supported on this browser frame", e);
     }
   };
 
-  // Audio Buzzer (Basketball Horn) synthesiser using Web Audio API (dissonant sawtooth waves)
+  // 2. NBA Arena Horn / Shot Clock Buzzer (Powerful stadium brass horn with sub-bass punch)
   const playSynthesizedBuzzer = () => {
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      const duration = 1.6; // Authentic NBA Arena horn length
       
-      const duration = 1.6; // authentic basketball horn length
-      const baseFreq = 75; // low frequency bass of the horn
+      const masterGain = ctx.createGain();
+      const lowpass = ctx.createBiquadFilter();
       
-      // Detuned sawtooth harmonics for the raspy electric buzz of a basket horn
-      const frequencies = [baseFreq, baseFreq * 2, baseFreq * 3, baseFreq * 4, baseFreq * 5, baseFreq * 6];
+      lowpass.type = 'lowpass';
+      lowpass.frequency.setValueAtTime(1450, now);
+      lowpass.Q.setValueAtTime(1.8, now);
       
-      frequencies.forEach((freq, idx) => {
+      // Detuned brass harmonics simulating dual electro-pneumatic stadium horns
+      const freqs = [
+        { f: 110, type: 'sawtooth' as OscillatorType, gain: 0.35 },  // Low A fundamental
+        { f: 112, type: 'sawtooth' as OscillatorType, gain: 0.35 },  // Detuned thick double
+        { f: 165, type: 'sawtooth' as OscillatorType, gain: 0.25 },  // Perfect 5th (E3)
+        { f: 220, type: 'sawtooth' as OscillatorType, gain: 0.20 },  // Octave (A3)
+        { f: 330, type: 'square' as OscillatorType,   gain: 0.15 },  // High brass (E4)
+        { f: 440, type: 'square' as OscillatorType,   gain: 0.10 },  // High bite (A4)
+        { f: 55,  type: 'sine' as OscillatorType,     gain: 0.45 }   // Sub-bass arena punch (A1)
+      ];
+      
+      freqs.forEach(item => {
         const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
+        const oscGain = ctx.createGain();
         
-        osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
+        osc.type = item.type;
+        osc.frequency.setValueAtTime(item.f, now);
+        osc.frequency.exponentialRampToValueAtTime(item.f * 0.97, now + duration);
         
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(freq + (idx * 0.4 - 1.0), ctx.currentTime);
+        oscGain.gain.setValueAtTime(item.gain, now);
         
-        gainNode.gain.setValueAtTime(0, ctx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.3 / frequencies.length, ctx.currentTime + 0.05);
-        gainNode.gain.setValueAtTime(0.3 / frequencies.length, ctx.currentTime + duration - 0.2);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-        
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + duration);
+        osc.connect(oscGain);
+        oscGain.connect(lowpass);
+        osc.start(now);
+        osc.stop(now + duration);
       });
+      
+      lowpass.connect(masterGain);
+      masterGain.connect(ctx.destination);
+      
+      // Arena Horn Envelope: Instant blast, sustained roar, clean acoustic decay
+      masterGain.gain.setValueAtTime(0, now);
+      masterGain.gain.linearRampToValueAtTime(0.6, now + 0.03);
+      masterGain.gain.setValueAtTime(0.6, now + duration - 0.25);
+      masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
     } catch (e) {
       console.warn("Audio Context blocked or not supported on this browser frame", e);
+    }
+  };
+
+  // 3. NBA Swish Sound ("Chof - Nothing but Net")
+  const playNbaSwish = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      
+      // White noise buffer for nylon net whip
+      const bufferSize = ctx.sampleRate * 0.3;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.setValueAtTime(3200, now);
+      bandpass.frequency.exponentialRampToValueAtTime(700, now + 0.22);
+      bandpass.Q.setValueAtTime(2.2, now);
+      
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(0.7, now + 0.04);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      
+      // Low frequency ball thump through net cord tension
+      const thump = ctx.createOscillator();
+      const thumpGain = ctx.createGain();
+      thump.type = 'sine';
+      thump.frequency.setValueAtTime(110, now);
+      thump.frequency.exponentialRampToValueAtTime(50, now + 0.12);
+      
+      thumpGain.gain.setValueAtTime(0.5, now);
+      thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      
+      noise.connect(bandpass);
+      bandpass.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      
+      thump.connect(thumpGain);
+      thumpGain.connect(ctx.destination);
+      
+      noise.start(now);
+      thump.start(now);
+      noise.stop(now + 0.3);
+      thump.stop(now + 0.2);
+    } catch (e) {
+      console.warn("Swish audio failed", e);
+    }
+  };
+
+  // 4. NBA Hardwood Sneaker Squeak
+  const playNbaSneakerSqueak = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(2200, now);
+      osc.frequency.exponentialRampToValueAtTime(3400, now + 0.06);
+      osc.frequency.exponentialRampToValueAtTime(2600, now + 0.12);
+      
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.4, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } catch (e) {
+      console.warn("Sneaker squeak audio failed", e);
     }
   };
 
@@ -489,22 +621,60 @@ export default function MobileCourtView({
           <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono">Modo Pista (Junior A)</span>
           <span className="text-xs font-semibold text-slate-200 truncate max-w-40 block">{session.name}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             id="btn-whistle-demo"
             onClick={playSynthesizedWhistle}
-            title="Tocar xiulet d’entrenador (Silbato)"
-            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-amber-400 cursor-pointer active:scale-95 transition"
+            title="Silbato Árbitro NBA (Fox 40)"
+            className="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 transition text-amber-400 rounded-lg flex items-center justify-center cursor-pointer shadow-xs border border-amber-500/20"
           >
-            <Volume2 size={14} />
+            <Volume2 size={15} />
           </button>
           <button
             id="btn-buzzer-demo"
             onClick={playSynthesizedBuzzer}
-            title="Tocar bocina de bàsquet (Buzzer)"
-            className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-red-500 cursor-pointer active:scale-95 transition"
+            title="Bocina de Pabellón NBA"
+            className="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 transition text-red-400 rounded-lg flex items-center justify-center cursor-pointer shadow-xs border border-red-500/20"
           >
-            <Megaphone size={14} />
+            <Megaphone size={15} />
+          </button>
+        </div>
+      </div>
+
+      {/* QUICK NBA SOUND FX TOOLBAR */}
+      <div id="nba-sound-toolbar" className="px-3 py-1.5 bg-slate-900/90 border-b border-slate-800/90 flex items-center justify-between text-[10px] font-mono shrink-0 select-none overflow-x-auto no-scrollbar gap-1.5">
+        <span className="text-[9px] font-black uppercase text-orange-400 tracking-wider shrink-0 flex items-center gap-1">
+          <Zap size={10} className="text-orange-400 animate-pulse" />
+          EFECTOS NBA:
+        </span>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={playSynthesizedBuzzer}
+            className="px-2 py-0.5 bg-red-950/80 border border-red-600/50 hover:bg-red-900 text-red-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
+          >
+            📢 Bocina Arena
+          </button>
+          <button
+            type="button"
+            onClick={playSynthesizedWhistle}
+            className="px-2 py-0.5 bg-amber-950/80 border border-amber-600/50 hover:bg-amber-900 text-amber-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
+          >
+            🎷 Silbato Fox 40
+          </button>
+          <button
+            type="button"
+            onClick={playNbaSwish}
+            className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-600/50 hover:bg-emerald-900 text-emerald-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
+          >
+            🏀 Swish Red
+          </button>
+          <button
+            type="button"
+            onClick={playNbaSneakerSqueak}
+            className="px-2 py-0.5 bg-sky-950/80 border border-sky-600/50 hover:bg-sky-900 text-sky-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
+          >
+            👟 Squeak Parquet
           </button>
         </div>
       </div>

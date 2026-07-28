@@ -36,7 +36,7 @@ export default function DrillCreator({
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>('Atac');
   const [concept, setConcept] = useState('');
-  const [duration, setDuration] = useState(15);
+  const [duration, setDuration] = useState(10);
   const [objectivesString, setObjectivesString] = useState('');
   const [description, setDescription] = useState('');
   const [setupInstructions, setSetupInstructions] = useState('');
@@ -59,7 +59,7 @@ export default function DrillCreator({
       setTitle(activeInitialDrill.title || '');
       setCategory(activeInitialDrill.category || 'Atac');
       setConcept(activeInitialDrill.concept || '');
-      setDuration(activeInitialDrill.duration || 15);
+      setDuration(activeInitialDrill.duration || 10);
       setObjectivesString(activeInitialDrill.objectives ? activeInitialDrill.objectives.join('\n') : '');
       setDescription(activeInitialDrill.description || '');
       setSetupInstructions(activeInitialDrill.setupInstructions || '');
@@ -90,7 +90,7 @@ export default function DrillCreator({
     setTitle('');
     setCategory('Atac');
     setConcept('');
-    setDuration(15);
+    setDuration(10);
     setObjectivesString('');
     setDescription('');
     setSetupInstructions('');
