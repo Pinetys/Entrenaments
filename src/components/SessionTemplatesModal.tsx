@@ -599,6 +599,7 @@ export default function SessionTemplatesModal({
                       <option value="Atac">Atac</option>
                       <option value="Defensa">Defensa</option>
                       <option value="Físico">Físico / Condicionament</option>
+                      <option value="Competència">Competència</option>
                       <option value="Combinat">Combinat</option>
                     </select>
                   </div>
@@ -729,6 +730,7 @@ export default function SessionTemplatesModal({
                     <option value="Defensa">Defensa</option>
                     <option value="Transició">Transició</option>
                     <option value="Físico">Físico / Condicionament</option>
+                    <option value="Competència">Competència</option>
                     <option value="Combinat">Combinat</option>
                   </select>
                 </div>

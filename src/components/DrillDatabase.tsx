@@ -138,7 +138,7 @@ export default function DrillDatabase({
 
   // Dynamically obtain all unique categories from current drills state
   const uniqueCategoriesInDrills = useMemo(() => {
-    const cats = new Set<string>(['Atac', 'Defensa', 'Transició', 'Escalfament']);
+    const cats = new Set<string>(['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament']);
     drills.forEach(d => {
       if (d.category) {
         cats.add(d.category);

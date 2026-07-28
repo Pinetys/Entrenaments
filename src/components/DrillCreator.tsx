@@ -29,7 +29,7 @@ export default function DrillCreator({
   onCancel,
   onNavigateToLibrary,
   triggerToast,
-  uniqueCategories = ['Atac', 'Defensa', 'Transició', 'Escalfament']
+  uniqueCategories = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament']
 }: DrillCreatorProps) {
   const activeInitialDrill = initialDrill || editingDrill;
   // Form states
@@ -73,7 +73,7 @@ export default function DrillCreator({
       setBoardStates(initialBoardStates);
       setActivePhaseIndex(0);
 
-      const defaultCats = ['Atac', 'Defensa', 'Transició', 'Escalfament'];
+      const defaultCats = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'];
       if (activeInitialDrill.category && !defaultCats.includes(activeInitialDrill.category)) {
         setIsCreatingCustomCategory(true);
         setCustomCategoryName(activeInitialDrill.category);

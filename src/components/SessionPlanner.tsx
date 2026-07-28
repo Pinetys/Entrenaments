@@ -692,7 +692,7 @@ export default function SessionPlanner({
             enhancedDrillsInSession.forEach(item => {
               if (!item.isVirtual) {
                 const rawCat = item.category || 'Atac';
-                const cat = rawCat === 'Defensa' ? 'Defensa' : (rawCat === 'Transició' ? 'Transició' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac'));
+                const cat = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].includes(rawCat) ? rawCat : (['Técnica'].includes(rawCat) ? 'Escalfament' : 'Atac');
                 categoryMinutes[cat] = (categoryMinutes[cat] || 0) + item.duration;
               }
             });
@@ -700,7 +700,7 @@ export default function SessionPlanner({
             
             if (totalMinExercise === 0) return null;
 
-            const categories = ['Atac', 'Defensa', 'Transició', 'Escalfament'];
+            const categories = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'];
             const activeCategories = categories.filter(cat => (categoryMinutes[cat] || 0) > 0);
 
             return (
@@ -717,7 +717,9 @@ export default function SessionPlanner({
                     const pct = (mins / totalMinExercise) * 100;
                     const colorClass = cat === 'Atac' ? 'bg-orange-500' :
                                        cat === 'Defensa' ? 'bg-rose-500' :
-                                       cat === 'Transició' ? 'bg-sky-500' : 'bg-emerald-500';
+                                       cat === 'Transició' ? 'bg-sky-500' :
+                                       cat === 'Físico' ? 'bg-amber-500' :
+                                       cat === 'Competència' ? 'bg-purple-500' : 'bg-emerald-500';
 
                     return (
                       <div 
@@ -734,10 +736,12 @@ export default function SessionPlanner({
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[8.5px] text-slate-500 font-semibold uppercase tracking-wider">
                   {activeCategories.map(cat => {
                     const mins = categoryMinutes[cat] || 0;
-                    const labelCatalan = cat === 'Atac' ? 'Atac' : cat === 'Defensa' ? 'Defensa' : cat === 'Transició' ? 'Transició' : 'Escalfament';
+                    const labelCatalan = cat;
                     const colorDotClass = cat === 'Atac' ? 'bg-orange-500' :
                                           cat === 'Defensa' ? 'bg-rose-500' :
-                                          cat === 'Transició' ? 'bg-sky-500' : 'bg-emerald-500';
+                                          cat === 'Transició' ? 'bg-sky-500' :
+                                          cat === 'Físico' ? 'bg-amber-500' :
+                                          cat === 'Competència' ? 'bg-purple-500' : 'bg-emerald-500';
 
                     return (
                       <span key={cat} className="flex items-center gap-1">
@@ -1337,6 +1341,8 @@ export default function SessionPlanner({
                   { id: 'Atac', label: 'Atac' },
                   { id: 'Defensa', label: 'Defensa' },
                   { id: 'Transició', label: 'Transició' },
+                  { id: 'Físico', label: 'Físico' },
+                  { id: 'Competència', label: 'Competència' },
                   { id: 'Escalfament', label: 'Escalfament' }
                 ].map((item) => {
                   const isActive = plannerCategoryFilter === item.id;
@@ -1785,20 +1791,20 @@ export default function SessionPlanner({
               {/* Category Distribution chart or blocks */}
               <div className="space-y-3">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-450 border-b border-slate-100 pb-1.5">Equilibri de Treball de la Sessió</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  {['Atac', 'Defensa', 'Transició', 'Escalfament'].map(cat => {
+                <div className="grid grid-cols-6 gap-2">
+                  {['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].map(cat => {
                     let catMin = 0;
                     enhancedDrillsInSession.forEach(item => {
                       if (!item.isVirtual) {
                         const rawCat = item.category || 'Atac';
-                        const normalizedCat = rawCat === 'Defensa' ? 'Defensa' : (rawCat === 'Transició' ? 'Transició' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac'));
+                        const normalizedCat = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].includes(rawCat) ? rawCat : 'Atac';
                         if (normalizedCat === cat) {
                           catMin += item.duration;
                         }
                       }
                     });
                     if (catMin === 0) return null;
-                    const labelCatalan = cat === 'Atac' ? 'ATAC' : cat === 'Defensa' ? 'DEFENSA' : cat === 'Transició' ? 'TRANSICIÓ' : 'ESCALFAMENT';
+                    const labelCatalan = cat.toUpperCase();
                     return (
                       <div key={cat} className="bg-slate-50 border border-slate-200 rounded p-2 text-center flex flex-col justify-between print:bg-white print:border-slate-300">
                         <span className="text-[8px] text-slate-505 font-black tracking-wider uppercase block truncate">{labelCatalan}</span>
@@ -1816,8 +1822,8 @@ export default function SessionPlanner({
                 <div className="space-y-8">
                   {enhancedDrillsInSession.map((item, idx) => {
                     const rawCat = item.category || 'Atac';
-                    const normalizedCat = rawCat === 'Defensa' ? 'Defensa' : (rawCat === 'Transició' ? 'Transició' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac'));
-                    const labelCatalan = normalizedCat === 'Atac' ? 'ATAC' : normalizedCat === 'Defensa' ? 'DEFENSA' : normalizedCat === 'Transició' ? 'TRANSICIÓ' : 'ESCALFAMENT';
+                    const normalizedCat = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].includes(rawCat) ? rawCat : 'Atac';
+                    const labelCatalan = normalizedCat.toUpperCase();
                     const hasBoardState = item.boardState && (item.boardState.pins.length > 0 || item.boardState.paths.length > 0);
                     
                     return (
@@ -1828,7 +1834,11 @@ export default function SessionPlanner({
                             ? 'border-l-rose-500 border-rose-200' 
                             : normalizedCat === 'Transició'
                               ? 'border-l-sky-500 border-sky-200'
-                              : 'border-l-emerald-500 border-emerald-200'
+                              : normalizedCat === 'Físico'
+                                ? 'border-l-amber-500 border-amber-200'
+                                : normalizedCat === 'Competència'
+                                  ? 'border-l-purple-500 border-purple-200'
+                                  : 'border-l-emerald-500 border-emerald-200'
                       }`}>
                         
                         {/* Header info of the exercise */}

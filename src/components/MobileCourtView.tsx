@@ -1000,12 +1000,14 @@ export default function MobileCourtView({
         {/* Drill Title block navigation */}
         {(() => {
           const rawCat = activeDrill.category || 'Atac';
-          const activeNormCat = rawCat === 'Defensa' ? 'Defensa' : (rawCat === 'Transició' ? 'Transició' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac'));
+          const activeNormCat = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].includes(rawCat) ? rawCat : 'Atac';
           return (
             <div className={`flex items-center justify-between bg-slate-900 border-2 rounded-2xl p-5 shrink-0 shadow-lg transition-colors duration-300 ${
               activeNormCat === 'Atac' ? 'border-orange-500' :
               activeNormCat === 'Defensa' ? 'border-rose-500' :
-              activeNormCat === 'Transició' ? 'border-sky-500' : 'border-emerald-500'
+              activeNormCat === 'Transició' ? 'border-sky-500' :
+              activeNormCat === 'Físico' ? 'border-amber-500' :
+              activeNormCat === 'Competència' ? 'border-purple-500' : 'border-emerald-500'
             }`}>
               <button
                 id="btn-swipe-prev"
@@ -1028,7 +1030,9 @@ export default function MobileCourtView({
                 <span className={`text-[10px] px-2.5 py-1 rounded-full text-white font-extrabold tracking-wider font-mono uppercase block w-max mx-auto mb-1.5 transition-colors shadow-xs ${
                   activeNormCat === 'Atac' ? 'bg-orange-600' :
                   activeNormCat === 'Defensa' ? 'bg-rose-600' :
-                  activeNormCat === 'Transició' ? 'bg-sky-600' : 'bg-emerald-600'
+                  activeNormCat === 'Transició' ? 'bg-sky-600' :
+                  activeNormCat === 'Físico' ? 'bg-amber-600' :
+                  activeNormCat === 'Competència' ? 'bg-purple-600' : 'bg-emerald-600'
                 }`}>
                   Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′) • 📖 Ver manual
                 </span>
@@ -1407,14 +1411,18 @@ export default function MobileCourtView({
         <div id="mobile-dots-indicator" className="py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-1.5 shrink-0">
           {drillsInSession.map((item, i) => {
             const rawCat = item.category || 'Atac';
-            const itemNormCat = rawCat === 'Defensa' ? 'Defensa' : (rawCat === 'Transició' ? 'Transició' : (['Físico', 'Técnica', 'Escalfament'].includes(rawCat) ? 'Escalfament' : 'Atac'));
+            const itemNormCat = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].includes(rawCat) ? rawCat : 'Atac';
             const colorClass = itemNormCat === 'Atac' 
               ? (safeActiveIndex === i ? 'bg-orange-500 ring-2 ring-orange-500 scale-125' : 'bg-orange-500/40')
               : itemNormCat === 'Defensa'
                 ? (safeActiveIndex === i ? 'bg-rose-500 ring-2 ring-rose-500 scale-125' : 'bg-rose-500/40')
                 : itemNormCat === 'Transició'
                   ? (safeActiveIndex === i ? 'bg-sky-500 ring-2 ring-sky-500 scale-125' : 'bg-sky-500/40')
-                  : (safeActiveIndex === i ? 'bg-emerald-500 ring-2 ring-emerald-500 scale-125' : 'bg-emerald-500/40');
+                  : itemNormCat === 'Físico'
+                    ? (safeActiveIndex === i ? 'bg-amber-500 ring-2 ring-amber-500 scale-125' : 'bg-amber-500/40')
+                    : itemNormCat === 'Competència'
+                      ? (safeActiveIndex === i ? 'bg-purple-500 ring-2 ring-purple-500 scale-125' : 'bg-purple-500/40')
+                      : (safeActiveIndex === i ? 'bg-emerald-500 ring-2 ring-emerald-500 scale-125' : 'bg-emerald-500/40');
             return (
               <button
                 key={i}
