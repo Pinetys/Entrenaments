@@ -1490,7 +1490,7 @@ export default function App() {
             {/* Desktop Action Row */}
             <div className="hidden md:flex items-center gap-2 md:gap-3">
               <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wider bg-orange-50 px-2.5 py-1 rounded-sm">
-                Temporada 23/24
+                Temporada 26/27
               </span>
               <span className="bg-slate-100 px-3 py-1 rounded-full text-xs text-slate-600 font-medium">
                 Sessió de Pista

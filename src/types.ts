@@ -98,13 +98,7 @@ export interface Player {
   role?: 'Quintet Inicial' | 'Rotació Principal' | 'Especialista' | 'Júnior Desenvolupament';
   height?: string;
   averageMinutes?: number;
-  ratings?: {
-    shooting?: number; // 1-10
-    defense?: number; // 1-10
-    tacticalIQ?: number; // 1-10
-    physical?: number; // 1-10
-    leadership?: number; // 1-10
-  };
+  ratings?: Record<string, number>; // Flexible key-value map for barems (1-10)
   strengths?: string[];
   areasToImprove?: string[];
   notes?: string;
