@@ -15,7 +15,9 @@ import {
   Expand,
   Minimize,
   Check,
-  X
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
@@ -63,6 +65,7 @@ export default function MobileCourtView({
   const [editorSearchText, setEditorSearchText] = useState('');
   const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
   const [showSyncCallout, setShowSyncCallout] = useState(false);
+  const [isIntensityExpanded, setIsIntensityExpanded] = useState(false);
 
   // Network connection status for completely offline Modo Pista support
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -1054,148 +1057,7 @@ export default function MobileCourtView({
           );
         })()}
 
-        {/* INTENSITY MONITORING & PEAK EFFORT CONTROL */}
-        {!activeDrill.isVirtual && (
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-orange-500/20 rounded-2xl p-4.5 space-y-3 shadow-xl relative overflow-hidden">
-            {/* Decorative background pulse glow */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm animate-pulse">🔥</span>
-                <div>
-                  <h4 className="text-[10px] uppercase font-extrabold text-orange-400 tracking-wider font-mono">
-                    Control d'Intensitat i Esforç
-                  </h4>
-                  <span className="text-[9px] text-slate-400 block -mt-0.5">
-                    Registra el pic màxim de rendiment actiu
-                  </span>
-                </div>
-              </div>
-              
-              {/* Status indicator */}
-              {intensityPeaks[activeDrill.id] ? (
-                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-[8px] font-bold font-mono tracking-wide animate-pulse">
-                  ⚡ PIC ENREGISTRAT
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full text-[8px] font-bold font-mono tracking-wide">
-                  SENSE MARCAR
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between gap-4">
-              {/* Counting stopwatch */}
-              <div className="flex flex-col">
-                <span className="text-[8px] uppercase font-bold text-slate-400 tracking-wider font-mono">Temps de Treball Actiu</span>
-                <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-3xl font-black font-mono tracking-tighter text-white">
-                    {formatTime(intensityElapsed)}
-                  </span>
-                  <span className="text-[9px] text-slate-500 font-bold font-mono uppercase">Cronòmetre</span>
-                </div>
-              </div>
-
-              {/* Manual stopwatch override controls */}
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIntensityTimerRunning(!intensityTimerRunning)}
-                  className={`p-2 rounded-xl transition active:scale-95 flex items-center justify-center cursor-pointer ${
-                    intensityTimerRunning ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  }`}
-                  title={intensityTimerRunning ? "Pausar cronòmetre d'intensitat" : "Iniciar cronòmetre d'intensitat"}
-                >
-                  {intensityTimerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIntensityElapsed(0);
-                    setIntensityTimerRunning(false);
-                  }}
-                  className="p-2 bg-slate-850 hover:bg-slate-800 text-slate-450 hover:text-slate-200 rounded-xl transition active:scale-95 cursor-pointer flex items-center justify-center"
-                  title="Reiniciar cronòmetre d'intensitat"
-                >
-                  <RotateCcw size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Intensity Level selector */}
-            <div className="space-y-1.5 bg-slate-950/40 p-2.5 rounded-xl border border-slate-850">
-              <div className="flex items-center justify-between text-[9px] font-sans font-bold uppercase tracking-wider">
-                <span className="text-slate-400">Nivell de pic previst:</span>
-                <span className="text-orange-400 font-extrabold font-mono">
-                  {selectedIntensityLevel === 1 && '🟢 BAIX (Regeneratiu)'}
-                  {selectedIntensityLevel === 2 && '🟡 MODERAT (Aeròbic)'}
-                  {selectedIntensityLevel === 3 && '🟠 ALTA INTENSITAT'}
-                  {selectedIntensityLevel === 4 && '🔴 MOLT ALTA (Llàctic)'}
-                  {selectedIntensityLevel === 5 && '💀 MÀXIM ESFORÇ (Pic)'}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 justify-between">
-                {[1, 2, 3, 4, 5].map((lvl) => (
-                  <button
-                    key={lvl}
-                    type="button"
-                    onClick={() => setSelectedIntensityLevel(lvl)}
-                    className={`flex-1 py-1 text-[10px] font-black rounded-lg transition-all duration-150 border active:scale-95 cursor-pointer ${
-                      selectedIntensityLevel === lvl
-                        ? 'bg-orange-500 text-slate-950 border-orange-400 font-black scale-[1.03] shadow-md shadow-orange-500/10'
-                        : 'bg-slate-900 border-slate-850 text-slate-400 hover:bg-slate-800 hover:text-slate-250'
-                    }`}
-                  >
-                    {lvl} {lvl === 5 ? '🔥' : lvl === 1 ? '🍃' : ''}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Mark Peak Effort Trigger Button */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleMarkPeakEffort}
-                className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-orange-500/15 hover:shadow-orange-500/25"
-              >
-                <span>🔥 MARCAR PIC D'ESFORÇ EXERCICI</span>
-              </button>
-            </div>
-
-            {/* Recorded Peak details */}
-            {intensityPeaks[activeDrill.id] && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl px-3.5 py-2 text-xs flex items-center justify-between text-orange-200 animate-in fade-in slide-in-from-top-1 duration-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">⏱️</span>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-bold uppercase tracking-wider leading-none">Pic d'esforç registrat</span>
-                    <span className="text-[11px] font-semibold mt-0.5 block">
-                      Assolit al minut <strong className="font-black text-orange-400 font-mono text-xs">{intensityPeaks[activeDrill.id].peakTime}</strong> amb intensitat <strong className="font-extrabold text-white">{intensityPeaks[activeDrill.id].intensityLabel}</strong>.
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = { ...intensityPeaks };
-                    delete updated[activeDrill.id];
-                    setIntensityPeaks(updated);
-                    localStorage.setItem(`basket_planner_intensity_peaks_${session.id}`, JSON.stringify(updated));
-                    triggerLocalToast("🗑️ Pic d'esforç esborrat.");
-                  }}
-                  className="text-slate-400 hover:text-rose-400 font-extrabold transition text-[11px] px-1.5 py-1 cursor-pointer"
-                  title="Eliminar registre de pic"
-                >
-                  Esborrar
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TACTICAL BOARD DISPLAY OR SPECIAL POSTER FOR VIRTUAL PAUSES */}
+        {/* TACTICAL BOARD DISPLAY OR SPECIAL POSTER FOR VIRTUAL PAUSES (PRIMARY PROTAGONIST) */}
         {activeDrill.isVirtual ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-inner min-h-64 flex flex-col justify-center items-center">
             {activeDrill.virtualType === 'hydration' ? (
@@ -1303,6 +1165,163 @@ export default function MobileCourtView({
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* INTENSITY MONITORING & PEAK EFFORT CONTROL (COLLAPSIBLE COMPACT BANNER) */}
+        {!activeDrill.isVirtual && (
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-orange-500/20 rounded-xl p-3 shadow-md relative overflow-hidden transition-all">
+            <div 
+              className="flex items-center justify-between cursor-pointer select-none"
+              onClick={() => setIsIntensityExpanded(!isIntensityExpanded)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🔥</span>
+                <span className="text-[11px] uppercase font-bold text-orange-400 font-mono tracking-wide">
+                  Control d'Intensitat
+                </span>
+                {intensityPeaks[activeDrill.id] ? (
+                  <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-[8px] font-bold font-mono tracking-wide">
+                    ⚡ PIC ({intensityPeaks[activeDrill.id].intensityLabel})
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full text-[8px] font-bold font-mono tracking-wide">
+                    SENSE MARCAR
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 text-slate-400 hover:text-white transition">
+                <span className="text-[9px] uppercase font-bold text-slate-500 font-mono">
+                  {isIntensityExpanded ? 'Plegar' : 'Configurar'}
+                </span>
+                {isIntensityExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </div>
+            </div>
+
+            {/* Collapsible Panel Content */}
+            {isIntensityExpanded && (
+              <div className="mt-3 pt-3 border-t border-slate-800 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between gap-4">
+                  {/* Counting stopwatch */}
+                  <div className="flex flex-col">
+                    <span className="text-[8px] uppercase font-bold text-slate-400 tracking-wider font-mono">Temps de Treball Actiu</span>
+                    <div className="flex items-baseline gap-1.5 mt-0.5">
+                      <span className="text-2xl font-black font-mono tracking-tighter text-white">
+                        {formatTime(intensityElapsed)}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono uppercase">Cronòmetre</span>
+                    </div>
+                  </div>
+
+                  {/* Manual stopwatch override controls */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIntensityTimerRunning(!intensityTimerRunning);
+                      }}
+                      className={`p-2 rounded-xl transition active:scale-95 flex items-center justify-center cursor-pointer ${
+                        intensityTimerRunning ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      }`}
+                      title={intensityTimerRunning ? "Pausar cronòmetre d'intensitat" : "Iniciar cronòmetre d'intensitat"}
+                    >
+                      {intensityTimerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIntensityElapsed(0);
+                        setIntensityTimerRunning(false);
+                      }}
+                      className="p-2 bg-slate-850 hover:bg-slate-800 text-slate-450 hover:text-slate-200 rounded-xl transition active:scale-95 cursor-pointer flex items-center justify-center"
+                      title="Reiniciar cronòmetre d'intensitat"
+                    >
+                      <RotateCcw size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Intensity Level selector */}
+                <div className="space-y-1.5 bg-slate-950/40 p-2.5 rounded-xl border border-slate-850">
+                  <div className="flex items-center justify-between text-[9px] font-sans font-bold uppercase tracking-wider">
+                    <span className="text-slate-400">Nivell de pic previst:</span>
+                    <span className="text-orange-400 font-extrabold font-mono">
+                      {selectedIntensityLevel === 1 && '🟢 BAIX (Regeneratiu)'}
+                      {selectedIntensityLevel === 2 && '🟡 MODERAT (Aeròbic)'}
+                      {selectedIntensityLevel === 3 && '🟠 ALTA INTENSITAT'}
+                      {selectedIntensityLevel === 4 && '🔴 MOLT ALTA (Llàctic)'}
+                      {selectedIntensityLevel === 5 && '💀 MÀXIM ESFORÇ (Pic)'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 justify-between">
+                    {[1, 2, 3, 4, 5].map((lvl) => (
+                      <button
+                        key={lvl}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedIntensityLevel(lvl);
+                        }}
+                        className={`flex-1 py-1 text-[10px] font-black rounded-lg transition-all duration-150 border active:scale-95 cursor-pointer ${
+                          selectedIntensityLevel === lvl
+                            ? 'bg-orange-500 text-slate-950 border-orange-400 font-black scale-[1.03] shadow-md shadow-orange-500/10'
+                            : 'bg-slate-900 border-slate-850 text-slate-400 hover:bg-slate-800 hover:text-slate-250'
+                        }`}
+                      >
+                        {lvl} {lvl === 5 ? '🔥' : lvl === 1 ? '🍃' : ''}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mark Peak Effort Trigger Button */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMarkPeakEffort();
+                    }}
+                    className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-orange-500/15 hover:shadow-orange-500/25"
+                  >
+                    <span>🔥 MARCAR PIC D'ESFORÇ EXERCICI</span>
+                  </button>
+                </div>
+
+                {/* Recorded Peak details */}
+                {intensityPeaks[activeDrill.id] && (
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl px-3.5 py-2 text-xs flex items-center justify-between text-orange-200 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">⏱️</span>
+                      <div>
+                        <span className="text-[9px] text-slate-400 block font-bold uppercase tracking-wider leading-none">Pic d'esforç registrat</span>
+                        <span className="text-[11px] font-semibold mt-0.5 block">
+                          Assolit al minut <strong className="font-black text-orange-400 font-mono text-xs">{intensityPeaks[activeDrill.id].peakTime}</strong> amb intensitat <strong className="font-extrabold text-white">{intensityPeaks[activeDrill.id].intensityLabel}</strong>.
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const updated = { ...intensityPeaks };
+                        delete updated[activeDrill.id];
+                        setIntensityPeaks(updated);
+                        localStorage.setItem(`basket_planner_intensity_peaks_${session.id}`, JSON.stringify(updated));
+                        triggerLocalToast("🗑️ Pic d'esforç esborrat.");
+                      }}
+                      className="text-slate-400 hover:text-rose-400 font-extrabold transition text-[11px] px-1.5 py-1 cursor-pointer"
+                      title="Eliminar registre de pic"
+                    >
+                      Esborrar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
