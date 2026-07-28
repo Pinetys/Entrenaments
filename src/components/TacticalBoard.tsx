@@ -326,7 +326,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
     if (!svgRef.current) return null;
-    const rect = svgRef.current.getBoundingClientRect();
+    const svg = svgRef.current;
     
     let clientX = 0;
     let clientY = 0;
@@ -339,23 +339,46 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       clientX = (e as MouseEvent).clientX;
       clientY = (e as MouseEvent).clientY;
     }
+
+    // High precision CTM inverse matrix transformation to perfectly synchronize pointer with SVG coordinates
+    try {
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const svgPt = pt.matrixTransform(ctm.inverse());
+        
+        if (boardType === 'full') {
+          return {
+            x: Math.max(-2, Math.min(102, svgPt.x)),
+            y: Math.max(-2, Math.min(102, svgPt.y))
+          };
+        } else {
+          return {
+            x: Math.max(-3, Math.min(103, svgPt.x)),
+            y: Math.max(44, Math.min(102, svgPt.y))
+          };
+        }
+      }
+    } catch {
+      // Fallback if CTM matrix transformation is unsupported
+    }
     
+    const rect = svg.getBoundingClientRect();
     const pctX = (clientX - rect.left) / rect.width;
     const pctY = (clientY - rect.top) / rect.height;
     
-    let x = 0;
-    let y = 0;
-    
     if (boardType === 'full') {
-      x = -2 + pctX * 104;
-      y = -2 + pctY * 104;
+      const x = -2 + pctX * 104;
+      const y = -2 + pctY * 104;
       return { 
         x: Math.max(-2, Math.min(102, x)), 
         y: Math.max(-2, Math.min(102, y)) 
       };
     } else {
-      x = -3 + pctX * 106;
-      y = 44 + pctY * 58;
+      const x = -3 + pctX * 106;
+      const y = 44 + pctY * 58;
       return { 
         x: Math.max(-3, Math.min(103, x)), 
         y: Math.max(44, Math.min(102, y)) 
@@ -568,14 +591,32 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   };
 
   useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (activePinId || currentPath) {
+        handleMove(e);
+      }
+    };
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (activePinId || currentPath) {
+        handleMove(e);
+      }
+    };
     const handleGlobalMouseUp = () => handleEnd();
+
+    if (activePinId || currentPath) {
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+    }
     window.addEventListener('mouseup', handleGlobalMouseUp);
     window.addEventListener('touchend', handleGlobalMouseUp);
+
     return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
       window.removeEventListener('touchend', handleGlobalMouseUp);
     };
-  }, [activePinId, currentPath, pins, paths]);
+  }, [activePinId, currentPath, pins, paths, mode, zoom]);
 
   const undoPath = () => {
     if (paths.length > 0) {
