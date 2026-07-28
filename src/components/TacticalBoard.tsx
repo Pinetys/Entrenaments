@@ -347,19 +347,20 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
     let y = 0;
     
     if (boardType === 'full') {
-      x = pctX * 100;
-      y = pctY * 100;
-    } else {
       x = -2 + pctX * 104;
-      y = 35 + pctY * 68;
+      y = -2 + pctY * 104;
+      return { 
+        x: Math.max(-2, Math.min(102, x)), 
+        y: Math.max(-2, Math.min(102, y)) 
+      };
+    } else {
+      x = -3 + pctX * 106;
+      y = 44 + pctY * 58;
+      return { 
+        x: Math.max(-3, Math.min(103, x)), 
+        y: Math.max(44, Math.min(102, y)) 
+      };
     }
-    
-    const minCalculatedY = boardType === 'full' ? 0 : 35;
-    
-    return { 
-      x: Math.max(-2, Math.min(102, x)), 
-      y: Math.max(minCalculatedY, Math.min(103, y)) 
-    };
   };
 
   // Handling drawing / dragging
@@ -1106,7 +1107,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       )}
 
       {/* SVG Canvas Board */}
-      <div className={`relative w-full ${boardType === 'full' ? 'aspect-square' : 'aspect-[104/68]'} bg-white cursor-crosshair overflow-hidden touch-none select-none border border-slate-300`}>
+      <div className="relative w-full aspect-square bg-white cursor-crosshair overflow-hidden touch-none select-none border border-slate-300">
 
         {/* Custom Confirmation Overlay for Path Deletion */}
         {pathToDeleteId && (
@@ -1143,7 +1144,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
           id="svg-court"
           ref={svgRef}
           className="w-full h-full"
-          viewBox={boardType === 'full' ? "0 0 100 100" : "-2 35 104 68"}
+          viewBox={boardType === 'full' ? "-2 -2 104 104" : "-3 44 106 58"}
           preserveAspectRatio="xMidYMid meet"
           onMouseDown={(e) => handleStart(e)}
           onTouchStart={(e) => {
@@ -1424,7 +1425,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
           {/* INTERACTIVE MAGNETIC PINS */}
           {pins
-            .filter(p => boardType === 'full' || p.y >= 32 || p.type === 'cone')
+            .filter(p => boardType === 'full' || p.y >= 42 || p.type === 'cone')
             .map((p) => {
               // High contrast vintage black and white styling (scaled up for high legibility)
               let pinBg = '#ffffff'; // White circle with thin black border for attackers "O"
