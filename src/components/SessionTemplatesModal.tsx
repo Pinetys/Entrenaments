@@ -273,7 +273,7 @@ export default function SessionTemplatesModal({
 
                 {/* Category filter pills */}
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-                  {['Tots', 'Transició', 'Atac', 'Defensa', 'Físico', 'Combinat'].map(cat => (
+                  {['Tots', 'Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].map(cat => (
                     <button
                       key={cat}
                       onClick={() => setCategoryFilter(cat)}

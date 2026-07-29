@@ -30,6 +30,9 @@ import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import SessionTemplatesModal from './SessionTemplatesModal';
 
+const EMPTY_BOARD = { paths: [], pins: [] };
+const NOOP_CHANGE = () => {};
+
 export function getEnhancedSessionDrills(
   sessionDrills: { drillId: string; duration: number; notes?: string }[],
   allDrills: Drill[]
@@ -1086,7 +1089,7 @@ export default function SessionPlanner({
                         title="Clica per veure en gran"
                         className="w-24 xs:w-28 md:w-32 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 mx-auto md:mx-0 p-0.5 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.02] transition self-center"
                       >
-                        <TacticalBoard boardState={sd.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                        <TacticalBoard boardState={sd.boardState || EMPTY_BOARD} onChange={NOOP_CHANGE} readOnly={true} />
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -1412,7 +1415,7 @@ export default function SessionPlanner({
                         title="Clica per veure en gran el manual tàctic"
                         className="w-20 xs:w-24 sm:w-28 md:w-20 lg:w-24 xl:w-28 bg-white border border-slate-200 rounded-lg overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-orange-500 hover:scale-[1.03] transition p-0.5 self-center"
                       >
-                        <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                        <TacticalBoard boardState={drill.boardState || EMPTY_BOARD} onChange={NOOP_CHANGE} readOnly={true} />
                       </div>
 
                       {/* Primary labels, titles & buttons grouped in 1 spacious column */}
@@ -1897,7 +1900,7 @@ export default function SessionPlanner({
                               <div className="border border-slate-200 rounded-lg p-1.5 bg-slate-50 w-full max-w-[240px] aspect-square relative print:bg-white print:border-slate-350">
                                 <TacticalBoard 
                                   boardState={item.boardState} 
-                                  onChange={() => {}} 
+                                  onChange={NOOP_CHANGE} 
                                   readOnly={true} 
                                 />
                               </div>

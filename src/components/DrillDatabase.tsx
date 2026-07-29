@@ -18,6 +18,9 @@ import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import DrillManualBooklet from './DrillManualBooklet';
 
+const EMPTY_BOARD = { paths: [], pins: [] };
+const NOOP_CHANGE = () => {};
+
 // Pre-populated High-Level Drills for Junior Nivel A Catalan Federation
 export const PRE_POPULATED_DRILLS: Drill[] = [
   {
@@ -147,16 +150,10 @@ export default function DrillDatabase({
   const [sessionTargetId, setSessionTargetId] = useState<string>(selectedSessionId);
   const [sessionSelectorNote, setSessionSelectorNote] = useState<string>('');
 
-  // Dynamically obtain all unique categories from current drills state
+  // Standard categories
   const uniqueCategoriesInDrills = useMemo(() => {
-    const cats = new Set<string>(['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament']);
-    drills.forEach(d => {
-      if (d.category) {
-        cats.add(d.category);
-      }
-    });
-    return Array.from(cats);
-  }, [drills]);
+    return ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'];
+  }, []);
 
   const handleCloneDrill = (drill: Drill) => {
     try {
@@ -183,6 +180,9 @@ export default function DrillDatabase({
       return matchesSearch && favoriteDrillIds.includes(d.id);
     }
     if (selectedCategory !== 'Tots') {
+      if (selectedCategory === 'Escalfament') {
+        return matchesSearch && (d.category === 'Escalfament' || d.category === 'Técnica' || d.category === 'Tiro');
+      }
       return matchesSearch && d.category === selectedCategory;
     }
     return matchesSearch; // 'Tots'
@@ -357,7 +357,7 @@ export default function DrillDatabase({
                   onClick={() => setSelectedDrillForOverlay(drill)}
                   className="w-full bg-white border border-slate-200 rounded shadow-xs overflow-hidden p-1 relative cursor-pointer group-hover:border-orange-300 transition"
                 >
-                  <TacticalBoard boardState={drill.boardState || { paths: [], pins: [] }} onChange={() => {}} readOnly={true} />
+                  <TacticalBoard boardState={drill.boardState || EMPTY_BOARD} onChange={NOOP_CHANGE} readOnly={true} />
                   {drill.boardStates && drill.boardStates.length > 1 && (
                     <div className="absolute bottom-2 right-2 bg-slate-900/90 text-[9px] text-white font-extrabold uppercase px-2 py-0.5 rounded tracking-widest font-mono shadow-xs">
                       {drill.boardStates.length} Grafismes

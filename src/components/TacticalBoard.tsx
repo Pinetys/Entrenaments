@@ -134,7 +134,7 @@ function getPointAtProgress(points: { x: number; y: number }[], t: number): { x:
   return points[points.length - 1];
 }
 
-export default function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
+const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [boardType, setBoardType] = useState<'half' | 'full'>(boardState?.courtType || 'half');
   const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'draw_shoot' | 'draw_handoff' | 'eraser'>('move');
@@ -292,16 +292,18 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   const rawPaths = boardState?.paths || [];
 
   // Automatically normalize and unify paths so that old/incorrect exercises look perfectly clean and standardized
-  const paths = rawPaths.map(p => {
-    let color = p.color || '#eab308';
-    if (color === '#000000' || color === 'black') {
-      if (p.type === 'dotted') color = '#0ea5e9'; // Pass
-      else if (p.type === 'dashed') color = '#ef4444'; // Run/Defense
-      else if (p.type === 'zigzag') color = '#f97316'; // Dribble
-      else color = '#eab308'; // Cut/Attack
-    }
-    return { ...p, color };
-  });
+  const paths = React.useMemo(() => {
+    return rawPaths.map(p => {
+      let color = p.color || '#eab308';
+      if (color === '#000000' || color === 'black') {
+        if (p.type === 'dotted') color = '#0ea5e9'; // Pass
+        else if (p.type === 'dashed') color = '#ef4444'; // Run/Defense
+        else if (p.type === 'zigzag') color = '#f97316'; // Dribble
+        else color = '#eab308'; // Cut/Attack
+      }
+      return { ...p, color };
+    });
+  }, [rawPaths]);
 
   const pins = rawPins;
 
@@ -315,6 +317,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
 
   // Initialize pins if empty
   useEffect(() => {
+    if (readOnly) return;
     if (boardState && (!boardState.pins || boardState.pins.length === 0)) {
       onChange({
         paths: boardState.paths || [],
@@ -322,7 +325,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
         courtType: boardState.courtType || 'half'
       });
     }
-  }, [boardState, onChange]);
+  }, [readOnly, boardState, onChange]);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
     if (!svgRef.current) return null;
@@ -591,6 +594,8 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
   };
 
   useEffect(() => {
+    if (readOnly) return;
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (activePinId || currentPath) {
         handleMove(e);
@@ -616,7 +621,7 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       window.removeEventListener('mouseup', handleGlobalMouseUp);
       window.removeEventListener('touchend', handleGlobalMouseUp);
     };
-  }, [activePinId, currentPath, pins, paths, mode, zoom]);
+  }, [readOnly, activePinId, currentPath, pins, paths, mode, zoom]);
 
   const undoPath = () => {
     if (paths.length > 0) {
@@ -1767,4 +1772,29 @@ export default function TacticalBoard({ boardState, onChange, readOnly = false }
       )}
     </div>
   );
-}
+};
+
+const TacticalBoard = React.memo(
+  TacticalBoardInner,
+  (prevProps, nextProps) => {
+    // If both are readOnly preview boards, check if boardState is equivalent
+    if (prevProps.readOnly && nextProps.readOnly) {
+      if (prevProps.boardState === nextProps.boardState) return true;
+      const p = prevProps.boardState;
+      const n = nextProps.boardState;
+      if (!p && !n) return true;
+      if (!p || !n) return false;
+      if (p.courtType !== n.courtType) return false;
+      if (p.pins === n.pins && p.paths === n.paths) return true;
+      if (p.pins?.length !== n.pins?.length || p.paths?.length !== n.paths?.length) return false;
+      return JSON.stringify(p) === JSON.stringify(n);
+    }
+    return (
+      prevProps.readOnly === nextProps.readOnly &&
+      prevProps.boardState === nextProps.boardState &&
+      prevProps.onChange === nextProps.onChange
+    );
+  }
+);
+
+export default TacticalBoard;

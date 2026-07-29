@@ -230,15 +230,22 @@ export default function MobileCourtView({
   }, [safeActiveIndex, activeDrill?.id]);
 
   // Persist court view progress to localStorage for offline / Render keep-alive resilience
+  const lastSavedRef = useRef<number>(0);
   useEffect(() => {
     if (!session?.id) return;
+    const now = Date.now();
+    // Throttle writes: if timer is running, only save every 5 seconds or when drill/running state changes
+    if (timerRunning && now - lastSavedRef.current < 5000) {
+      return;
+    }
+    lastSavedRef.current = now;
     try {
       const stateToPersist = {
         activeDrillIndex: safeActiveIndex,
         timeLeft,
         sessionTimeLeft,
         timerRunning,
-        updatedAt: Date.now()
+        updatedAt: now
       };
       localStorage.setItem(`basket_planner_court_state_${session.id}`, JSON.stringify(stateToPersist));
     } catch (e) {}
