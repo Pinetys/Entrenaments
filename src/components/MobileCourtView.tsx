@@ -17,7 +17,15 @@ import {
   Check,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Plus,
+  Search,
+  BookOpen,
+  Calendar,
+  Smartphone,
+  Star,
+  Clock,
+  Filter
 } from 'lucide-react';
 import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
@@ -40,6 +48,67 @@ function getSharedAudioContext(): AudioContext | null {
   }
 }
 const NOOP_CHANGE = () => {};
+const EMPTY_BOARD_STATE: BoardState = { paths: [], pins: [] };
+
+interface TacticalBoardContainerProps {
+  currentBS: BoardState;
+  isFullscreenBoard: boolean;
+  activeBoardStates: BoardState[];
+  activeBoardIndex: number;
+  setActiveBoardIndex: (idx: number) => void;
+  setIsFullscreenBoard: (val: boolean) => void;
+}
+
+const TacticalBoardContainer = React.memo(function TacticalBoardContainer({
+  currentBS,
+  isFullscreenBoard,
+  activeBoardStates,
+  activeBoardIndex,
+  setActiveBoardIndex,
+  setIsFullscreenBoard
+}: TacticalBoardContainerProps) {
+  return (
+    <div
+      className={`transition-all duration-300 ${
+        isFullscreenBoard
+          ? 'fixed inset-0 bg-slate-950 z-50 p-4 flex flex-col justify-center'
+          : 'w-full'
+      }`}
+    >
+      {isFullscreenBoard && activeBoardStates.length > 1 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-4 self-center select-none no-scrollbar">
+          {activeBoardStates.map((_, bIdx) => (
+            <button
+              key={bIdx}
+              type="button"
+              onClick={() => setActiveBoardIndex(bIdx)}
+              className={`px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition shrink-0 ${
+                activeBoardIndex === bIdx
+                  ? 'bg-orange-500 text-white shadow'
+                  : 'bg-slate-900 border border-slate-800 text-slate-350'
+              }`}
+            >
+              Grafisme {bIdx + 1}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <TacticalBoard boardState={currentBS} onChange={NOOP_CHANGE} readOnly={!isFullscreenBoard} />
+
+      {isFullscreenBoard && (
+        <button
+          id="btn-close-fullscreen-board"
+          type="button"
+          onClick={() => setIsFullscreenBoard(false)}
+          className="mt-4 w-full py-2 bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider cursor-pointer active:scale-95 transition shrink-0"
+        >
+          Cerrar Pantalla Completa
+        </button>
+      )}
+    </div>
+  );
+});
 
 interface MobileCourtViewProps {
   session: TrainingSession;
@@ -49,6 +118,10 @@ interface MobileCourtViewProps {
   isSharedMobile?: boolean;
   onUpdateSession?: (updatedSession: TrainingSession) => void;
   onAddDrill?: (drill: Drill) => void;
+  onAddDrillToSession?: (drillId: string, targetSessionId?: string, customNotes?: string) => void;
+  onNavigateView?: (view: string) => void;
+  favoriteDrillIds?: string[];
+  onToggleFavorite?: (drillId: string) => void;
   completions?: SessionCompletion[];
   onToggleCompleteSession?: (sessionId: string) => void;
   activePlanId?: string;
@@ -67,6 +140,10 @@ export default function MobileCourtView({
   isSharedMobile = false,
   onUpdateSession,
   onAddDrill,
+  onAddDrillToSession,
+  onNavigateView,
+  favoriteDrillIds = [],
+  onToggleFavorite,
   completions = [],
   onToggleCompleteSession,
   activePlanId = 'plan-default',
@@ -84,6 +161,12 @@ export default function MobileCourtView({
   const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
   const [showSyncCallout, setShowSyncCallout] = useState(false);
   const [isIntensityExpanded, setIsIntensityExpanded] = useState(false);
+
+  // Mobile Exercise Library Modal state
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [librarySearchText, setLibrarySearchText] = useState('');
+  const [libraryCatFilter, setLibraryCatFilter] = useState<string>('Tots');
+  const [libraryNotes, setLibraryNotes] = useState<Record<string, string>>({});
 
   // Network connection status for completely offline Modo Pista support
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -199,16 +282,16 @@ export default function MobileCourtView({
   // Extract all available diagrams/phases for the active drill
   const activeDrillAny = activeDrill as any;
   const activeBoardStates: BoardState[] = useMemo(() => {
-    if (!activeDrillAny) return [{ paths: [], pins: [] }];
+    if (!activeDrillAny) return [EMPTY_BOARD_STATE];
     return activeDrillAny.boardStates && activeDrillAny.boardStates.length > 0
       ? activeDrillAny.boardStates 
-      : [activeDrillAny.boardState || { paths: [], pins: [] }];
+      : [activeDrillAny.boardState || EMPTY_BOARD_STATE];
   }, [activeDrillAny?.boardStates, activeDrillAny?.boardState]);
 
   // Safely clamp activeBoardIndex to activeBoardStates length
   const safeBoardIndex = Math.min(Math.max(0, activeBoardIndex), activeBoardStates.length - 1);
   const currentBS = useMemo(
-    () => activeBoardStates[safeBoardIndex] || activeBoardStates[0],
+    () => activeBoardStates[safeBoardIndex] || activeBoardStates[0] || EMPTY_BOARD_STATE,
     [activeBoardStates, safeBoardIndex]
   );
 
@@ -1170,41 +1253,14 @@ export default function MobileCourtView({
             )}
 
             {/* Interactive tactile board wrapper */}
-            <div className={`transition-all duration-300 ${
-              isFullscreenBoard 
-                ? 'fixed inset-0 bg-slate-950 z-50 p-4 flex flex-col justify-center' 
-                : 'w-full'
-            }`}>
-              {isFullscreenBoard && activeBoardStates.length > 1 && (
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-4 self-center select-none no-scrollbar">
-                  {activeBoardStates.map((_, bIdx) => (
-                    <button
-                      key={bIdx}
-                      onClick={() => setActiveBoardIndex(bIdx)}
-                      className={`px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition shrink-0 ${
-                        activeBoardIndex === bIdx
-                          ? 'bg-orange-500 text-white shadow'
-                          : 'bg-slate-900 border border-slate-800 text-slate-350'
-                      }`}
-                    >
-                      Grafisme {bIdx + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
-              
-              <TacticalBoard boardState={currentBS} onChange={NOOP_CHANGE} readOnly={isFullscreenBoard ? false : true} />
-              
-              {isFullscreenBoard && (
-                <button
-                  id="btn-close-fullscreen-board"
-                  onClick={() => setIsFullscreenBoard(false)}
-                  className="mt-4 w-full py-2 bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider cursor-pointer active:scale-95 transition shrink-0"
-                >
-                  Cerrar Pantalla Completa
-                </button>
-              )}
-            </div>
+            <TacticalBoardContainer
+              currentBS={currentBS}
+              isFullscreenBoard={isFullscreenBoard}
+              activeBoardStates={activeBoardStates}
+              activeBoardIndex={activeBoardIndex}
+              setActiveBoardIndex={setActiveBoardIndex}
+              setIsFullscreenBoard={setIsFullscreenBoard}
+            />
           </div>
         )}
 

@@ -1636,15 +1636,15 @@ export default function App() {
       <main id="main-content-area" className={`flex-1 ${isSharedMobile || activeView === 'mobile' ? 'p-0 md:px-8 md:py-6 max-w-md md:max-w-7xl' : 'max-w-7xl px-4 py-6 md:px-8'} w-full mx-auto relative`}>
         
         {/* TAB WORKSPACE SEPARATION (planner, library database, mobile view slider) */}
-        {activeView !== 'mobile' && (
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        {!isSharedMobile && (
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-4">
             
             {/* Visual Tabs selector - Beautifully aligned squared geometric grid on mobile */}
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 p-1.5 bg-slate-200/60 rounded-lg select-none w-full sm:w-auto">
               <button
                 id="tab-planner"
                 onClick={() => setActiveView('planner')}
-                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
                   activeView === 'planner' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -1657,7 +1657,7 @@ export default function App() {
               <button
                 id="tab-database"
                 onClick={() => setActiveView('database')}
-                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
                   activeView === 'database' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -1673,7 +1673,7 @@ export default function App() {
                   setEditingDrill(null);
                   setActiveView('creator');
                 }}
-                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
                   activeView === 'creator' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -1686,7 +1686,7 @@ export default function App() {
               <button
                 id="tab-court-mode"
                 onClick={() => setActiveView('mobile')}
-                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all duration-150 ${
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all duration-150 cursor-pointer ${
                   activeView === 'mobile' 
                     ? 'bg-white text-slate-900 shadow-xs border-b-2 border-orange-500' 
                     : 'text-orange-600 hover:text-orange-850 hover:bg-orange-50'
@@ -1989,6 +1989,10 @@ export default function App() {
               session={activeSession}
               drills={drills}
               onBackToPlanner={() => setActiveView('planner')}
+              onNavigateView={setActiveView}
+              onAddDrillToSession={handleAddDrillToSession}
+              favoriteDrillIds={favoriteDrillIds}
+              onToggleFavorite={handleToggleFavoriteDrill}
               onPreviewDrill={setPreviewDrill}
               isSharedMobile={isSharedMobile}
               onUpdateSession={handleUpdateSession}

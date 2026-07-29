@@ -1774,26 +1774,72 @@ const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOn
   );
 };
 
+function areBoardStatesEqual(p?: BoardState, n?: BoardState): boolean {
+  if (p === n) return true;
+  if (!p && !n) return true;
+  if (!p || !n) return false;
+  if (p.courtType !== n.courtType) return false;
+
+  const pPins = p.pins || [];
+  const nPins = n.pins || [];
+  const pPaths = p.paths || [];
+  const nPaths = n.paths || [];
+
+  if (pPins.length !== nPins.length || pPaths.length !== nPaths.length) return false;
+
+  if (pPins !== nPins) {
+    for (let i = 0; i < pPins.length; i++) {
+      const pinA = pPins[i];
+      const pinB = nPins[i];
+      if (
+        pinA.id !== pinB.id ||
+        pinA.x !== pinB.x ||
+        pinA.y !== pinB.y ||
+        pinA.type !== pinB.type ||
+        pinA.label !== pinB.label
+      ) {
+        return false;
+      }
+    }
+  }
+
+  if (pPaths !== nPaths) {
+    for (let i = 0; i < pPaths.length; i++) {
+      const pathA = pPaths[i];
+      const pathB = nPaths[i];
+      if (
+        pathA.id !== pathB.id ||
+        pathA.type !== pathB.type ||
+        pathA.color !== pathB.color ||
+        pathA.points?.length !== pathB.points?.length
+      ) {
+        return false;
+      }
+      if (pathA.points && pathB.points && pathA.points.length > 0) {
+        const ptA0 = pathA.points[0];
+        const ptB0 = pathB.points[0];
+        const ptALast = pathA.points[pathA.points.length - 1];
+        const ptBLast = pathB.points[pathB.points.length - 1];
+        if (
+          ptA0?.x !== ptB0?.x ||
+          ptA0?.y !== ptB0?.y ||
+          ptALast?.x !== ptBLast?.x ||
+          ptALast?.y !== ptBLast?.y
+        ) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 const TacticalBoard = React.memo(
   TacticalBoardInner,
   (prevProps, nextProps) => {
-    // If both are readOnly preview boards, check if boardState is equivalent
-    if (prevProps.readOnly && nextProps.readOnly) {
-      if (prevProps.boardState === nextProps.boardState) return true;
-      const p = prevProps.boardState;
-      const n = nextProps.boardState;
-      if (!p && !n) return true;
-      if (!p || !n) return false;
-      if (p.courtType !== n.courtType) return false;
-      if (p.pins === n.pins && p.paths === n.paths) return true;
-      if (p.pins?.length !== n.pins?.length || p.paths?.length !== n.paths?.length) return false;
-      return JSON.stringify(p) === JSON.stringify(n);
-    }
-    return (
-      prevProps.readOnly === nextProps.readOnly &&
-      prevProps.boardState === nextProps.boardState &&
-      prevProps.onChange === nextProps.onChange
-    );
+    if (prevProps.readOnly !== nextProps.readOnly) return false;
+    return areBoardStatesEqual(prevProps.boardState, nextProps.boardState);
   }
 );
 
