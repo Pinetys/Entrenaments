@@ -1836,6 +1836,7 @@ const TacticalBoard = React.memo(
   TacticalBoardInner,
   (prevProps, nextProps) => {
     if (prevProps.readOnly !== nextProps.readOnly) return false;
+    if (prevProps.hideAnimation !== nextProps.hideAnimation) return false;
     return areBoardStatesEqual(prevProps.boardState, nextProps.boardState);
   }
 );
