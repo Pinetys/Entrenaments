@@ -57,6 +57,7 @@ interface TacticalBoardContainerProps {
   activeBoardIndex: number;
   setActiveBoardIndex: (idx: number) => void;
   setIsFullscreenBoard: (val: boolean) => void;
+  isUltraLightMode?: boolean;
 }
 
 const TacticalBoardContainer = React.memo(
@@ -66,7 +67,8 @@ const TacticalBoardContainer = React.memo(
     activeBoardStates,
     activeBoardIndex,
     setActiveBoardIndex,
-    setIsFullscreenBoard
+    setIsFullscreenBoard,
+    isUltraLightMode
   }: TacticalBoardContainerProps) {
     return (
       <div
@@ -95,7 +97,7 @@ const TacticalBoardContainer = React.memo(
           </div>
         )}
 
-        <TacticalBoard boardState={currentBS} onChange={NOOP_CHANGE} readOnly={!isFullscreenBoard} />
+        <TacticalBoard boardState={currentBS} onChange={NOOP_CHANGE} readOnly={!isFullscreenBoard} hideAnimation={isUltraLightMode} />
 
         {isFullscreenBoard && (
           <button
@@ -115,7 +117,8 @@ const TacticalBoardContainer = React.memo(
       prev.isFullscreenBoard === next.isFullscreenBoard &&
       prev.activeBoardIndex === next.activeBoardIndex &&
       prev.currentBS === next.currentBS &&
-      prev.activeBoardStates.length === next.activeBoardStates.length
+      prev.activeBoardStates.length === next.activeBoardStates.length &&
+      prev.isUltraLightMode === next.isUltraLightMode
     );
   }
 );
@@ -1128,21 +1131,23 @@ export default function MobileCourtView({
                   </span>
                 )}
               </label>
-              <button
-                id="btn-expand-board"
-                onClick={() => setIsFullscreenBoard(!isFullscreenBoard)}
-                className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 cursor-pointer py-0.5 font-sans"
-              >
-                {isFullscreenBoard ? (
-                  <>
-                    <Minimize size={11} /> Reducir
-                  </>
-                ) : (
-                  <>
-                    <Expand size={11} /> Pantalla Completa
-                  </>
-                )}
-              </button>
+              {!isUltraLightMode && (
+                <button
+                  id="btn-expand-board"
+                  onClick={() => setIsFullscreenBoard(!isFullscreenBoard)}
+                  className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 cursor-pointer py-0.5 font-sans"
+                >
+                  {isFullscreenBoard ? (
+                    <>
+                      <Minimize size={11} /> Reducir
+                    </>
+                  ) : (
+                    <>
+                      <Expand size={11} /> Pantalla Completa
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Quick Slide Navigation Tabs */}
@@ -1172,6 +1177,7 @@ export default function MobileCourtView({
               activeBoardIndex={activeBoardIndex}
               setActiveBoardIndex={setActiveBoardIndex}
               setIsFullscreenBoard={setIsFullscreenBoard}
+              isUltraLightMode={isUltraLightMode}
             />
           </div>
         )}

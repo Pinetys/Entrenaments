@@ -74,6 +74,7 @@ interface TacticalBoardProps {
   boardState: BoardState;
   onChange: (newState: BoardState) => void;
   readOnly?: boolean;
+  hideAnimation?: boolean;
 }
 
 const DEFAULT_PINS: BoardPin[] = [
@@ -134,7 +135,7 @@ function getPointAtProgress(points: { x: number; y: number }[], t: number): { x:
   return points[points.length - 1];
 }
 
-const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOnly = false }: TacticalBoardProps) {
+const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOnly = false, hideAnimation = false }: TacticalBoardProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [boardType, setBoardType] = useState<'half' | 'full'>(boardState?.courtType || 'half');
   const [mode, setMode] = useState<'move' | 'draw_pass' | 'draw_cut' | 'draw_run' | 'draw_dribble' | 'draw_shoot' | 'draw_handoff' | 'eraser'>('move');
@@ -1737,7 +1738,7 @@ const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOn
       </div>
 
       {/* Much smaller, clean play animation button outside the graphic */}
-      {paths.length > 0 && (
+      {paths.length > 0 && !hideAnimation && (
         <div className="flex justify-end mt-1">
           <button
             type="button"

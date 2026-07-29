@@ -26,6 +26,7 @@ import {
   NotebookPen,
   Users
 } from 'lucide-react';
+import coachPinetyLogo from './assets/images/coach_pinety_logo_1785329115241.jpg';
 import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player } from './types';
 import { DEFAULT_SESSION_TEMPLATES } from './data/defaultTemplates';
 import { DEFAULT_JUNIOR_PLAYERS } from './data/defaultPlayers';
@@ -1454,11 +1455,13 @@ export default function App() {
           {/* Row 1: Logo, Brand Title, Team Subtitle & Profile Avatar */}
           <div className="flex items-center justify-between w-full md:w-auto gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-white relative shadow-md border border-orange-400/20 group shrink-0">
-                <Dribbble strokeWidth={2.2} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] animate-[spin_12s_linear_infinite] md:w-6 md:h-6" />
-                <div className="absolute -bottom-1 -right-1 bg-slate-950 text-white text-[8px] px-1 font-black rounded-full border border-orange-500 scale-90">
-                  A
-                </div>
+              <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl overflow-hidden relative shadow-md border border-orange-500/40 group shrink-0 bg-slate-900">
+                <img 
+                  src={coachPinetyLogo} 
+                  alt="Coach Pinety Logo" 
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover transition transform group-hover:scale-105" 
+                />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
