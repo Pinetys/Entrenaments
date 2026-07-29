@@ -761,62 +761,7 @@ export default function MobileCourtView({
           <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono">Modo Pista (Junior A)</span>
           <span className="text-xs font-semibold text-slate-200 truncate max-w-40 block">{session.name}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            id="btn-whistle-demo"
-            onClick={playSynthesizedWhistle}
-            title="Silbato Árbitro NBA (Fox 40)"
-            className="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 transition text-amber-400 rounded-lg flex items-center justify-center cursor-pointer shadow-xs border border-amber-500/20"
-          >
-            <Volume2 size={15} />
-          </button>
-          <button
-            id="btn-buzzer-demo"
-            onClick={playSynthesizedBuzzer}
-            title="Bocina de Pabellón NBA"
-            className="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 transition text-red-400 rounded-lg flex items-center justify-center cursor-pointer shadow-xs border border-red-500/20"
-          >
-            <Megaphone size={15} />
-          </button>
-        </div>
-      </div>
-
-      {/* QUICK NBA SOUND FX TOOLBAR */}
-      <div id="nba-sound-toolbar" className="px-3 py-1.5 bg-slate-900/90 border-b border-slate-800/90 flex items-center justify-between text-[10px] font-mono shrink-0 select-none overflow-x-auto no-scrollbar gap-1.5">
-        <span className="text-[9px] font-black uppercase text-orange-400 tracking-wider shrink-0 flex items-center gap-1">
-          <Zap size={10} className="text-orange-400 animate-pulse" />
-          EFECTOS NBA:
-        </span>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={playSynthesizedBuzzer}
-            className="px-2 py-0.5 bg-red-950/80 border border-red-600/50 hover:bg-red-900 text-red-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
-          >
-            📢 Bocina Arena
-          </button>
-          <button
-            type="button"
-            onClick={playSynthesizedWhistle}
-            className="px-2 py-0.5 bg-amber-950/80 border border-amber-600/50 hover:bg-amber-900 text-amber-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
-          >
-            🎷 Silbato Fox 40
-          </button>
-          <button
-            type="button"
-            onClick={playNbaSwish}
-            className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-600/50 hover:bg-emerald-900 text-emerald-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
-          >
-            🏀 Swish Red
-          </button>
-          <button
-            type="button"
-            onClick={playNbaSneakerSqueak}
-            className="px-2 py-0.5 bg-sky-950/80 border border-sky-600/50 hover:bg-sky-900 text-sky-300 rounded font-bold text-[9px] active:scale-95 transition cursor-pointer flex items-center gap-1"
-          >
-            👟 Squeak Parquet
-          </button>
-        </div>
+        <div className="w-[85px]" />
       </div>
 
   {/* TIMING DOUBLE STOPWATCH UNIT */}
@@ -946,78 +891,6 @@ export default function MobileCourtView({
             
             <div className="absolute bottom-0 left-0 right-0 bg-slate-900 h-1.5 overflow-hidden">
               <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, (timeLeft / (activeDrill.duration * 60 || 1)) * 100))}%` }}></div>
-            </div>
-          </div>
-        )}
-
-        {/* CONFIGURABLE REST TIMER BETWEEN DRILL BLOCKS (Hidden in motion mode) */}
-        {!isMotionMode && (
-          <div className="bg-slate-950/90 border border-amber-500/30 p-2 rounded-xl flex items-center justify-between gap-3 relative overflow-hidden">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="text-base text-amber-500 animate-pulse shrink-0">💤</span>
-              <div className="min-w-0">
-                <span className="text-[8px] text-amber-400 font-extrabold uppercase tracking-wider block leading-none">Descans Personalitzat</span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`text-sm font-black font-mono leading-none tracking-tight ${restTimerRunning ? 'text-amber-300 animate-pulse' : 'text-slate-400'}`}>
-                    {formatTime(restTimeLeft)}
-                  </span>
-                  
-                  {/* Duration dropdown selector */}
-                  <select
-                    disabled={restTimerRunning}
-                    value={configuredRestTime}
-                    onChange={(e) => {
-                      const secs = Number(e.target.value);
-                      setConfiguredRestTime(secs);
-                      setRestTimeLeft(secs);
-                    }}
-                    className="bg-slate-900 border border-slate-800 text-amber-400 rounded text-[9px] font-black px-1.5 py-0.5 ml-1 focus:outline-none focus:border-amber-500 cursor-pointer"
-                  >
-                    <option value={30}>30s</option>
-                    <option value={45}>45s</option>
-                    <option value={60}>1 min</option>
-                    <option value={90}>1:30 min</option>
-                    <option value={120}>2 min</option>
-                    <option value={180}>3 min</option>
-                    <option value={300}>5 min</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Mini progress bar */}
-            <div className="flex-1 bg-slate-850 h-1 rounded-full overflow-hidden mx-2 shrink opacity-60 hidden xs:block">
-              <div className="h-full bg-amber-400 transition-all duration-300" style={{ width: `${(restTimeLeft / configuredRestTime) * 100}%` }}></div>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                id="btn-toggle-rest"
-                type="button"
-                onClick={() => {
-                  setRestTimerRunning(!restTimerRunning);
-                  if (!restTimerRunning) {
-                    setTimerRunning(false); // Stop active exercise automatically on rest toggle
-                  }
-                }}
-                className="px-2.5 py-1.5 text-[9px] font-black uppercase rounded transition active:scale-95 cursor-pointer font-sans"
-                style={{ backgroundColor: restTimerRunning ? '#f59e0b' : '#334155', color: restTimerRunning ? '#020617' : '#94a3b8' }}
-              >
-                {restTimerRunning ? 'Pausar' : `Iniciar`}
-              </button>
-              <button
-                id="btn-reset-rest"
-                type="button"
-                onClick={() => {
-                  setRestTimeLeft(configuredRestTime);
-                  setRestTimerRunning(false);
-                }}
-                title="Reiniciar descans"
-                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
-                style={{ minWidth: '28px', minHeight: '28px' }}
-              >
-                <RotateCcw size={11} />
-              </button>
             </div>
           </div>
         )}
