@@ -12,6 +12,191 @@ import {
 } from 'lucide-react';
 import { BoardState, BoardPin, BoardPath } from '../types';
 
+const StaticCourtCanvas = React.memo(function StaticCourtCanvas({ boardType }: { boardType: 'full' | 'half' }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const isFull = boardType === 'full';
+    const baseW = isFull ? 1040 : 1060;
+    const baseH = isFull ? 1040 : 580;
+
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    canvas.width = baseW * dpr;
+    canvas.height = baseH * dpr;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    const toX = (x: number) => (isFull ? (x + 2) * 10 : (x + 3) * 10);
+    const toY = (y: number) => (isFull ? (y + 2) * 10 : (y - 44) * 10);
+
+    // 1. Pure white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, baseW, baseH);
+
+    // 2. Grid lines
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 5;
+    for (let x = 10; x <= 90; x += 10) {
+      ctx.beginPath();
+      ctx.moveTo(toX(x), toY(0));
+      ctx.lineTo(toX(x), toY(100));
+      ctx.stroke();
+    }
+    for (let y = 10; y <= 90; y += 10) {
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(y));
+      ctx.lineTo(toX(100), toY(y));
+      ctx.stroke();
+    }
+
+    // 3. Court outer boundary
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 12;
+    ctx.strokeRect(toX(3), toY(3), 940, 940);
+
+    // 4. Center line & circle
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(toX(3), toY(50));
+    ctx.lineTo(toX(97), toY(50));
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(toX(50), toY(50), 120, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(toX(50), toY(50), 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Half court helper
+    const drawHalf = (isTop: boolean) => {
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 8;
+
+      const keyY = isTop ? 3 : 77.5;
+
+      // Key Area fill & border
+      ctx.fillStyle = 'rgba(0,0,0,0.015)';
+      ctx.fillRect(toX(35), toY(keyY), 300, 195);
+      ctx.strokeRect(toX(35), toY(keyY), 300, 195);
+
+      const ftCy = isTop ? 22.5 : 77.5;
+
+      // Free throw solid arc
+      ctx.beginPath();
+      ctx.ellipse(
+        toX(50),
+        toY(ftCy),
+        150,
+        82,
+        0,
+        isTop ? 0 : Math.PI,
+        isTop ? Math.PI : 0,
+        !isTop
+      );
+      ctx.stroke();
+
+      // Free throw dashed arc
+      ctx.save();
+      ctx.setLineDash([15, 15]);
+      ctx.beginPath();
+      ctx.ellipse(
+        toX(50),
+        toY(ftCy),
+        150,
+        82,
+        0,
+        isTop ? Math.PI : 0,
+        isTop ? 0 : Math.PI,
+        isTop
+      );
+      ctx.stroke();
+      ctx.restore();
+
+      // Backboard & Rim
+      const bbY = isTop ? 7 : 93;
+      const bbLineY2 = isTop ? 3 : 97;
+      const rimCy = isTop ? 8.8 : 91.2;
+
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(toX(44), toY(bbY));
+      ctx.lineTo(toX(56), toY(bbY));
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(toX(50), toY(bbY));
+      ctx.lineTo(toX(50), toY(bbLineY2));
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(toX(50), toY(rimCy), 18, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Three point line
+      const cornerX1 = toX(8.5);
+      const cornerX2 = toX(91.5);
+      const cornerYStart = toY(isTop ? 3 : 97);
+      const cornerYEnd = toY(isTop ? 13.5 : 86.5);
+
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(cornerX1, cornerYStart);
+      ctx.lineTo(cornerX1, cornerYEnd);
+      ctx.ellipse(
+        toX(50),
+        cornerYEnd,
+        415,
+        225,
+        0,
+        Math.PI,
+        0,
+        !isTop
+      );
+      ctx.lineTo(cornerX2, cornerYStart);
+      ctx.stroke();
+
+      // Restricted area arc
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.ellipse(
+        toX(50),
+        toY(rimCy),
+        65,
+        40,
+        0,
+        0,
+        Math.PI,
+        !isTop
+      );
+      ctx.stroke();
+    };
+
+    drawHalf(false);
+    if (isFull) {
+      drawHalf(true);
+    }
+
+    ctx.restore();
+  }, [boardType]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ width: '100%', height: '100%', display: 'block' }}
+    />
+  );
+});
+
 function getZigzagPath(points: { x: number; y: number }[]): string {
   if (points.length < 2) return '';
   
@@ -1250,77 +1435,15 @@ const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOn
             })}
           </defs>
 
-          {/* COURT LINES DESIGN - Clinic pure white background */}
-          <rect x="-10" y="-10" width="120" height="120" fill="#ffffff" />
-          
-          {/* Subtle grid lines matching the technical planner blueprint */}
-          <g stroke="#e2e8f0" strokeWidth="0.5">
-            <line x1="10" y1="0" x2="10" y2="100" />
-            <line x1="20" y1="0" x2="20" y2="100" />
-            <line x1="30" y1="0" x2="30" y2="100" />
-            <line x1="40" y1="0" x2="40" y2="100" />
-            <line x1="50" y1="0" x2="50" y2="100" />
-            <line x1="60" y1="0" x2="60" y2="100" />
-            <line x1="70" y1="0" x2="70" y2="100" />
-            <line x1="80" y1="0" x2="80" y2="100" />
-            <line x1="90" y1="0" x2="90" y2="100" />
-            
-            <line x1="0" y1="10" x2="100" y2="10" />
-            <line x1="0" y1="20" x2="100" y2="20" />
-            <line x1="0" y1="30" x2="100" y2="30" />
-            <line x1="0" y1="40" x2="100" y2="40" />
-            <line x1="0" y1="50" x2="100" y2="50" />
-            <line x1="0" y1="60" x2="100" y2="60" />
-            <line x1="0" y1="70" x2="100" y2="70" />
-            <line x1="0" y1="80" x2="100" y2="80" />
-            <line x1="0" y1="90" x2="100" y2="90" />
-          </g>
-
-          {/* Boundaries with deep classic black lines */}
-          <rect x="3" y="3" width="94" height="94" fill="none" stroke="#000000" strokeWidth="1.2" />
-
-          {/* Center line */}
-          <line x1="3" y1="50" x2="97" y2="50" stroke="#000000" strokeWidth="0.8" />
-          {/* Center circle */}
-          <circle cx="50" cy="50" r="12" fill="none" stroke="#000000" strokeWidth="0.8" />
-          <circle cx="50" cy="50" r="2.0" fill="#000000" />
-
-          {/* BOTTOM COURT (Main half court) */}
-          {/* Area Paint with slight high-class technical dash background */}
-          <rect x="35" y="77.5" width="30" height="19.5" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
-          {/* Free throw circle top */}
-          <path d="M 35 77.5 A 15 8.2 0 0 1 65 77.5" fill="none" stroke="#000000" strokeWidth="0.8" />
-          {/* Free throw circle bottom (dashed) */}
-          <path d="M 35 77.5 A 15 8.2 0 0 0 65 77.5" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
-          {/* Backboard & Rim */}
-          <line x1="44" y1="93" x2="56" y2="93" stroke="#000000" strokeWidth="1.0" />
-          <line x1="50" y1="93" x2="50" y2="97" stroke="#000000" strokeWidth="1.0" />
-          <circle cx="50" cy="91.2" r="1.8" fill="none" stroke="#000000" strokeWidth="1.0" /> {/* Rim */}
-
-          {/* Three point line (International / FIBA compliant scale) */}
-          <path d="M 8.5 97 L 8.5 86.5 A 41.5 22.5 0 0 1 91.5 86.5 L 91.5 97" fill="none" stroke="#000000" strokeWidth="0.8" />
-          {/* Restricted area arc */}
-          <path d="M 43.5 91.2 A 6.5 4.0 0 0 1 56.5 91.2" fill="none" stroke="#000000" strokeWidth="0.7" />
-
-          {/* TOP COURT */}
-          {boardType === 'full' && (
-            <g>
-              {/* Restricted area with classic paint stain */}
-              <rect x="35" y="3" width="30" height="19.5" fill="#000000" fillOpacity="0.015" stroke="#000000" strokeWidth="0.8" />
-              {/* Free throw circle bottom */}
-              <path d="M 35 22.5 A 15 8.2 0 0 0 65 22.5" fill="none" stroke="#000000" strokeWidth="0.8" />
-              {/* Free throw circle top (dashed) */}
-              <path d="M 35 22.5 A 15 8.2 0 0 1 65 22.5" fill="none" stroke="#000000" strokeWidth="0.8" strokeDasharray="1.5, 1.5" />
-              {/* Backboard & Rim */}
-              <line x1="44" y1="7" x2="56" y2="7" stroke="#000000" strokeWidth="1.0" />
-              <line x1="50" y1="7" x2="50" y2="3" stroke="#000000" strokeWidth="1.0" />
-              <circle cx="50" cy="8.8" r="1.8" fill="none" stroke="#000000" strokeWidth="1.0" />
-
-              {/* Three point line */}
-              <path d="M 8.5 3 L 8.5 13.5 A 41.5 22.5 0 0 0 91.5 13.5 L 91.5 3" fill="none" stroke="#000000" strokeWidth="0.8" />
-              {/* Restricted area arc */}
-              <path d="M 43.5 8.8 A 6.5 4.0 0 0 0 56.5 8.8" fill="none" stroke="#000000" strokeWidth="0.7" />
-            </g>
+          {/* STATIC COURT CANVAS BACKGROUND */}
+          {boardType === 'full' ? (
+            <foreignObject x="-2" y="-2" width="104" height="104" className="pointer-events-none">
+              <StaticCourtCanvas boardType="full" />
+            </foreignObject>
+          ) : (
+            <foreignObject x="-3" y="44" width="106" height="58" className="pointer-events-none">
+              <StaticCourtCanvas boardType="half" />
+            </foreignObject>
           )}
 
           {/* DRAWN PATHS */}

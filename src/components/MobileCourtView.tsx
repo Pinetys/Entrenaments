@@ -576,8 +576,11 @@ export default function MobileCourtView({
     }
   };
 
-  // Timer tick runner
+  // Timer tick runner - only runs interval when at least one timer is active
   useEffect(() => {
+    const isAnyTimerActive = timerRunning || sessionTimerRunning || restTimerRunning || intensityTimerRunning;
+    if (!isAnyTimerActive) return;
+
     const interval = setInterval(() => {
       if (sessionTimerRunning) {
         setSessionTimeLeft((prevSess) => Math.max(0, prevSess - 1));
