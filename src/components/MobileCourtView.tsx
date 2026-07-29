@@ -25,7 +25,8 @@ import {
   Smartphone,
   Star,
   Clock,
-  Filter
+  Filter,
+  Moon
 } from 'lucide-react';
 import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
@@ -173,6 +174,7 @@ export default function MobileCourtView({
   const [showSessionEditor, setShowSessionEditor] = useState(false);
   const [isMotionMode, setIsMotionMode] = useState(false);
   const [isUltraLightMode, setIsUltraLightMode] = useState(true);
+  const [isNightMode, setIsNightMode] = useState(false);
   const [showTacticalDiagram, setShowTacticalDiagram] = useState(false);
   const [editorSearchText, setEditorSearchText] = useState('');
   const [addCategoryFilter, setAddCategoryFilter] = useState<'Tots' | 'Escalfament' | 'Atac' | 'Defensa'>('Tots');
