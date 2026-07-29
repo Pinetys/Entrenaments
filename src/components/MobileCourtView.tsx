@@ -59,56 +59,66 @@ interface TacticalBoardContainerProps {
   setIsFullscreenBoard: (val: boolean) => void;
 }
 
-const TacticalBoardContainer = React.memo(function TacticalBoardContainer({
-  currentBS,
-  isFullscreenBoard,
-  activeBoardStates,
-  activeBoardIndex,
-  setActiveBoardIndex,
-  setIsFullscreenBoard
-}: TacticalBoardContainerProps) {
-  return (
-    <div
-      className={`transition-all duration-300 ${
-        isFullscreenBoard
-          ? 'fixed inset-0 bg-slate-950 z-50 p-4 flex flex-col justify-center'
-          : 'w-full'
-      }`}
-    >
-      {isFullscreenBoard && activeBoardStates.length > 1 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-4 self-center select-none no-scrollbar">
-          {activeBoardStates.map((_, bIdx) => (
-            <button
-              key={bIdx}
-              type="button"
-              onClick={() => setActiveBoardIndex(bIdx)}
-              className={`px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition shrink-0 ${
-                activeBoardIndex === bIdx
-                  ? 'bg-orange-500 text-white shadow'
-                  : 'bg-slate-900 border border-slate-800 text-slate-350'
-              }`}
-            >
-              Grafisme {bIdx + 1}
-            </button>
-          ))}
-        </div>
-      )}
+const TacticalBoardContainer = React.memo(
+  function TacticalBoardContainer({
+    currentBS,
+    isFullscreenBoard,
+    activeBoardStates,
+    activeBoardIndex,
+    setActiveBoardIndex,
+    setIsFullscreenBoard
+  }: TacticalBoardContainerProps) {
+    return (
+      <div
+        className={`transition-all duration-300 ${
+          isFullscreenBoard
+            ? 'fixed inset-0 bg-slate-950 z-50 p-4 flex flex-col justify-center'
+            : 'w-full'
+        }`}
+      >
+        {isFullscreenBoard && activeBoardStates.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-4 self-center select-none no-scrollbar">
+            {activeBoardStates.map((_, bIdx) => (
+              <button
+                key={bIdx}
+                type="button"
+                onClick={() => setActiveBoardIndex(bIdx)}
+                className={`px-4 py-1.5 rounded text-xs font-black uppercase tracking-wider transition shrink-0 ${
+                  activeBoardIndex === bIdx
+                    ? 'bg-orange-500 text-white shadow'
+                    : 'bg-slate-900 border border-slate-800 text-slate-350'
+                }`}
+              >
+                Grafisme {bIdx + 1}
+              </button>
+            ))}
+          </div>
+        )}
 
-      <TacticalBoard boardState={currentBS} onChange={NOOP_CHANGE} readOnly={!isFullscreenBoard} />
+        <TacticalBoard boardState={currentBS} onChange={NOOP_CHANGE} readOnly={!isFullscreenBoard} />
 
-      {isFullscreenBoard && (
-        <button
-          id="btn-close-fullscreen-board"
-          type="button"
-          onClick={() => setIsFullscreenBoard(false)}
-          className="mt-4 w-full py-2 bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider cursor-pointer active:scale-95 transition shrink-0"
-        >
-          Cerrar Pantalla Completa
-        </button>
-      )}
-    </div>
-  );
-});
+        {isFullscreenBoard && (
+          <button
+            id="btn-close-fullscreen-board"
+            type="button"
+            onClick={() => setIsFullscreenBoard(false)}
+            className="mt-4 w-full py-2 bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider cursor-pointer active:scale-95 transition shrink-0"
+          >
+            Cerrar Pantalla Completa
+          </button>
+        )}
+      </div>
+    );
+  },
+  (prev, next) => {
+    return (
+      prev.isFullscreenBoard === next.isFullscreenBoard &&
+      prev.activeBoardIndex === next.activeBoardIndex &&
+      prev.currentBS === next.currentBS &&
+      prev.activeBoardStates.length === next.activeBoardStates.length
+    );
+  }
+);
 
 interface MobileCourtViewProps {
   session: TrainingSession;

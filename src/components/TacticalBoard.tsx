@@ -220,6 +220,7 @@ const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOn
   } | null>(null);
 
   const handleTouchStartCustom = (e: React.TouchEvent<SVGSVGElement>) => {
+    if (readOnly) return;
     if (e.touches.length === 2) {
       e.stopPropagation();
       const t1 = e.touches[0];
@@ -250,6 +251,7 @@ const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOn
   };
 
   const handleTouchMoveCustom = (e: React.TouchEvent<SVGSVGElement> | TouchEvent) => {
+    if (readOnly) return;
     const touches = 'touches' in e ? e.touches : [];
     if (touches.length === 2 && touchStartRef.current) {
       e.preventDefault();
@@ -281,10 +283,18 @@ const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOn
     }
   };
 
+  // Reset zoom and pan when boardState or readOnly changes
+  useEffect(() => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  }, [boardState, readOnly]);
+
   // Sync boardType with incoming boardState
   useEffect(() => {
-    if (boardState?.courtType && boardState.courtType !== boardType) {
-      setBoardType(boardState.courtType);
+    const expectedType = boardState?.courtType || 'half';
+    if (expectedType !== boardType) {
+      setBoardType(expectedType);
     }
   }, [boardState?.courtType]);
 
@@ -1194,19 +1204,21 @@ const TacticalBoardInner = function TacticalBoard({ boardState, onChange, readOn
           preserveAspectRatio="xMidYMid meet"
           onMouseDown={(e) => handleStart(e)}
           onTouchStart={(e) => {
+            if (readOnly) return;
             handleTouchStartCustom(e);
             handleStart(e);
           }}
           onMouseMove={handleMove}
           onTouchMove={(e) => {
+            if (readOnly) return;
             handleTouchMoveCustom(e);
             handleMove(e);
           }}
           style={{
-            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            transform: zoom === 1 && panX === 0 && panY === 0 ? undefined : `translate(${panX}px, ${panY}px) scale(${zoom})`,
             transformOrigin: 'center center',
-            transition: activePinId || currentPath ? 'none' : 'transform 0.15s ease-out',
-            touchAction: 'none'
+            transition: activePinId || currentPath || (zoom === 1 && panX === 0 && panY === 0) ? 'none' : 'transform 0.15s ease-out',
+            touchAction: readOnly ? 'pan-y' : 'none'
           }}
         >
           {/* DEFINITIONS FOR DYNAMIC ARROW MARKERS */}
