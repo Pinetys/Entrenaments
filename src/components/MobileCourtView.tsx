@@ -1244,123 +1244,67 @@ export default function MobileCourtView({
             )}
           </div>
         ) : (
-          <div id="mobile-tactical-container" className="space-y-2.5 relative -mx-5 sm:mx-0">
-            {/* Ultra-Light Mode Header Control */}
-            {isUltraLightMode ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between mx-5 sm:mx-0 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-xs font-black text-emerald-400 font-mono tracking-wider uppercase">⚡ MODO BÀSIC RÀPID</span>
-                  <span className="text-[9px] text-slate-400 font-sans hidden xs:inline">(0% Càrrega GPU)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowTacticalDiagram(!showTacticalDiagram)}
-                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-700 rounded-lg text-xs font-extrabold flex items-center gap-1 active:scale-95 transition cursor-pointer"
-                >
-                  {showTacticalDiagram ? '👁️ Amagar Grafisme' : '👁️ Veure Grafisme Tàctic'}
-                </button>
-              </div>
-            ) : null}
-
-            {(!isUltraLightMode || showTacticalDiagram) ? (
-              <>
-                <div className="flex items-center justify-between px-5 sm:px-0">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <span>Esquema de l'Exercici</span>
-                    {activeBoardStates.length > 1 && (
-                      <span className="text-[9px] bg-orange-650 text-white font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
-                        Grafisme {activeBoardIndex + 1} de {activeBoardStates.length}
-                      </span>
-                    )}
-                  </label>
-                  <button
-                    id="btn-expand-board"
-                    onClick={() => setIsFullscreenBoard(!isFullscreenBoard)}
-                    className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 cursor-pointer py-0.5 font-sans"
-                  >
-                    {isFullscreenBoard ? (
-                      <>
-                        <Minimize size={11} /> Reducir
-                      </>
-                    ) : (
-                      <>
-                        <Expand size={11} /> Pantalla Completa
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Quick Slide Navigation Tabs */}
+          <div id="mobile-tactical-container" className="space-y-3 relative -mx-5 sm:mx-0">
+            {/* Header label for Diagram */}
+            <div className="flex items-center justify-between px-5 sm:px-0">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span>Esquema de l'Exercici (Grafisme)</span>
                 {activeBoardStates.length > 1 && (
-                  <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-5 sm:px-0 select-none no-scrollbar">
-                    {activeBoardStates.map((_, bIdx) => (
-                      <button
-                        key={bIdx}
-                        onClick={() => setActiveBoardIndex(bIdx)}
-                        className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
-                          activeBoardIndex === bIdx
-                            ? 'bg-orange-500 text-white shadow'
-                            : 'bg-slate-900 border border-slate-800 text-slate-400 hover:bg-slate-800'
-                        }`}
-                      >
-                        Graf. {bIdx + 1}
-                      </button>
-                    ))}
-                  </div>
+                  <span className="text-[9px] bg-orange-650 text-white font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
+                    Grafisme {activeBoardIndex + 1} de {activeBoardStates.length}
+                  </span>
                 )}
+              </label>
+              <button
+                id="btn-expand-board"
+                onClick={() => setIsFullscreenBoard(!isFullscreenBoard)}
+                className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 cursor-pointer py-0.5 font-sans"
+              >
+                {isFullscreenBoard ? (
+                  <>
+                    <Minimize size={11} /> Reducir
+                  </>
+                ) : (
+                  <>
+                    <Expand size={11} /> Pantalla Completa
+                  </>
+                )}
+              </button>
+            </div>
 
-                {/* Interactive tactile board wrapper */}
-                <TacticalBoardContainer
-                  currentBS={currentBS}
-                  isFullscreenBoard={isFullscreenBoard}
-                  activeBoardStates={activeBoardStates}
-                  activeBoardIndex={activeBoardIndex}
-                  setActiveBoardIndex={setActiveBoardIndex}
-                  setIsFullscreenBoard={setIsFullscreenBoard}
-                />
-              </>
-            ) : (
-              /* ULTRA LIGHTWEIGHT DRILL CARD (ZERO CANVAS OVERHEAD) */
-              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 mx-5 sm:mx-0 space-y-3 text-left">
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                  <span className="text-[10px] font-extrabold text-orange-400 font-mono uppercase tracking-widest">
-                    📋 RESUM TÀCTIC (MODO LLEUGER)
-                  </span>
-                  <span className="text-[10px] bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-full font-mono">
-                    {activeDrill.duration} MINUTS
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-slate-200 font-sans leading-relaxed">
-                  {activeDrill.objectives && activeDrill.objectives.length > 0 && (
-                    <div>
-                      <strong className="text-amber-400 uppercase font-mono text-[10px] block">Objectius:</strong>
-                      <p className="text-slate-300">{Array.isArray(activeDrill.objectives) ? activeDrill.objectives.join(', ') : activeDrill.objectives}</p>
-                    </div>
-                  )}
-
-                  {activeDrill.description && (
-                    <div>
-                      <strong className="text-slate-400 uppercase font-mono text-[10px] block">Descripció:</strong>
-                      <p className="text-slate-300 font-normal">{activeDrill.description}</p>
-                    </div>
-                  )}
-
-                  {activeDrill.customNotes && (
-                    <div className="bg-amber-950/30 border border-amber-500/20 p-2.5 rounded-xl">
-                      <strong className="text-amber-300 uppercase font-mono text-[10px] block">💡 Notes de Pista:</strong>
-                      <p className="text-amber-200 font-bold">{activeDrill.customNotes}</p>
-                    </div>
-                  )}
-                </div>
+            {/* Quick Slide Navigation Tabs */}
+            {activeBoardStates.length > 1 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-5 sm:px-0 select-none no-scrollbar">
+                {activeBoardStates.map((_, bIdx) => (
+                  <button
+                    key={bIdx}
+                    onClick={() => setActiveBoardIndex(bIdx)}
+                    className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
+                      activeBoardIndex === bIdx
+                        ? 'bg-orange-500 text-white shadow'
+                        : 'bg-slate-900 border border-slate-800 text-slate-400 hover:bg-slate-800'
+                    }`}
+                  >
+                    Graf. {bIdx + 1}
+                  </button>
+                ))}
               </div>
             )}
+
+            {/* Interactive tactile board wrapper (Grafismo) */}
+            <TacticalBoardContainer
+              currentBS={currentBS}
+              isFullscreenBoard={isFullscreenBoard}
+              activeBoardStates={activeBoardStates}
+              activeBoardIndex={activeBoardIndex}
+              setActiveBoardIndex={setActiveBoardIndex}
+              setIsFullscreenBoard={setIsFullscreenBoard}
+            />
           </div>
         )}
 
-        {/* INTENSITY MONITORING & PEAK EFFORT CONTROL (COLLAPSIBLE COMPACT BANNER) */}
-        {!activeDrill.isVirtual && (
+        {/* INTENSITY MONITORING & PEAK EFFORT CONTROL (Hidden in Basic Mode) */}
+        {!activeDrill.isVirtual && !isUltraLightMode && (
           <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-orange-500/20 rounded-xl p-3 shadow-md relative overflow-hidden transition-all">
             <div 
               className="flex items-center justify-between cursor-pointer select-none"
@@ -1517,7 +1461,7 @@ export default function MobileCourtView({
         )}
 
         {/* CUSTOM NOTES SPECIFIC FOR THE ACTIVE TRAINING DAY */}
-        {activeDrill.notes && (
+        {activeDrill.notes && !isUltraLightMode && (
           <div 
             id="mobile-drill-quick-note" 
             className={`transition-all duration-200 ${
@@ -1539,21 +1483,21 @@ export default function MobileCourtView({
         {/* DRILL LARGE CHECKLIST DETAILS FOR COACH SCANNING */}
         <div className="space-y-4">
           
-          {/* Direct Instructions list */}
+          {/* Direct Instructions list (Descripció de l'Exercici - ALWAYS SHOWN) */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
             <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
               <Clipboard size={12} className="text-orange-400" />
-              Instruccions de l'Exercici
+              Descripció de l'Exercici
             </h4>
             <p className={`leading-relaxed font-sans transition-all duration-200 ${
               isMotionMode ? 'text-lg text-white font-black px-1 py-1' : 'text-xs text-slate-200 font-medium'
             }`}>
-              {activeDrill.description}
+              {activeDrill.description || 'Sense descripció.'}
             </p>
           </div>
 
-          {/* Objectives Bullet points checklists */}
-          {activeDrill.objectives && activeDrill.objectives.length > 0 && (
+          {/* Objectives Bullet points checklists (Hidden in Basic Mode) */}
+          {!isUltraLightMode && activeDrill.objectives && activeDrill.objectives.length > 0 && (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
               <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
                 <Users size={12} className="text-sky-400" />
@@ -1576,8 +1520,8 @@ export default function MobileCourtView({
             </div>
           )}
 
-          {/* Setup Instructions */}
-          {activeDrill.setupInstructions && (
+          {/* Setup Instructions (Hidden in Basic Mode) */}
+          {!isUltraLightMode && activeDrill.setupInstructions && (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-2 shadow-xs">
               <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
                 <NotebookText size={12} className="text-yellow-400" />
