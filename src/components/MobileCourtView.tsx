@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Play, 
   Pause, 
@@ -22,6 +22,24 @@ import {
 import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
 import { getEnhancedSessionDrills } from './SessionPlanner';
+
+let sharedAudioCtx: AudioContext | null = null;
+function getSharedAudioContext(): AudioContext | null {
+  try {
+    if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtxClass) return null;
+      sharedAudioCtx = new AudioCtxClass();
+    }
+    if (sharedAudioCtx.state === 'suspended') {
+      sharedAudioCtx.resume().catch(() => {});
+    }
+    return sharedAudioCtx;
+  } catch (e) {
+    return null;
+  }
+}
+const NOOP_CHANGE = () => {};
 
 interface MobileCourtViewProps {
   session: TrainingSession;
@@ -163,7 +181,10 @@ export default function MobileCourtView({
   };
 
   // Active training drill resolving with physical water breaks and active shooting loops
-  const drillsInSession = getEnhancedSessionDrills(session.drills, drills);
+  const drillsInSession = useMemo(
+    () => getEnhancedSessionDrills(session.drills, drills),
+    [session.drills, drills]
+  );
 
   // Safely clamp activeDrillIndex to ensure no index out of bounds crashes
   const safeActiveIndex = Math.min(Math.max(0, activeDrillIndex), Math.max(0, drillsInSession.length - 1));
@@ -177,13 +198,19 @@ export default function MobileCourtView({
 
   // Extract all available diagrams/phases for the active drill
   const activeDrillAny = activeDrill as any;
-  const activeBoardStates: BoardState[] = activeDrillAny?.boardStates && activeDrillAny.boardStates.length > 0
-    ? activeDrillAny.boardStates 
-    : [activeDrillAny?.boardState || { paths: [], pins: [] }];
+  const activeBoardStates: BoardState[] = useMemo(() => {
+    if (!activeDrillAny) return [{ paths: [], pins: [] }];
+    return activeDrillAny.boardStates && activeDrillAny.boardStates.length > 0
+      ? activeDrillAny.boardStates 
+      : [activeDrillAny.boardState || { paths: [], pins: [] }];
+  }, [activeDrillAny?.boardStates, activeDrillAny?.boardState]);
 
   // Safely clamp activeBoardIndex to activeBoardStates length
   const safeBoardIndex = Math.min(Math.max(0, activeBoardIndex), activeBoardStates.length - 1);
-  const currentBS = activeBoardStates[safeBoardIndex];
+  const currentBS = useMemo(
+    () => activeBoardStates[safeBoardIndex] || activeBoardStates[0],
+    [activeBoardStates, safeBoardIndex]
+  );
 
   // Reset phase slide view indicator whenever a new exercise layout loads
   useEffect(() => {
@@ -198,15 +225,18 @@ export default function MobileCourtView({
   }, [drillsInSession.length, activeDrillIndex]);
 
   // Sync Timer when active drill changes (unless restored from localStorage)
-  const isFirstMountRef = useRef(true);
+  const isInitialMountRef = useRef(true);
+  const prevActiveIndexRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (isFirstMountRef.current) {
-      isFirstMountRef.current = false;
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
       try {
         const saved = localStorage.getItem(`basket_planner_court_state_${session.id}`);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed && typeof parsed.activeDrillIndex === 'number') {
+            prevActiveIndexRef.current = parsed.activeDrillIndex;
             setActiveDrillIndex(parsed.activeDrillIndex);
             if (typeof parsed.timeLeft === 'number' && parsed.timeLeft > 0) {
               setTimeLeft(parsed.timeLeft);
@@ -222,10 +252,13 @@ export default function MobileCourtView({
       } catch (e) {}
     }
 
-    if (activeDrill) {
-      setTimeLeft(activeDrill.duration * 60);
-      setTimerRunning(false);
-      setShowFinishedToast(false);
+    if (prevActiveIndexRef.current !== safeActiveIndex) {
+      prevActiveIndexRef.current = safeActiveIndex;
+      if (activeDrill) {
+        setTimeLeft(activeDrill.duration * 60);
+        setTimerRunning(false);
+        setShowFinishedToast(false);
+      }
     }
   }, [safeActiveIndex, activeDrill?.id]);
 
@@ -234,8 +267,8 @@ export default function MobileCourtView({
   useEffect(() => {
     if (!session?.id) return;
     const now = Date.now();
-    // Throttle writes: if timer is running, only save every 5 seconds or when drill/running state changes
-    if (timerRunning && now - lastSavedRef.current < 5000) {
+    // Throttle writes: only save when drill/running state changes, or throttled to max once every 10s
+    if (timerRunning && now - lastSavedRef.current < 10000) {
       return;
     }
     lastSavedRef.current = now;
@@ -249,14 +282,13 @@ export default function MobileCourtView({
       };
       localStorage.setItem(`basket_planner_court_state_${session.id}`, JSON.stringify(stateToPersist));
     } catch (e) {}
-  }, [session?.id, safeActiveIndex, timeLeft, sessionTimeLeft, timerRunning]);
+  }, [session?.id, safeActiveIndex, timerRunning]);
 
   // 1. NBA Referee Whistle (Fox 40 Classic Pealess Whistle - Authentic NBA referee pitch & acoustic beat)
   const playSynthesizedWhistle = () => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = getSharedAudioContext();
+      if (!ctx) return;
       const now = ctx.currentTime;
       
       // Dual high frequencies for acoustic trill (2850Hz & 3120Hz -> 270Hz beat frequency)
@@ -315,9 +347,8 @@ export default function MobileCourtView({
   // 2. NBA Arena Horn / Shot Clock Buzzer (Powerful stadium brass horn with sub-bass punch)
   const playSynthesizedBuzzer = () => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = getSharedAudioContext();
+      if (!ctx) return;
       const now = ctx.currentTime;
       const duration = 1.6; // Authentic NBA Arena horn length
       
@@ -371,9 +402,8 @@ export default function MobileCourtView({
   // 3. NBA Swish Sound ("Chof - Nothing but Net")
   const playNbaSwish = () => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = getSharedAudioContext();
+      if (!ctx) return;
       const now = ctx.currentTime;
       
       // White noise buffer for nylon net whip
@@ -427,9 +457,8 @@ export default function MobileCourtView({
   // 4. NBA Hardwood Sneaker Squeak
   const playNbaSneakerSqueak = () => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = getSharedAudioContext();
+      if (!ctx) return;
       const now = ctx.currentTime;
       
       const osc = ctx.createOscillator();
@@ -1164,7 +1193,7 @@ export default function MobileCourtView({
                 </div>
               )}
               
-              <TacticalBoard boardState={currentBS} onChange={() => {}} readOnly={isFullscreenBoard ? false : true} />
+              <TacticalBoard boardState={currentBS} onChange={NOOP_CHANGE} readOnly={isFullscreenBoard ? false : true} />
               
               {isFullscreenBoard && (
                 <button
