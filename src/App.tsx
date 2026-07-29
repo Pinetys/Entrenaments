@@ -480,6 +480,43 @@ export default function App() {
     });
   };
 
+  const handleAddDrillToSession = (drillId: string, targetSessionId?: string, customNotes?: string) => {
+    const targetId = targetSessionId || selectedSessionId || 'dia1';
+    const originalDrill = drills.find(d => d.id === drillId);
+    if (!originalDrill) return;
+
+    setSessions((prevSessions: Record<string, TrainingSession>) => {
+      const currentSess = prevSessions[targetId] || {
+        id: targetId,
+        name: `Sessió ${targetId}`,
+        dayOfWeek: 'Martes',
+        totalDuration: 0,
+        drills: []
+      };
+
+      const newDrillRef = {
+        drillId,
+        duration: originalDrill.duration || 10,
+        notes: customNotes || ''
+      };
+
+      const updatedDrills = [...currentSess.drills, newDrillRef];
+      const totalDuration = updatedDrills.reduce((acc, curr) => acc + (curr.duration || 10), 0);
+
+      return {
+        ...prevSessions,
+        [targetId]: {
+          ...currentSess,
+          drills: updatedDrills,
+          totalDuration
+        }
+      };
+    });
+
+    const sessName = sessions[targetId]?.name || `Sessió`;
+    triggerToast(`➕ S'ha afegit "${originalDrill.title}" a la ${sessName}`);
+  };
+
   const handleToggleCompleteSession = (planId: string, sessId: string) => {
     const isCompleted = completions.some(c => c.planId === planId && c.sessionId === sessId);
     if (isCompleted) {
@@ -1912,6 +1949,9 @@ export default function App() {
           <DrillDatabase
             drills={drills}
             onAddDrill={handleAddDrillToDatabase}
+            onAddDrillToSession={handleAddDrillToSession}
+            allSessions={sessions}
+            selectedSessionId={selectedSessionId}
             onEditDrill={(drill) => {
               setEditingDrill(drill);
               setActiveView('creator');
@@ -2278,6 +2318,11 @@ export default function App() {
         <DrillManualBooklet 
           drill={previewDrill} 
           onClose={() => setPreviewDrill(null)} 
+          onAddToSession={(targetSessId, note) => {
+            handleAddDrillToSession(previewDrill.id, targetSessId, note);
+          }}
+          allSessions={sessions}
+          selectedSessionId={selectedSessionId}
         />
       )}
     </div>

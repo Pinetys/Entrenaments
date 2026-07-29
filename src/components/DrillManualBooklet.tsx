@@ -1,22 +1,44 @@
 import React, { useState } from 'react';
-import { X, Clock, Users, Shield, Wrench, Sparkles, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Drill } from '../types';
+import { X, Clock, Users, Shield, Wrench, Sparkles, BookOpen, ChevronLeft, ChevronRight, Plus, Check, Calendar } from 'lucide-react';
+import { Drill, TrainingSession } from '../types';
 import TacticalBoard from './TacticalBoard';
 
 interface DrillManualBookletProps {
   drill: Drill;
   onClose: () => void;
+  onAddToSession?: (targetSessionId?: string, customNotes?: string) => void;
+  allSessions?: Record<string, TrainingSession>;
+  selectedSessionId?: string;
 }
 
-export default function DrillManualBooklet({ drill, onClose }: DrillManualBookletProps) {
+export default function DrillManualBooklet({ 
+  drill, 
+  onClose,
+  onAddToSession,
+  allSessions,
+  selectedSessionId = 'dia1'
+}: DrillManualBookletProps) {
   // Support active graphic page switching
   const [activeBoardIndex, setActiveBoardIndex] = useState(0);
+  const [showSessionPicker, setShowSessionPicker] = useState(false);
+  const [targetSession, setTargetSession] = useState<string>(selectedSessionId);
+  const [customNote, setCustomNote] = useState<string>('');
+  const [addedSuccess, setAddedSuccess] = useState(false);
 
   const boardStates = drill.boardStates && drill.boardStates.length > 0
     ? drill.boardStates
     : [drill.boardState || { paths: [], pins: [] }];
 
   const currentBS = boardStates[activeBoardIndex] || boardStates[0] || { paths: [], pins: [] };
+
+  const handleExecuteAdd = (sessId: string) => {
+    if (onAddToSession) {
+      onAddToSession(sessId, customNote);
+      setAddedSuccess(true);
+      setTimeout(() => setAddedSuccess(false), 2000);
+      setShowSessionPicker(false);
+    }
+  };
 
   // Generate a random-looking or hash-based realistic exercise number (e.g. 712) for the physical textbook feel
   const exerciseNumber = React.useMemo(() => {
@@ -41,22 +63,34 @@ export default function DrillManualBooklet({ drill, onClose }: DrillManualBookle
       }`}>
         
         {/* TEXTBOOK VINTAGE TOP BANNER */}
-        <div className="bg-[#1e293b] text-[#f8fafc] px-6 py-3 flex items-center justify-between border-b border-amber-950/20 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest font-mono text-slate-300">
+        <div className="bg-[#1e293b] text-[#f8fafc] px-6 py-3 flex items-center justify-between border-b border-amber-950/20 shrink-0 gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse shrink-0" />
+            <span className="text-[10px] font-black uppercase tracking-widest font-mono text-slate-300 truncate">
               Federació Catalana de Basquetbol • Quadern de Pista Nivel A
             </span>
           </div>
           
-          <button
-            id="btn-close-booklet-top"
-            onClick={onClose}
-            className="p-1 px-2.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition text-xs font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer"
-          >
-            <span>Tancar</span>
-            <X size={15} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {onAddToSession && (
+              <button
+                type="button"
+                onClick={() => setShowSessionPicker(true)}
+                className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              >
+                {addedSuccess ? <Check size={14} className="text-slate-950" /> : <Plus size={14} strokeWidth={3} />}
+                <span>{addedSuccess ? 'Afegit!' : 'Afegir a la Sessió'}</span>
+              </button>
+            )}
+            <button
+              id="btn-close-booklet-top"
+              onClick={onClose}
+              className="p-1 px-2.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition text-xs font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+            >
+              <span>Tancar</span>
+              <X size={15} />
+            </button>
+          </div>
         </div>
 
         {/* PHYSICAL NOTEBOOK BOOKLET SPREAD CONTAINER */}
@@ -232,17 +266,29 @@ export default function DrillManualBooklet({ drill, onClose }: DrillManualBookle
             )}
 
             {/* FOOTER ACTION CLOSER */}
-            <div className="pt-4 border-t border-[#eddcc4] shrink-0 flex items-center justify-between">
+            <div className="pt-4 border-t border-[#eddcc4] shrink-0 flex items-center justify-between gap-3 flex-wrap">
               <span className="text-[10px] text-slate-400 italic font-mono uppercase tracking-widest">
                 COACHBOARD AUTOMATED PLANNER 2026
               </span>
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-none shadow-md cursor-pointer active:scale-95 transition-all"
-              >
-                Tancar Manual
-              </button>
+              <div className="flex items-center gap-2">
+                {onAddToSession && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSessionPicker(true)}
+                    className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded transition flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95"
+                  >
+                    {addedSuccess ? <Check size={15} /> : <Plus size={15} strokeWidth={3} />}
+                    <span>{addedSuccess ? 'Afegit a la Sessió!' : 'Afegir a la Sessió'}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-none shadow-md cursor-pointer active:scale-95 transition-all"
+                >
+                  Tancar Manual
+                </button>
+              </div>
             </div>
           </div>
 
@@ -254,6 +300,128 @@ export default function DrillManualBooklet({ drill, onClose }: DrillManualBookle
         </div>
 
       </div>
-    </div>
+
+      {/* SESSION PICKER POPUP */}
+      {showSessionPicker && (
+        <div className="fixed inset-0 bg-slate-950/80 z-60 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-black">
+                  <Plus size={18} strokeWidth={3} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                    Afegir Exercici a la Sessió
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Tria quina sessió del microcicle rebrà aquest exercici
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSessionPicker(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Exercici seleccionat:</span>
+              <h4 className="text-xs font-black text-slate-900 uppercase">{drill.title}</h4>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-[9px] uppercase font-black">{drill.category}</span>
+                <span>•</span>
+                <span>⏱️ {drill.duration} minuts</span>
+              </div>
+            </div>
+
+            {/* SESSIONS LIST */}
+            <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+              <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">
+                Selecciona la Sessió d'Entrenament:
+              </span>
+              
+              {allSessions ? (
+                Object.entries(allSessions).map(([sessId, sess]) => {
+                  const isActive = sessId === targetSession;
+                  const isCurrentActiveGlobal = sessId === selectedSessionId;
+                  const drillCount = sess.drills?.length || 0;
+                  const totalMin = sess.drills?.reduce((acc, curr) => acc + (curr.duration || 10), 0) || 0;
+
+                  return (
+                    <button
+                      key={sessId}
+                      type="button"
+                      onClick={() => setTargetSession(sessId)}
+                      className={`w-full p-2.5 rounded-xl border text-left transition cursor-pointer flex items-center justify-between gap-2 ${
+                        isActive
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                          : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`text-xs font-black uppercase truncate ${isActive ? 'text-white' : 'text-slate-900'}`}>
+                            {sess.name}
+                          </span>
+                          {isCurrentActiveGlobal && (
+                            <span className="text-[8px] font-black uppercase bg-orange-500 text-slate-950 px-1.5 py-0.2 rounded font-mono">
+                              ACTIVA
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] block font-medium ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {sess.dayOfWeek} • {drillCount} exercicis ({totalMin} min)
+                        </span>
+                      </div>
+                      {isActive && <Check size={16} className="text-orange-400 shrink-0" />}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="p-3 bg-slate-50 text-center text-xs text-slate-500 font-bold">
+                  S'afegirà a la sessió activa actual.
+                </div>
+              )}
+            </div>
+
+            {/* OPTIONAL NOTE */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">
+                Anotació Tàctica Específica per aquesta Sessió (Opcional):
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: Emfatitzar la comunicació en els canvis de marca..."
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-slate-800"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowSessionPicker(false)}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-lg transition cursor-pointer"
+              >
+                Cancel·lar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExecuteAdd(targetSession)}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-lg transition shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Plus size={14} strokeWidth={3} />
+                <span>Confirmar i Afegir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
   );
 }

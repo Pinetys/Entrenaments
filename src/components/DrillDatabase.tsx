@@ -13,7 +13,7 @@ import {
   BookOpen,
   Star
 } from 'lucide-react';
-import { Drill } from '../types';
+import { Drill, TrainingSession } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import DrillManualBooklet from './DrillManualBooklet';
@@ -114,6 +114,9 @@ export const PRE_POPULATED_DRILLS: Drill[] = [
 interface DrillDatabaseProps {
   drills: Drill[];
   onAddDrill: (drill: Drill) => void;
+  onAddDrillToSession?: (drillId: string, targetSessionId?: string, customNotes?: string) => void;
+  allSessions?: Record<string, TrainingSession>;
+  selectedSessionId?: string;
   onEditDrill: (drill: Drill) => void;
   onDeleteDrill: (drillId: string) => void;
   triggerToast?: (msg: string) => void;
@@ -125,6 +128,9 @@ interface DrillDatabaseProps {
 export default function DrillDatabase({ 
   drills, 
   onAddDrill, 
+  onAddDrillToSession,
+  allSessions,
+  selectedSessionId = 'dia1',
   onDeleteDrill, 
   triggerToast,
   favoriteDrillIds = [],
@@ -135,6 +141,11 @@ export default function DrillDatabase({
   const [selectedCategory, setSelectedCategory] = useState<string>('Tots');
   const [drillToDelete, setDrillToDelete] = useState<Drill | null>(null);
   const [selectedDrillForOverlay, setSelectedDrillForOverlay] = useState<Drill | null>(null);
+
+  // Session selector modal state
+  const [sessionSelectorDrill, setSessionSelectorDrill] = useState<Drill | null>(null);
+  const [sessionTargetId, setSessionTargetId] = useState<string>(selectedSessionId);
+  const [sessionSelectorNote, setSessionSelectorNote] = useState<string>('');
 
   // Dynamically obtain all unique categories from current drills state
   const uniqueCategoriesInDrills = useMemo(() => {
@@ -391,6 +402,22 @@ export default function DrillDatabase({
                     </ul>
                   </div>
                 )}
+
+                {/* ADD TO SESSION ACTION BUTTON */}
+                <div className="pt-2.5 border-t border-slate-100 mt-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSessionSelectorDrill(drill);
+                      setSessionTargetId(selectedSessionId);
+                      setSessionSelectorNote('');
+                    }}
+                    className="w-full py-2 px-3 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-slate-950 font-black text-xs uppercase tracking-wider rounded-lg transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus size={15} strokeWidth={3} />
+                    <span>Afegir a la Sessió</span>
+                  </button>
+                </div>
               </div>
             );
           })
@@ -402,7 +429,146 @@ export default function DrillDatabase({
         <DrillManualBooklet 
           drill={selectedDrillForOverlay} 
           onClose={() => setSelectedDrillForOverlay(null)} 
+          onAddToSession={(targetSessId, note) => {
+            if (onAddDrillToSession) {
+              onAddDrillToSession(selectedDrillForOverlay.id, targetSessId, note);
+            }
+          }}
+          allSessions={allSessions}
+          selectedSessionId={selectedSessionId}
         />
+      )}
+
+      {/* SESSION SELECTOR MODAL FROM CARD CLICK */}
+      {sessionSelectorDrill && (
+        <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-xs select-none">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black">
+                  <Plus size={20} strokeWidth={3} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                    Afegir a l'Entrenament
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Selecciona a quina sessió de la setmana vols assignar aquest exercici
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSessionSelectorDrill(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
+              >
+                <span className="font-bold">✕</span>
+              </button>
+            </div>
+
+            {/* SELECTED DRILL SUMMARY BOX */}
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+              <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Exercici de la biblioteca:</span>
+              <h4 className="text-xs font-black text-slate-900 uppercase">{sessionSelectorDrill.title}</h4>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-[9px] uppercase font-black">
+                  {sessionSelectorDrill.category}
+                </span>
+                <span>•</span>
+                <span>⏱️ {sessionSelectorDrill.duration}′ minuts</span>
+                <span>•</span>
+                <span>👥 {sessionSelectorDrill.playersNeeded || 'X'} jugadors</span>
+              </div>
+            </div>
+
+            {/* SESSIONS LIST */}
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+              <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">
+                Sessió de Destí:
+              </span>
+              
+              {allSessions ? (
+                Object.entries(allSessions).map(([sessId, sess]) => {
+                  const isSelected = sessId === sessionTargetId;
+                  const isCurrentActiveGlobal = sessId === selectedSessionId;
+                  const drillCount = sess.drills?.length || 0;
+                  const totalMin = sess.drills?.reduce((acc, curr) => acc + (curr.duration || 10), 0) || 0;
+
+                  return (
+                    <button
+                      key={sessId}
+                      type="button"
+                      onClick={() => setSessionTargetId(sessId)}
+                      className={`w-full p-2.5 rounded-xl border text-left transition cursor-pointer flex items-center justify-between gap-2 ${
+                        isSelected
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                          : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`text-xs font-black uppercase truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                            {sess.name}
+                          </span>
+                          {isCurrentActiveGlobal && (
+                            <span className="text-[8px] font-black uppercase bg-orange-500 text-slate-950 px-1.5 py-0.2 rounded font-mono">
+                              ACTIVA
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] block font-medium ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {sess.dayOfWeek} • {drillCount} exercicis ({totalMin} min)
+                        </span>
+                      </div>
+                      {isSelected && <span className="text-orange-400 font-black text-sm">✓</span>}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="p-3 bg-slate-50 text-center text-xs text-slate-500 font-bold rounded-xl">
+                  S'afegirà a la sessió actualment seleccionada.
+                </div>
+              )}
+            </div>
+
+            {/* OPTIONAL CUSTOM NOTE */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">
+                Anotació Tàctica / Observacions (Opcional):
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: Centrar-nos en la primera passada de sortida..."
+                value={sessionSelectorNote}
+                onChange={(e) => setSessionSelectorNote(e.target.value)}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-slate-800"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSessionSelectorDrill(null)}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
+              >
+                Cancel·lar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onAddDrillToSession && sessionSelectorDrill) {
+                    onAddDrillToSession(sessionSelectorDrill.id, sessionTargetId, sessionSelectorNote);
+                    setSessionSelectorDrill(null);
+                  }
+                }}
+                className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Plus size={16} strokeWidth={3} />
+                <span>Confirmar i Afegir</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* CONFIRMATION DIALOG FOR DRILL DELETION */}
