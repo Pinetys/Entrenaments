@@ -1996,6 +1996,7 @@ export default function App() {
               onPreviewDrill={setPreviewDrill}
               isSharedMobile={isSharedMobile}
               onUpdateSession={handleUpdateSession}
+              onSelectSessionId={setSelectedSessionId}
               onAddDrill={handleAddDrillToDatabase}
               completions={completions}
               onToggleCompleteSession={(sessId) => handleToggleCompleteSession(activePlan?.id || 'plan-default', sessId)}
