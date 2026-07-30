@@ -24,12 +24,15 @@ import {
   BookOpen,
   Bookmark,
   Copy,
-  Save
+  Save,
+  Activity,
+  Gauge
 } from 'lucide-react';
 import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan, SessionTemplate } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import SessionTemplatesModal from './SessionTemplatesModal';
+import PerformanceSummaryModal from './PerformanceSummaryModal';
 
 const EMPTY_BOARD = { paths: [], pins: [] };
 const NOOP_CHANGE = () => {};
@@ -172,6 +175,9 @@ export default function SessionPlanner({
 
   // State for show print preview mode
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+
+  // State for Performance Summary Modal (Post-Training RPE)
+  const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
 
   // Discreet state to show category distribution graph (defaults to false for 100% "disimulado" look)
   const [showCategoryChart, setShowCategoryChart] = useState(false);
@@ -1561,16 +1567,31 @@ export default function SessionPlanner({
                 <span className="text-xs font-bold text-slate-700">Completada:</span>
                 <button
                   type="button"
-                  onClick={() => onToggleCompleteSession(session.id)}
-                  className={`px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition ${
+                  onClick={() => {
+                    setShowPerformanceSummary(true);
+                    if (!isCurrentSessionCompleted) {
+                      onToggleCompleteSession(session.id);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition cursor-pointer ${
                     isCurrentSessionCompleted
                       ? 'bg-emerald-500 text-white shadow-xs'
-                      : 'bg-white border border-slate-200 text-slate-707 hover:bg-slate-100'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   {isCurrentSessionCompleted ? '✓ Sí' : '☐ No'}
                 </button>
               </div>
+
+              {/* Performance Summary (RPE) trigger */}
+              <button
+                type="button"
+                onClick={() => setShowPerformanceSummary(true)}
+                className="w-full py-2 px-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-700 border border-orange-500/30 rounded text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              >
+                <Activity size={14} className="text-orange-600" />
+                <span>Resum de Rendiment (RPE)</span>
+              </button>
 
               <div className="flex flex-col gap-1.5 border-t border-slate-200 pt-3">
                 <div className="flex items-center justify-between">
@@ -2078,6 +2099,17 @@ export default function SessionPlanner({
         }}
         triggerToast={triggerToast}
       />
+
+      {/* Post-Training Performance Summary Modal (RPE) */}
+      {showPerformanceSummary && (
+        <PerformanceSummaryModal
+          session={session}
+          drills={drills}
+          onClose={() => setShowPerformanceSummary(false)}
+          onToggleCompleteSession={onToggleCompleteSession}
+          isCompleted={isCurrentSessionCompleted}
+        />
+      )}
     </div>
   );
 }

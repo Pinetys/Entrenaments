@@ -26,11 +26,14 @@ import {
   Star,
   Clock,
   Filter,
-  Moon
+  Moon,
+  Activity,
+  Gauge
 } from 'lucide-react';
 import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
 import { getEnhancedSessionDrills } from './SessionPlanner';
+import PerformanceSummaryModal from './PerformanceSummaryModal';
 
 let sharedAudioCtx: AudioContext | null = null;
 function getSharedAudioContext(): AudioContext | null {
@@ -186,6 +189,9 @@ export default function MobileCourtView({
   const [librarySearchText, setLibrarySearchText] = useState('');
   const [libraryCatFilter, setLibraryCatFilter] = useState<string>('Tots');
   const [libraryNotes, setLibraryNotes] = useState<Record<string, string>>({});
+
+  // Resumen de Rendimiento (Post-Entrenament) Modal state
+  const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
 
   // Network connection status for completely offline Modo Pista support
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -810,8 +816,19 @@ export default function MobileCourtView({
 
         <button
           type="button"
+          onClick={() => setShowPerformanceSummary(true)}
+          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
+          title="Obrir Resum de Rendiment post-entrenament i registrar escala RPE"
+        >
+          <Activity size={10} strokeWidth={3} />
+          <span>Resum Rendiment</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => {
-            if (onToggleCompleteSession) {
+            setShowPerformanceSummary(true);
+            if (onToggleCompleteSession && !isSessionCompleted) {
               onToggleCompleteSession(session.id);
             }
           }}
@@ -1567,6 +1584,18 @@ export default function MobileCourtView({
           <span className="text-orange-400 animate-bounce">🔥</span>
           <span className="text-[11px] uppercase tracking-wide">{toast}</span>
         </div>
+      )}
+
+      {/* Post-Training Performance Summary Modal */}
+      {showPerformanceSummary && (
+        <PerformanceSummaryModal
+          session={session}
+          drills={drills}
+          completedDrillIndices={completedDrillIndices}
+          onClose={() => setShowPerformanceSummary(false)}
+          onToggleCompleteSession={onToggleCompleteSession}
+          isCompleted={isSessionCompleted}
+        />
       )}
 
     </div>
