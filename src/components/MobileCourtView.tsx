@@ -1149,7 +1149,7 @@ export default function MobileCourtView({
           const rawCat = activeDrill.category || 'Atac';
           const activeNormCat = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].includes(rawCat) ? rawCat : 'Atac';
           return (
-            <div className={`flex items-center justify-between bg-slate-900 border-2 rounded-2xl p-5 shrink-0 shadow-lg transition-colors duration-300 ${
+            <div className={`flex items-center justify-between bg-slate-900 border-2 rounded-2xl p-4 sm:p-5 shrink-0 shadow-lg transition-colors duration-300 ${
               activeNormCat === 'Atac' ? 'border-orange-500' :
               activeNormCat === 'Defensa' ? 'border-rose-500' :
               activeNormCat === 'Transició' ? 'border-sky-500' :
@@ -1165,25 +1165,18 @@ export default function MobileCourtView({
                 <ChevronLeft size={22} strokeWidth={3} />
               </button>
 
-              <div 
-                onClick={() => {
-                  // Find the original full drill object if possible
-                  const orig = drills.find(d => d.id === activeDrill.drillId) || activeDrill as any;
-                  if (onPreviewDrill && orig) onPreviewDrill(orig);
-                }}
-                title="Veure el manual tàctic tipus llibre"
-                className="text-center min-w-0 flex-1 px-3 cursor-pointer group select-none active:scale-95 transition"
-              >
-                <span className={`text-[10px] px-2.5 py-1 rounded-full text-white font-extrabold tracking-wider font-mono uppercase block w-max mx-auto mb-1.5 transition-colors shadow-xs ${
+              <div className="text-center min-w-0 flex-1 px-2 sm:px-3 select-none">
+                <span className={`text-[10px] px-2.5 py-1 rounded-full text-white font-extrabold tracking-wider font-mono uppercase inline-block mx-auto mb-1.5 transition-colors shadow-xs ${
                   activeNormCat === 'Atac' ? 'bg-orange-600' :
                   activeNormCat === 'Defensa' ? 'bg-rose-600' :
                   activeNormCat === 'Transició' ? 'bg-sky-600' :
                   activeNormCat === 'Físico' ? 'bg-amber-600' :
                   activeNormCat === 'Competència' ? 'bg-purple-600' : 'bg-emerald-600'
                 }`}>
-                  Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′) • 📖 Ver manual
+                  Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′)
                 </span>
-                <h3 className="text-base xs:text-lg font-black text-white tracking-tight leading-snug group-hover:text-orange-400 transition break-words whitespace-normal drop-shadow-sm uppercase flex items-center justify-center gap-1.5 flex-wrap">
+
+                <h3 className="text-base xs:text-lg font-black text-white tracking-tight leading-snug uppercase flex items-center justify-center gap-1.5 flex-wrap text-center drop-shadow-sm">
                   <span>{activeDrill.title}</span>
                   {(() => {
                     const orig = drills.find(d => d.id === activeDrill.drillId);
@@ -1195,14 +1188,11 @@ export default function MobileCourtView({
                   })()}
                 </h3>
 
-                {/* Requirement 4: Automatic and Manual Exercise Completion badge */}
-                <div className="flex items-center justify-center gap-2 mt-2">
+                {/* Requirement: Actions row - Completion toggle & Secondary 'Ver manual' button in background */}
+                <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleDrillCompleted(safeActiveIndex);
-                    }}
+                    onClick={() => toggleDrillCompleted(safeActiveIndex)}
                     className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-1 border shadow-xs ${
                       completedDrillIndices.includes(safeActiveIndex)
                         ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 hover:bg-emerald-500/30'
@@ -1211,6 +1201,19 @@ export default function MobileCourtView({
                   >
                     <Check size={12} strokeWidth={3.5} className={completedDrillIndices.includes(safeActiveIndex) ? 'text-emerald-400' : 'text-slate-400'} />
                     <span>{completedDrillIndices.includes(safeActiveIndex) ? '✓ EXERCICI COMPLETAT' : 'MARCAR COMPLETAT'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const orig = drills.find(d => d.id === activeDrill.drillId) || activeDrill as any;
+                      if (onPreviewDrill && orig) onPreviewDrill(orig);
+                    }}
+                    title="Veure el manual tàctic tipus llibre"
+                    className="px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-400 hover:text-orange-300 bg-slate-950/60 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 transition cursor-pointer flex items-center gap-1"
+                  >
+                    <BookOpen size={11} className="text-slate-400" />
+                    <span>Ver manual</span>
                   </button>
                 </div>
               </div>
