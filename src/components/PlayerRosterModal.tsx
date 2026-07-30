@@ -18,7 +18,9 @@ import {
   Settings,
   RotateCcw,
   Sliders,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  FileText
 } from 'lucide-react';
 import { Player } from '../types';
 
@@ -67,6 +69,7 @@ export default function PlayerRosterModal({
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [copiedReport, setCopiedReport] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'list' | 'detail'>('list');
 
   // Baremo configuration state
   const [baremos, setBaremos] = useState<BaremoItem[]>(() => {
@@ -167,6 +170,7 @@ export default function PlayerRosterModal({
   const handleStartAdd = () => {
     setIsAdding(true);
     setIsEditing(false);
+    setMobileTab('detail');
     setFormData({
       number: players.length > 0 ? Math.max(...players.map(p => p.number)) + 1 : 4,
       name: '',
@@ -185,6 +189,7 @@ export default function PlayerRosterModal({
   const handleStartEdit = (player: Player) => {
     setIsEditing(true);
     setIsAdding(false);
+    setMobileTab('detail');
     setFormData({
       number: player.number,
       name: player.name,
@@ -318,61 +323,91 @@ export default function PlayerRosterModal({
   const formMediaCalc = calculatePlayerMedia(formData.ratings as Record<string, number>);
 
   return (
-    <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-5xl w-full max-h-[94vh] flex flex-col overflow-hidden text-slate-900">
+    <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 animate-fadeIn">
+      <div className="bg-white sm:rounded-2xl border-0 sm:border border-slate-200 shadow-2xl max-w-5xl w-full h-full sm:h-auto sm:max-h-[94vh] flex flex-col overflow-hidden text-slate-900">
         
         {/* MODAL HEADER */}
-        <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-orange-500 text-slate-950 flex items-center justify-center font-black">
-              <Users size={20} />
+        <div className="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-orange-500 text-slate-950 flex items-center justify-center font-black shrink-0">
+              <Users size={18} />
             </div>
-            <div>
-              <h2 className="font-extrabold uppercase text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
-                Plantilla de Jugadors i Valoracions Junior A
-                <span className="text-[10px] font-mono font-black bg-orange-500/20 text-orange-400 border border-orange-400/30 px-2 py-0.5 rounded uppercase">
-                  {players.length} Jugadors
+            <div className="min-w-0">
+              <h2 className="font-extrabold uppercase text-xs sm:text-base tracking-tight text-white flex items-center gap-1.5 truncate">
+                <span className="truncate">Plantilla Jugadors</span>
+                <span className="text-[9px] sm:text-[10px] font-mono font-black bg-orange-500/20 text-orange-400 border border-orange-400/30 px-1.5 sm:px-2 py-0.5 rounded uppercase shrink-0">
+                  {players.length}
                 </span>
               </h2>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-slate-400 hidden sm:block">
                 Anotacions en barems configurables, càlcul de mitjana del jugador i desenvolupament
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setShowBaremoModal(true)}
-              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs rounded-lg transition cursor-pointer flex items-center gap-1.5 border border-slate-700"
+              className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs rounded-lg transition cursor-pointer flex items-center gap-1 border border-slate-700"
               title="Configurar els barems d'avaluació"
             >
               <Settings size={14} className="text-orange-400" />
-              <span className="hidden sm:inline">Configurar Barems</span>
+              <span className="hidden sm:inline">Barems</span>
             </button>
             <button
               type="button"
               onClick={handleStartAdd}
-              className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className="px-2.5 sm:px-3 py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider rounded-lg transition cursor-pointer flex items-center gap-1 shadow-xs"
             >
-              <UserPlus size={15} />
+              <UserPlus size={14} />
               <span className="hidden sm:inline">Nou Jugador</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition"
             >
               <X size={16} />
             </button>
           </div>
         </div>
 
+        {/* MOBILE NAVIGATION TABS (visible only on mobile) */}
+        <div className="flex md:hidden items-center justify-around bg-slate-900 border-b border-slate-800 p-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => setMobileTab('list')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition ${
+              mobileTab === 'list'
+                ? 'bg-orange-500 text-slate-950 shadow-xs'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Users size={14} />
+            <span>Plantilla ({players.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('detail')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition ${
+              mobileTab === 'detail'
+                ? 'bg-orange-500 text-slate-950 shadow-xs'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <FileText size={14} />
+            <span>{isAdding ? 'Nou' : isEditing ? 'Editar' : activePlayer ? `#${activePlayer.number} ${activePlayer.name.split(' ')[0]}` : 'Detall'}</span>
+          </button>
+        </div>
+
         {/* MODAL BODY */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row bg-slate-100">
           
           {/* LEFT COLUMN: ROSTER LIST */}
-          <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-200 bg-white flex flex-col shrink-0">
+          <div className={`w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-200 bg-white flex flex-col shrink-0 ${
+            mobileTab === 'list' ? 'flex flex-1 h-full' : 'hidden md:flex'
+          }`}>
             
             {/* SEARCH & FILTERS */}
             <div className="p-3 border-b border-slate-100 space-y-2 bg-slate-50/80">
@@ -387,11 +422,11 @@ export default function PlayerRosterModal({
                 />
               </div>
 
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
                 <button
                   type="button"
                   onClick={() => setFilterPos('ALL')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${
+                  className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
                     filterPos === 'ALL' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                   }`}
                 >
@@ -402,7 +437,7 @@ export default function PlayerRosterModal({
                     key={pos}
                     type="button"
                     onClick={() => setFilterPos(pos)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
+                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
                       filterPos === pos ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                     }`}
                   >
@@ -413,7 +448,7 @@ export default function PlayerRosterModal({
             </div>
 
             {/* PLAYER TILES LIST */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1.5 max-h-[300px] md:max-h-none">
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
               {filteredPlayers.length === 0 ? (
                 <div className="p-6 text-center text-slate-400 text-xs font-medium space-y-2">
                   <Users size={28} className="mx-auto opacity-40" />
@@ -431,6 +466,7 @@ export default function PlayerRosterModal({
                         setSelectedPlayerId(player.id);
                         setIsEditing(false);
                         setIsAdding(false);
+                        setMobileTab('detail');
                       }}
                       className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2 ${
                         isSelected
@@ -479,7 +515,20 @@ export default function PlayerRosterModal({
           </div>
 
           {/* RIGHT COLUMN: PLAYER DETAIL / EDIT / ADD FORM */}
-          <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4">
+          <div className={`flex-1 p-3 sm:p-5 overflow-y-auto space-y-4 ${
+            mobileTab === 'detail' ? 'block flex-1 h-full' : 'hidden md:block'
+          }`}>
+            {/* Mobile Back Button */}
+            <div className="md:hidden flex items-center justify-between pb-1">
+              <button
+                type="button"
+                onClick={() => setMobileTab('list')}
+                className="text-xs font-black text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-200 flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <ArrowLeft size={14} />
+                <span>Tornar a la llista de jugadors</span>
+              </button>
+            </div>
             
             {(isAdding || isEditing) ? (
               /* CREATE / EDIT FORM */
@@ -601,7 +650,7 @@ export default function PlayerRosterModal({
                     <label className="text-[10px] font-black uppercase text-slate-600 tracking-wider block">
                       Promedis Estadístics (PPG, RPG, APG, % 3P):
                     </label>
-                    <div className="grid grid-cols-4 gap-2 pt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                       <div>
                         <span className="text-[9px] font-bold text-slate-400 block">Punts:</span>
                         <input
@@ -660,7 +709,7 @@ export default function PlayerRosterModal({
 
                 {/* DYNAMIC RATINGS / BAREMOS SLIDERS */}
                 <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <span className="text-[10px] font-black uppercase text-slate-800 tracking-wider block">
                         📊 Valoració en Barems de Competències (Escala 1 a 10)
@@ -671,7 +720,7 @@ export default function PlayerRosterModal({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="px-2.5 py-1 bg-slate-900 text-white rounded-lg font-mono font-black text-xs">
+                      <div className="px-2.5 py-1 bg-slate-900 text-white rounded-lg font-mono font-black text-xs shrink-0">
                         {formMediaCalc.media !== null ? (
                           <span className="text-orange-400">
                             MEDIA: {formMediaCalc.media} / 10 ({formMediaCalc.percent}%)
@@ -683,7 +732,7 @@ export default function PlayerRosterModal({
                       <button
                         type="button"
                         onClick={() => setShowBaremoModal(true)}
-                        className="text-[10px] font-bold text-orange-600 hover:underline flex items-center gap-1"
+                        className="text-[10px] font-bold text-orange-600 hover:underline flex items-center gap-1 shrink-0"
                       >
                         <Settings size={12} /> Editar Barems
                       </button>
