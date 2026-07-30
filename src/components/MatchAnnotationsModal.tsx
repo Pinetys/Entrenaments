@@ -678,104 +678,110 @@ export default function MatchAnnotationsModal({
               </div>
             </div>
 
-            {/* CONTROLLERS GRID */}
+            {/* CONTROLLERS GRID - OPTIMIZED FOR MOBILE / COURT-SIDE QUICK TOUCH */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
               
               {/* GROUP 1: TURNOVERS & PASSES */}
-              <div className="bg-rose-50/40 border border-rose-200/80 p-3 rounded-xl space-y-2.5">
-                <div className="flex items-center gap-1.5 text-rose-950 font-black text-xs uppercase tracking-wider border-b border-rose-200/60 pb-1.5">
-                  <TrendingDown size={14} className="text-rose-600" /> 1. Pèrdues de Pilota i Pases
+              <div className="bg-rose-50/50 border border-rose-200 p-3.5 sm:p-3 rounded-xl space-y-3 sm:space-y-2.5">
+                <div className="flex items-center gap-1.5 text-rose-950 font-black text-xs uppercase tracking-wider border-b border-rose-200/80 pb-2">
+                  <TrendingDown size={15} className="text-rose-600 shrink-0" /> 1. Pèrdues de Pilota i Pases
                 </div>
 
                 {/* Lost passes counter */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>⚠️ Pases Perduts:</span>
-                    <span className="font-mono font-black text-rose-700 text-xs">{lostPasses}</span>
+                    <span className="font-mono font-black text-rose-700 text-sm">{lostPasses}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setLostPasses(prev => Math.max(0, prev - 1))}
-                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-black transition cursor-pointer active:scale-90 touch-manipulation select-none shrink-0"
+                      title="Restar 1 pase perdut"
                     >
-                      <Minus size={13} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
                       min={0}
                       value={lostPasses}
                       onChange={(e) => setLostPasses(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-rose-500"
+                      className="flex-1 h-11 sm:h-8 text-center text-sm font-black font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
                     />
                     <button
                       type="button"
                       onClick={() => setLostPasses(prev => prev + 1)}
-                      className="w-7 h-7 rounded bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                      className="h-11 sm:h-8 flex-1 sm:flex-initial px-3 rounded-lg bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white flex items-center justify-center gap-1 font-black text-xs transition cursor-pointer active:scale-95 touch-manipulation select-none shadow-xs"
+                      title="Sumar 1 pase perdut"
                     >
-                      <Plus size={13} />
+                      <Plus size={16} /> <span className="sm:hidden font-extrabold">+1 Pase Perdut</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Other turnovers counter */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>🚫 Altres Pèrdues (Passos/Violacions):</span>
-                    <span className="font-mono font-black text-rose-700 text-xs">{otherTurnovers}</span>
+                    <span className="font-mono font-black text-rose-700 text-sm">{otherTurnovers}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setOtherTurnovers(prev => Math.max(0, prev - 1))}
-                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-black transition cursor-pointer active:scale-90 touch-manipulation select-none shrink-0"
+                      title="Restar 1 altra pèrdua"
                     >
-                      <Minus size={13} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
                       min={0}
                       value={otherTurnovers}
                       onChange={(e) => setOtherTurnovers(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-rose-500"
+                      className="flex-1 h-11 sm:h-8 text-center text-sm font-black font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
                     />
                     <button
                       type="button"
                       onClick={() => setOtherTurnovers(prev => prev + 1)}
-                      className="w-7 h-7 rounded bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                      className="h-11 sm:h-8 flex-1 sm:flex-initial px-3 rounded-lg bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white flex items-center justify-center gap-1 font-black text-xs transition cursor-pointer active:scale-95 touch-manipulation select-none shadow-xs"
+                      title="Sumar 1 altra pèrdua"
                     >
-                      <Plus size={13} />
+                      <Plus size={16} /> <span className="sm:hidden font-extrabold">+1 Pèrdua</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Steals */}
-                <div className="space-y-1 pt-1 border-t border-rose-200/40">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <div className="space-y-1 pt-1.5 border-t border-rose-200/60">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>⚡ Recuperacions / Robades:</span>
-                    <span className="font-mono font-black text-emerald-700 text-xs">{steals}</span>
+                    <span className="font-mono font-black text-emerald-700 text-sm">{steals}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setSteals(prev => Math.max(0, prev - 1))}
-                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-black transition cursor-pointer active:scale-90 touch-manipulation select-none shrink-0"
+                      title="Restar 1 recuperació"
                     >
-                      <Minus size={13} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
                       min={0}
                       value={steals}
                       onChange={(e) => setSteals(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="flex-1 h-11 sm:h-8 text-center text-sm font-black font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                     <button
                       type="button"
                       onClick={() => setSteals(prev => prev + 1)}
-                      className="w-7 h-7 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                      className="h-11 sm:h-8 flex-1 sm:flex-initial px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white flex items-center justify-center gap-1 font-black text-xs transition cursor-pointer active:scale-95 touch-manipulation select-none shadow-xs"
+                      title="Sumar 1 recuperació"
                     >
-                      <Plus size={13} />
+                      <Plus size={16} /> <span className="sm:hidden font-extrabold">+1 Robada</span>
                     </button>
                   </div>
                 </div>
@@ -783,85 +789,85 @@ export default function MatchAnnotationsModal({
               </div>
 
               {/* GROUP 2: SHOOTING STATS (TIRS ANOTATS I FALLATS) */}
-              <div className="bg-amber-50/40 border border-amber-200/80 p-3 rounded-xl space-y-2.5">
-                <div className="flex items-center gap-1.5 text-amber-950 font-black text-xs uppercase tracking-wider border-b border-amber-200/60 pb-1.5">
-                  <Target size={14} className="text-amber-600" /> 2. Comptador de Tirs i Fallos
+              <div className="bg-amber-50/50 border border-amber-200 p-3.5 sm:p-3 rounded-xl space-y-3 sm:space-y-2.5">
+                <div className="flex items-center gap-1.5 text-amber-950 font-black text-xs uppercase tracking-wider border-b border-amber-200/80 pb-2">
+                  <Target size={15} className="text-amber-600 shrink-0" /> 2. Comptador de Tirs i Fallos
                 </div>
 
                 {/* Tiro 2P */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>🏀 Tiro de 2 Punts:</span>
-                    <span className="font-mono font-bold text-amber-900 text-[11px]">
+                    <span className="font-mono font-bold text-amber-900 text-xs">
                       {fg2Made} Anot. / <span className="text-rose-600">{fg2Missed} Fall.</span>
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setFg2Made(prev => prev + 1)}
-                      className="py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                      className="h-11 sm:h-9 px-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-black text-xs sm:text-[11px] rounded-lg transition cursor-pointer flex items-center justify-center gap-1 shadow-xs active:scale-95 touch-manipulation select-none"
                     >
-                      <Plus size={12} /> +1 Anotat
+                      <Plus size={15} /> +1 Anotat
                     </button>
                     <button
                       type="button"
                       onClick={() => setFg2Missed(prev => prev + 1)}
-                      className="py-1 px-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                      className="h-11 sm:h-9 px-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-black text-xs sm:text-[11px] rounded-lg transition cursor-pointer flex items-center justify-center gap-1 shadow-xs active:scale-95 touch-manipulation select-none"
                     >
-                      <Plus size={12} /> +1 Fallat
+                      <Plus size={15} /> +1 Fallat
                     </button>
                   </div>
                 </div>
 
                 {/* Tiro 3P */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>🎯 Tiro de 3 Punts:</span>
-                    <span className="font-mono font-bold text-amber-900 text-[11px]">
+                    <span className="font-mono font-bold text-amber-900 text-xs">
                       {fg3Made} Anot. / <span className="text-rose-600">{fg3Missed} Fall.</span>
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setFg3Made(prev => prev + 1)}
-                      className="py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                      className="h-11 sm:h-9 px-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-black text-xs sm:text-[11px] rounded-lg transition cursor-pointer flex items-center justify-center gap-1 shadow-xs active:scale-95 touch-manipulation select-none"
                     >
-                      <Plus size={12} /> +1 Anotat
+                      <Plus size={15} /> +1 Anotat
                     </button>
                     <button
                       type="button"
                       onClick={() => setFg3Missed(prev => prev + 1)}
-                      className="py-1 px-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                      className="h-11 sm:h-9 px-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-black text-xs sm:text-[11px] rounded-lg transition cursor-pointer flex items-center justify-center gap-1 shadow-xs active:scale-95 touch-manipulation select-none"
                     >
-                      <Plus size={12} /> +1 Fallat
+                      <Plus size={15} /> +1 Fallat
                     </button>
                   </div>
                 </div>
 
                 {/* Tirs lliures (TL) */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>📋 Tirs Lliures (TL):</span>
-                    <span className="font-mono font-bold text-amber-900 text-[11px]">
+                    <span className="font-mono font-bold text-amber-900 text-xs">
                       {ftMade} Anot. / <span className="text-rose-600">{ftMissed} Fall.</span>
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setFtMade(prev => prev + 1)}
-                      className="py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                      className="h-11 sm:h-9 px-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-black text-xs sm:text-[11px] rounded-lg transition cursor-pointer flex items-center justify-center gap-1 shadow-xs active:scale-95 touch-manipulation select-none"
                     >
-                      <Plus size={12} /> +1 TL Anotat
+                      <Plus size={15} /> +1 TL Anotat
                     </button>
                     <button
                       type="button"
                       onClick={() => setFtMissed(prev => prev + 1)}
-                      className="py-1 px-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                      className="h-11 sm:h-9 px-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-black text-xs sm:text-[11px] rounded-lg transition cursor-pointer flex items-center justify-center gap-1 shadow-xs active:scale-95 touch-manipulation select-none"
                     >
-                      <Plus size={12} /> +1 TL Fallat
+                      <Plus size={15} /> +1 TL Fallat
                     </button>
                   </div>
                 </div>
@@ -869,100 +875,106 @@ export default function MatchAnnotationsModal({
               </div>
 
               {/* GROUP 3: REBOUNDS & DEFENSIVE DISCIPLINE */}
-              <div className="bg-sky-50/40 border border-sky-200/80 p-3 rounded-xl space-y-2.5">
-                <div className="flex items-center gap-1.5 text-sky-950 font-black text-xs uppercase tracking-wider border-b border-sky-200/60 pb-1.5">
-                  <Shield size={14} className="text-sky-600" /> 3. Rebots i Defensa
+              <div className="bg-sky-50/50 border border-sky-200 p-3.5 sm:p-3 rounded-xl space-y-3 sm:space-y-2.5">
+                <div className="flex items-center gap-1.5 text-sky-950 font-black text-xs uppercase tracking-wider border-b border-sky-200/80 pb-2">
+                  <Shield size={15} className="text-sky-600 shrink-0" /> 3. Rebots i Defensa
                 </div>
 
                 {/* Offensive Rebounds */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>💥 Rebot Ofensiu (Atac):</span>
-                    <span className="font-mono font-black text-sky-900 text-xs">{offRebounds}</span>
+                    <span className="font-mono font-black text-sky-900 text-sm">{offRebounds}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setOffRebounds(prev => Math.max(0, prev - 1))}
-                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-black transition cursor-pointer active:scale-90 touch-manipulation select-none shrink-0"
+                      title="Restar 1 rebot ofensiu"
                     >
-                      <Minus size={13} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
                       min={0}
                       value={offRebounds}
                       onChange={(e) => setOffRebounds(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="flex-1 h-11 sm:h-8 text-center text-sm font-black font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                     <button
                       type="button"
                       onClick={() => setOffRebounds(prev => prev + 1)}
-                      className="w-7 h-7 rounded bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                      className="h-11 sm:h-8 flex-1 sm:flex-initial px-3 rounded-lg bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white flex items-center justify-center gap-1 font-black text-xs transition cursor-pointer active:scale-95 touch-manipulation select-none shadow-xs"
+                      title="Sumar 1 rebot ofensiu"
                     >
-                      <Plus size={13} />
+                      <Plus size={16} /> <span className="sm:hidden font-extrabold">+1 Rebot Of.</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Defensive Rebounds */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>🛡️ Rebot Defensiu:</span>
-                    <span className="font-mono font-black text-sky-900 text-xs">{defRebounds}</span>
+                    <span className="font-mono font-black text-sky-900 text-sm">{defRebounds}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setDefRebounds(prev => Math.max(0, prev - 1))}
-                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-black transition cursor-pointer active:scale-90 touch-manipulation select-none shrink-0"
+                      title="Restar 1 rebot defensiu"
                     >
-                      <Minus size={13} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
                       min={0}
                       value={defRebounds}
                       onChange={(e) => setDefRebounds(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="flex-1 h-11 sm:h-8 text-center text-sm font-black font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                     <button
                       type="button"
                       onClick={() => setDefRebounds(prev => prev + 1)}
-                      className="w-7 h-7 rounded bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                      className="h-11 sm:h-8 flex-1 sm:flex-initial px-3 rounded-lg bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white flex items-center justify-center gap-1 font-black text-xs transition cursor-pointer active:scale-95 touch-manipulation select-none shadow-xs"
+                      title="Sumar 1 rebot defensiu"
                     >
-                      <Plus size={13} />
+                      <Plus size={16} /> <span className="sm:hidden font-extrabold">+1 Rebot Def.</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Fouls */}
-                <div className="space-y-1 pt-1 border-t border-sky-200/40">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <div className="space-y-1 pt-1.5 border-t border-sky-200/60">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>🛑 Faltes Personals de L'Equip:</span>
-                    <span className="font-mono font-black text-slate-900 text-xs">{fouls}</span>
+                    <span className="font-mono font-black text-slate-900 text-sm">{fouls}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setFouls(prev => Math.max(0, prev - 1))}
-                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-black transition cursor-pointer active:scale-90 touch-manipulation select-none shrink-0"
+                      title="Restar 1 falta"
                     >
-                      <Minus size={13} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
                       min={0}
                       value={fouls}
                       onChange={(e) => setFouls(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-500"
+                      className="flex-1 h-11 sm:h-8 text-center text-sm font-black font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                     />
                     <button
                       type="button"
                       onClick={() => setFouls(prev => prev + 1)}
-                      className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                      className="h-11 sm:h-8 flex-1 sm:flex-initial px-3 rounded-lg bg-slate-800 hover:bg-slate-900 active:bg-slate-950 text-white flex items-center justify-center gap-1 font-black text-xs transition cursor-pointer active:scale-95 touch-manipulation select-none shadow-xs"
+                      title="Sumar 1 falta"
                     >
-                      <Plus size={13} />
+                      <Plus size={16} /> <span className="sm:hidden font-extrabold">+1 Falta</span>
                     </button>
                   </div>
                 </div>
