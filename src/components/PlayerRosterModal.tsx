@@ -532,31 +532,40 @@ export default function PlayerRosterModal({
             
             {(isAdding || isEditing) ? (
               /* CREATE / EDIT FORM */
-              <form onSubmit={handleSaveForm} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 animate-fadeIn">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+              <form onSubmit={handleSaveForm} className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 animate-fadeIn relative">
+                {/* STICKY TOP HEADER WITH SAVE & CANCEL BUTTONS */}
+                <div className="sticky top-0 bg-white/95 backdrop-blur-xs z-20 pb-3 pt-1 border-b border-slate-200 flex items-center justify-between gap-3 shadow-2xs -mx-1 px-1">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate flex items-center gap-2">
                       {isAdding ? '➕ Afegir Nou Jugador' : `✏️ Editar Fitxa #${formData.number} ${formData.name}`}
                     </h3>
                     {isAdding && (
-                      <p className="text-[11px] text-orange-600 font-semibold mt-0.5">
+                      <p className="text-[10px] sm:text-[11px] text-orange-600 font-semibold mt-0.5 truncate">
                         * Els nous jugadors es creen sense percentatges ni valoracions per defecte.
                       </p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAdding(false);
-                      setIsEditing(false);
-                    }}
-                    className="text-xs font-bold text-slate-500 hover:text-slate-800"
-                  >
-                    Cancel·lar
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAdding(false);
+                        setIsEditing(false);
+                      }}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition cursor-pointer"
+                    >
+                      Cancel·lar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-lg transition cursor-pointer shadow-md flex items-center gap-1.5"
+                    >
+                      <Save size={14} /> Desar Fitxa
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
                   {/* Dorsal */}
                   <div className="sm:col-span-3 space-y-1">
                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">
@@ -709,7 +718,7 @@ export default function PlayerRosterModal({
 
                 {/* DYNAMIC RATINGS / BAREMOS SLIDERS */}
                 <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
                     <div>
                       <span className="text-[10px] font-black uppercase text-slate-800 tracking-wider block">
                         📊 Valoració en Barems de Competències (Escala 1 a 10)
@@ -719,7 +728,7 @@ export default function PlayerRosterModal({
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <div className="px-2.5 py-1 bg-slate-900 text-white rounded-lg font-mono font-black text-xs shrink-0">
                         {formMediaCalc.media !== null ? (
                           <span className="text-orange-400">
@@ -740,24 +749,43 @@ export default function PlayerRosterModal({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                    {baremos.map(b => {
+                    {baremos.map((b, idx) => {
                       const val = formData.ratings?.[b.id] || 0;
+                      const isLastOdd = idx === baremos.length - 1 && baremos.length % 2 !== 0;
                       return (
-                        <div key={b.id} className="space-y-1.5 p-2 bg-white rounded-lg border border-slate-200">
-                          <div className="flex items-center justify-between font-bold text-slate-700 text-[11px]">
-                            <span className="truncate pr-2">{b.label}</span>
+                        <div 
+                          key={b.id} 
+                          className={`space-y-2 p-3 bg-white rounded-xl border border-slate-200 shadow-2xs ${
+                            isLastOdd ? 'sm:col-span-2' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between font-bold text-slate-800 text-[11px]">
+                            <span className="truncate pr-2 flex items-center gap-1.5">
+                              <span className="text-slate-400 font-mono text-[10px] font-black">#{idx + 1}</span>
+                              <span className="truncate">{b.label}</span>
+                            </span>
                             {val > 0 ? (
-                              <span className="font-mono text-orange-600 font-black text-xs shrink-0">
+                              <span className="font-mono text-orange-600 font-black text-xs shrink-0 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-md">
                                 {val}/10 ({val * 10}%)
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-slate-400 italic shrink-0">
+                              <span className="text-[10px] font-bold text-slate-400 italic shrink-0 bg-slate-100 px-2 py-0.5 rounded-md">
                                 Sense valorar (0%)
                               </span>
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          {/* Visual progress bar representation */}
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
+                            <div 
+                              className={`h-full transition-all duration-200 rounded-full ${
+                                val > 0 ? 'bg-orange-500' : 'bg-slate-200'
+                              }`} 
+                              style={{ width: `${(val / 10) * 100}%` }}
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-0.5">
                             <input
                               type="range"
                               min={0}
@@ -774,7 +802,7 @@ export default function PlayerRosterModal({
                                 }
                                 setFormData({ ...formData, ratings: newRatings });
                               }}
-                              className="w-full accent-orange-500 cursor-pointer"
+                              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
                             />
                             {val > 0 && (
                               <button
@@ -784,7 +812,7 @@ export default function PlayerRosterModal({
                                   delete newRatings[b.id];
                                   setFormData({ ...formData, ratings: newRatings });
                                 }}
-                                className="text-[10px] text-slate-400 hover:text-rose-600 font-bold shrink-0 px-1"
+                                className="text-[10px] text-slate-400 hover:text-rose-600 font-bold shrink-0 px-1.5 py-0.5 hover:bg-rose-50 rounded transition"
                                 title="Netejar valoració d'aquest barem"
                               >
                                 ✕
@@ -882,23 +910,29 @@ export default function PlayerRosterModal({
                   />
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAdding(false);
-                      setIsEditing(false);
-                    }}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg transition cursor-pointer"
-                  >
-                    Cancel·lar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-lg transition cursor-pointer shadow-md flex items-center gap-1.5"
-                  >
-                    <Save size={14} /> Desar Fitxa Jugador
-                  </button>
+                {/* STICKY BOTTOM ACTION BAR */}
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur-xs pt-3 pb-2 flex items-center justify-between gap-2 border-t border-slate-200 z-10 -mx-1 px-1">
+                  <span className="text-[11px] font-semibold text-slate-500 hidden sm:inline">
+                    {isAdding ? "Omple el dorsal i nom per crear el jugador." : "Modifica les dades i desa la fitxa."}
+                  </span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAdding(false);
+                        setIsEditing(false);
+                      }}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg transition cursor-pointer"
+                    >
+                      Cancel·lar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-lg transition cursor-pointer shadow-md flex items-center gap-1.5"
+                    >
+                      <Save size={14} /> Desar Fitxa Jugador
+                    </button>
+                  </div>
                 </div>
               </form>
             ) : activePlayer ? (
