@@ -24,7 +24,8 @@ import {
   Camera,
   User,
   NotebookPen,
-  Users
+  Users,
+  Save
 } from 'lucide-react';
 import coachPinetyLogo from './assets/images/coach_pinety_logo_1785329115241.jpg';
 import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player } from './types';
@@ -53,8 +54,8 @@ const DEFAULT_COACH_PROFILE: CoachProfile = {
 const DEFAULT_SESSIONS = {
   dia1: { 
     id: 'dia1', 
-    name: 'Sessió 1: Dimarts Setmana 1 - Ritme de Transició', 
-    dayOfWeek: 'Martes', 
+    name: 'Sessió 1: Jueves 3 de Setembre - Ritme de Transició', 
+    dayOfWeek: 'Jueves', 
     totalDuration: 75, 
     drills: [
       { drillId: 'drill-rueda-11', duration: 15, notes: "Activa ritme de cames ràpides i passe fort de sortida." },
@@ -67,8 +68,8 @@ const DEFAULT_SESSIONS = {
   },
   dia2: { 
     id: 'dia2', 
-    name: 'Sessió 2: Dijous Setmana 1 - Defensa de l’1v1', 
-    dayOfWeek: 'Jueves', 
+    name: 'Sessió 2: Martes 8 de Setembre - Defensa de l’1v1', 
+    dayOfWeek: 'Martes', 
     totalDuration: 75, 
     drills: [
       { drillId: 'drill-defensa-shell', duration: 20, notes: "Control d'ajuda i recuperació de línies de passe." },
@@ -79,12 +80,12 @@ const DEFAULT_SESSIONS = {
       { drillId: 'drill-dejan-cikic-decisions', duration: 10, notes: "Lectura ràpida de l'avantatge espacial en la trena." }
     ] 
   },
-  dia3: { id: 'dia3', name: 'Sessió 3: Dimarts Setmana 2 - Transició i Joc Continu', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia4: { id: 'dia4', name: 'Sessió 4: Dijous Setmana 2 - Pick & Roll Situacions', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia5: { id: 'dia5', name: 'Sessió 5: Dimarts Setmana 3 - Construcció del Contraatac', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia6: { id: 'dia6', name: 'Sessió 6: Dijous Setmana 3 - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia7: { id: 'dia7', name: 'Sessió 7: Dimarts Setmana 4 - Presió a Tot Camp', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia8: { id: 'dia8', name: 'Sessió 8: Dijous Setmana 4 - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia3: { id: 'dia3', name: 'Sessió 3: Jueves 10 de Setembre - Transició i Joc Continu', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia4: { id: 'dia4', name: 'Sessió 4: Martes 15 de Setembre - Pick & Roll Situacions', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+  dia5: { id: 'dia5', name: 'Sessió 5: Jueves 17 de Setembre - Construcció del Contraatac', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia6: { id: 'dia6', name: 'Sessió 6: Martes 22 de Setembre - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+  dia7: { id: 'dia7', name: 'Sessió 7: Jueves 24 de Setembre - Presió a Tot Camp', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia8: { id: 'dia8', name: 'Sessió 8: Martes 29 de Setembre - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
 };
 
 const isMobileDevice = () => {
@@ -186,7 +187,7 @@ export default function App() {
       {
         id: 'plan-default',
         name: 'Planificació Mensual: Transició i Defensa Base',
-        startDate: new Date().toISOString().substring(0, 10),
+        startDate: '2026-09-03',
         dia1: DEFAULT_SESSIONS.dia1,
         dia2: DEFAULT_SESSIONS.dia2,
         dia3: DEFAULT_SESSIONS.dia3,
@@ -739,6 +740,35 @@ export default function App() {
 
     return () => clearTimeout(timer);
   }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, syncCode, hasLoadedFromCloud]);
+
+  const handleForceSaveSession = async () => {
+    setIsSyncing(true);
+    const currentState = {
+      drills,
+      weeklyPlans,
+      selectedWeeklyPlanId,
+      selectedSessionId,
+      completions,
+      favoriteDrillIds,
+      coachProfile,
+      players
+    };
+    const currentStateString = JSON.stringify(currentState);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
+      if (syncCode) {
+        const savedTimeStr = await saveToCloud(syncCode, currentState);
+        setLastSynced(new Date(savedTimeStr));
+        lastSavedTimeStrRef.current = savedTimeStr;
+        lastSeenStateStringRef.current = currentStateString;
+      }
+      triggerToast('💾 Sessió i planificació desades immediatament a la memòria i al núvol!');
+    } catch (e: any) {
+      triggerToast('💾 Sessió desada localment a la memòria del navegador.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Listen for real-time changes from the cloud (Firestore onSnapshot)
   useEffect(() => {
@@ -1566,6 +1596,16 @@ export default function App() {
               </button>
 
               <button
+                id="btn-header-force-save"
+                onClick={handleForceSaveSession}
+                title="Grabar i desar immediatament en memòria i núvol"
+                className="py-1.5 md:py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition text-xs font-black rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
+              >
+                <Save size={13} />
+                <span>Desar Sessió</span>
+              </button>
+
+              <button
                 id="btn-header-export"
                 onClick={handleExportJson}
                 title="Descarregar còpia del pla"
@@ -1946,6 +1986,7 @@ export default function App() {
                 setSelectedMatchDateIndex(dateIdx !== undefined ? dateIdx : 5);
                 setShowMatchModal(true);
               }}
+              onForceSaveSession={handleForceSaveSession}
             />
           </div>
         ) : activeView === 'database' ? (

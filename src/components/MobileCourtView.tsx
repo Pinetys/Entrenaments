@@ -203,13 +203,48 @@ export default function MobileCourtView({
     };
   }, []);
 
-  // Timer states
+  // Timer states with background timestamp resilience
   const [timeLeft, setTimeLeft] = useState(0);
   const [sessionTimeLeft, setSessionTimeLeft] = useState(75 * 60); // 75 minutes of training remaining
   const [timerRunning, setTimerRunning] = useState(false);
   const [sessionTimerRunning, setSessionTimerRunning] = useState(false);
   const [showFinishedToast, setShowFinishedToast] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Background screen lock resilient timestamp references
+  const targetEndTimeRef = useRef<number | null>(null);
+  const sessionTargetEndTimeRef = useRef<number | null>(null);
+  const restTargetEndTimeRef = useRef<number | null>(null);
+  const intensityStartTimeRef = useRef<number | null>(null);
+
+  // Completed drills state in current session
+  const [completedDrillIndices, setCompletedDrillIndices] = useState<number[]>(() => {
+    try {
+      const saved = localStorage.getItem(`basket_planner_completed_drills_${session.id}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Save completed drills to local storage when changed
+  useEffect(() => {
+    try {
+      localStorage.setItem(`basket_planner_completed_drills_${session.id}`, JSON.stringify(completedDrillIndices));
+    } catch (e) {}
+  }, [completedDrillIndices, session.id]);
+
+  const toggleDrillCompleted = (index: number) => {
+    setCompletedDrillIndices((prev) => {
+      const exists = prev.includes(index);
+      const updated = exists ? prev.filter(i => i !== index) : [...prev, index];
+      if (!exists) {
+        playNbaSneakerSqueak();
+        triggerLocalToast(`✅ Exercici ${index + 1} completat!`);
+      }
+      return updated;
+    });
+  };
 
   // Rest timer states
   const [configuredRestTime, setConfiguredRestTime] = useState(60);
@@ -356,10 +391,12 @@ export default function MobileCourtView({
 
     if (prevActiveIndexRef.current !== safeActiveIndex) {
       prevActiveIndexRef.current = safeActiveIndex;
-      if (activeDrill) {
-        setTimeLeft(activeDrill.duration * 60);
-        setTimerRunning(false);
-        setShowFinishedToast(false);
+      // Requirement 1: Do NOT stop or pause running timer when navigating exercises!
+      if (!timerRunning) {
+        if (activeDrill) {
+          setTimeLeft(activeDrill.duration * 60);
+          setShowFinishedToast(false);
+        }
       }
     }
   }, [safeActiveIndex, activeDrill?.id]);
@@ -585,48 +622,117 @@ export default function MobileCourtView({
     }
   };
 
-  // Timer tick runner - only runs interval when at least one timer is active
+  // Requirement 2: Background screen lock resilient timer tick & visibility listener
   useEffect(() => {
     const isAnyTimerActive = timerRunning || sessionTimerRunning || restTimerRunning || intensityTimerRunning;
     if (!isAnyTimerActive) return;
 
+    // Synchronize target timestamps when timers become active
+    const now = Date.now();
+    if (timerRunning && !targetEndTimeRef.current) {
+      targetEndTimeRef.current = now + timeLeft * 1000;
+    }
+    if (sessionTimerRunning && !sessionTargetEndTimeRef.current) {
+      sessionTargetEndTimeRef.current = now + sessionTimeLeft * 1000;
+    }
+    if (restTimerRunning && !restTargetEndTimeRef.current) {
+      restTargetEndTimeRef.current = now + restTimeLeft * 1000;
+    }
+    if (intensityTimerRunning && !intensityStartTimeRef.current) {
+      intensityStartTimeRef.current = now - intensityElapsed * 1000;
+    }
+
     const interval = setInterval(() => {
-      if (sessionTimerRunning) {
-        setSessionTimeLeft((prevSess) => Math.max(0, prevSess - 1));
+      const currentNow = Date.now();
+
+      if (sessionTimerRunning && sessionTargetEndTimeRef.current) {
+        const remainingSess = Math.max(0, Math.round((sessionTargetEndTimeRef.current - currentNow) / 1000));
+        setSessionTimeLeft(remainingSess);
+        if (remainingSess <= 0) {
+          setSessionTimerRunning(false);
+          sessionTargetEndTimeRef.current = null;
+        }
       }
 
-      if (restTimerRunning) {
-        setRestTimeLeft((prevRest) => {
-          if (prevRest <= 1) {
-            setRestTimerRunning(false);
-            playSynthesizedWhistle();
-            setShowRestFinishedToast(true);
-            return 0;
-          }
-          return prevRest - 1;
-        });
+      if (restTimerRunning && restTargetEndTimeRef.current) {
+        const remainingRest = Math.max(0, Math.round((restTargetEndTimeRef.current - currentNow) / 1000));
+        setRestTimeLeft(remainingRest);
+        if (remainingRest <= 0) {
+          setRestTimerRunning(false);
+          restTargetEndTimeRef.current = null;
+          playSynthesizedWhistle();
+          setShowRestFinishedToast(true);
+        }
       }
 
-      if (timerRunning) {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setTimerRunning(false);
-            playSynthesizedBuzzer();
-            // Trigger custom visual flash toast state
-            setShowFinishedToast(true);
-            return 0;
-          }
-          return prev - 1;
-        });
+      if (timerRunning && targetEndTimeRef.current) {
+        const remaining = Math.max(0, Math.round((targetEndTimeRef.current - currentNow) / 1000));
+        setTimeLeft(remaining);
+        if (remaining <= 0) {
+          setTimerRunning(false);
+          targetEndTimeRef.current = null;
+          playSynthesizedBuzzer();
+          setShowFinishedToast(true);
+          // Requirement 4: Automatically mark exercise completed when timer finishes!
+          setCompletedDrillIndices((prev) => prev.includes(safeActiveIndex) ? prev : [...prev, safeActiveIndex]);
+        }
       }
 
-      if (intensityTimerRunning) {
-        setIntensityElapsed((prev) => prev + 1);
+      if (intensityTimerRunning && intensityStartTimeRef.current) {
+        const elapsed = Math.max(0, Math.round((currentNow - intensityStartTimeRef.current) / 1000));
+        setIntensityElapsed(elapsed);
       }
-    }, 1000);
+    }, 500);
 
     return () => clearInterval(interval);
-  }, [timerRunning, sessionTimerRunning, restTimerRunning, activeDrillIndex, intensityTimerRunning]);
+  }, [timerRunning, sessionTimerRunning, restTimerRunning, intensityTimerRunning, safeActiveIndex]);
+
+  // Screen lock unlock & visibilitychange event listener to update timers instantly upon waking device
+  useEffect(() => {
+    const handleScreenWake = () => {
+      const currentNow = Date.now();
+      if (timerRunning && targetEndTimeRef.current) {
+        const remaining = Math.max(0, Math.round((targetEndTimeRef.current - currentNow) / 1000));
+        setTimeLeft(remaining);
+        if (remaining <= 0) {
+          setTimerRunning(false);
+          targetEndTimeRef.current = null;
+          playSynthesizedBuzzer();
+          setShowFinishedToast(true);
+          setCompletedDrillIndices((prev) => prev.includes(safeActiveIndex) ? prev : [...prev, safeActiveIndex]);
+        }
+      }
+      if (sessionTimerRunning && sessionTargetEndTimeRef.current) {
+        const remainingSess = Math.max(0, Math.round((sessionTargetEndTimeRef.current - currentNow) / 1000));
+        setSessionTimeLeft(remainingSess);
+        if (remainingSess <= 0) {
+          setSessionTimerRunning(false);
+          sessionTargetEndTimeRef.current = null;
+        }
+      }
+      if (restTimerRunning && restTargetEndTimeRef.current) {
+        const remainingRest = Math.max(0, Math.round((restTargetEndTimeRef.current - currentNow) / 1000));
+        setRestTimeLeft(remainingRest);
+        if (remainingRest <= 0) {
+          setRestTimerRunning(false);
+          restTargetEndTimeRef.current = null;
+          playSynthesizedWhistle();
+          setShowRestFinishedToast(true);
+        }
+      }
+      if (intensityTimerRunning && intensityStartTimeRef.current) {
+        const elapsed = Math.max(0, Math.round((currentNow - intensityStartTimeRef.current) / 1000));
+        setIntensityElapsed(elapsed);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleScreenWake);
+    window.addEventListener('focus', handleScreenWake);
+    return () => {
+      document.removeEventListener('visibilitychange', handleScreenWake);
+      window.removeEventListener('focus', handleScreenWake);
+    };
+  }, [timerRunning, sessionTimerRunning, restTimerRunning, intensityTimerRunning, safeActiveIndex]);
 
   if (drillsInSession.length === 0) {
     return (
@@ -1071,6 +1177,25 @@ export default function MobileCourtView({
                     ) : null;
                   })()}
                 </h3>
+
+                {/* Requirement 4: Automatic and Manual Exercise Completion badge */}
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDrillCompleted(safeActiveIndex);
+                    }}
+                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-1 border shadow-xs ${
+                      completedDrillIndices.includes(safeActiveIndex)
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 hover:bg-emerald-500/30'
+                        : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-700'
+                    }`}
+                  >
+                    <Check size={12} strokeWidth={3.5} className={completedDrillIndices.includes(safeActiveIndex) ? 'text-emerald-400' : 'text-slate-400'} />
+                    <span>{completedDrillIndices.includes(safeActiveIndex) ? '✓ EXERCICI COMPLETAT' : 'MARCAR COMPLETAT'}</span>
+                  </button>
+                </div>
               </div>
 
               <button

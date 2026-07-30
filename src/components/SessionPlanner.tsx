@@ -23,7 +23,8 @@ import {
   Star,
   BookOpen,
   Bookmark,
-  Copy
+  Copy,
+  Save
 } from 'lucide-react';
 import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan, SessionTemplate } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
@@ -126,6 +127,7 @@ interface SessionPlannerProps {
   onCreateTemplateFromScratch?: (newTpl: Omit<SessionTemplate, 'id'>) => void;
   onDeleteTemplate?: (templateId: string) => void;
   onOpenMatchNotes?: (dateIndex?: number) => void;
+  onForceSaveSession?: () => void;
 }
 
 export default function SessionPlanner({ 
@@ -151,7 +153,8 @@ export default function SessionPlanner({
   onSaveCurrentSessionAsTemplate,
   onCreateTemplateFromScratch,
   onDeleteTemplate,
-  onOpenMatchNotes
+  onOpenMatchNotes,
+  onForceSaveSession
 }: SessionPlannerProps) {
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [sessionNotes, setSessionNotes] = useState<string>('');
@@ -566,6 +569,18 @@ export default function SessionPlanner({
                   </div>
                 )}
               </div>
+
+              {onForceSaveSession && (
+                <button
+                  id="btn-force-save-session"
+                  type="button"
+                  onClick={onForceSaveSession}
+                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs active:scale-95"
+                  title="Grabar y guardar sesión inmediatamente en memoria y nube"
+                >
+                  <Save size={13} /> Desar Sessió
+                </button>
+              )}
 
               <button
                 id="btn-open-session-templates-library"
