@@ -126,7 +126,7 @@ interface SessionPlannerProps {
   onToggleFavorite?: (drillId: string) => void;
   sessionTemplates?: SessionTemplate[];
   onApplyTemplateToSession?: (template: SessionTemplate, targetSessionId: string) => void;
-  onSaveCurrentSessionAsTemplate?: (name: string, category: string, description?: string) => void;
+  onSaveCurrentSessionAsTemplate?: (name: string, category: string, description?: string, customSession?: TrainingSession) => void;
   onCreateTemplateFromScratch?: (newTpl: Omit<SessionTemplate, 'id'>) => void;
   onDeleteTemplate?: (templateId: string) => void;
   onOpenMatchNotes?: (dateIndex?: number) => void;
@@ -160,6 +160,7 @@ export default function SessionPlanner({
   onForceSaveSession
 }: SessionPlannerProps) {
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [templatesModalInitialTab, setTemplatesModalInitialTab] = useState<'library' | 'save_current' | 'create_new'>('library');
   const [sessionNotes, setSessionNotes] = useState<string>('');
   const [activeNoteEditId, setActiveNoteEditId] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -591,11 +592,27 @@ export default function SessionPlanner({
               <button
                 id="btn-open-session-templates-library"
                 type="button"
-                onClick={() => setShowTemplatesModal(true)}
+                onClick={() => {
+                  setTemplatesModalInitialTab('library');
+                  setShowTemplatesModal(true);
+                }}
                 className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-slate-250"
-                title="Plantilles i Presets"
+                title="Biblioteca de plantilles i presets"
               >
                 <BookOpen size={13} /> Plantilles
+              </button>
+
+              <button
+                id="btn-save-session-as-template"
+                type="button"
+                onClick={() => {
+                  setTemplatesModalInitialTab('save_current');
+                  setShowTemplatesModal(true);
+                }}
+                className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs active:scale-95"
+                title="Convertir una sessió creada en una plantilla reutilitzable"
+              >
+                <Bookmark size={13} /> Desar com a Plantilla
               </button>
 
               <button
@@ -2085,11 +2102,12 @@ export default function SessionPlanner({
         activePlan={activePlan}
         activeSession={session}
         allSessions={allSessions}
+        initialTab={templatesModalInitialTab}
         onApplyTemplateToSession={(tpl, targetId) => {
           if (onApplyTemplateToSession) onApplyTemplateToSession(tpl, targetId);
         }}
-        onSaveCurrentSessionAsTemplate={(name, cat, desc) => {
-          if (onSaveCurrentSessionAsTemplate) onSaveCurrentSessionAsTemplate(name, cat, desc);
+        onSaveCurrentSessionAsTemplate={(name, cat, desc, customSession) => {
+          if (onSaveCurrentSessionAsTemplate) onSaveCurrentSessionAsTemplate(name, cat, desc, customSession);
         }}
         onCreateTemplateFromScratch={(newTpl) => {
           if (onCreateTemplateFromScratch) onCreateTemplateFromScratch(newTpl);

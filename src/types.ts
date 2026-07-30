@@ -60,6 +60,22 @@ export interface QuarterNotes {
   ot?: string;
 }
 
+export interface TeamStats {
+  lostPasses?: number;
+  otherTurnovers?: number;
+  fg2Made?: number;
+  fg2Missed?: number;
+  fg3Made?: number;
+  fg3Missed?: number;
+  ftMade?: number;
+  ftMissed?: number;
+  offRebounds?: number;
+  defRebounds?: number;
+  steals?: number;
+  fouls?: number;
+  blocks?: number;
+}
+
 export interface MatchAnnotation {
   id: string;
   dateIndex: number; // 0..27 (day index in 28-day microcycle grid)
@@ -72,6 +88,7 @@ export interface MatchAnnotation {
   generalNotes?: string;
   tacticalKeyPoints?: string[];
   tags?: string[];
+  teamStats?: TeamStats;
   updatedAt?: string;
 }
 

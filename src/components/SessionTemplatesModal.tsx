@@ -32,8 +32,9 @@ interface SessionTemplatesModalProps {
   activePlan: WeeklyPlan;
   activeSession: TrainingSession;
   allSessions?: Record<string, TrainingSession>;
+  initialTab?: 'library' | 'save_current' | 'create_new';
   onApplyTemplateToSession: (template: SessionTemplate, targetSessionId: string) => void;
-  onSaveCurrentSessionAsTemplate: (name: string, category: string, description?: string) => void;
+  onSaveCurrentSessionAsTemplate: (name: string, category: string, description?: string, customSession?: TrainingSession) => void;
   onCreateTemplateFromScratch: (newTpl: Omit<SessionTemplate, 'id'>) => void;
   onDeleteTemplate: (templateId: string) => void;
   triggerToast?: (msg: string) => void;
@@ -47,16 +48,20 @@ export default function SessionTemplatesModal({
   activePlan,
   activeSession,
   allSessions,
+  initialTab = 'library',
   onApplyTemplateToSession,
   onSaveCurrentSessionAsTemplate,
   onCreateTemplateFromScratch,
   onDeleteTemplate,
   triggerToast
 }: SessionTemplatesModalProps) {
-  const [activeTab, setActiveTab] = useState<'library' | 'save_current' | 'create_new'>('library');
+  const [activeTab, setActiveTab] = useState<'library' | 'save_current' | 'create_new'>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Tots');
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+
+  // Selected session ID for saving as template
+  const [selectedSessionIdToSave, setSelectedSessionIdToSave] = useState<string>(activeSession.id || 'dia1');
 
   // Selector for "Traslladar a qualsevol sessió"
   const [transferTarget, setTransferTarget] = useState<{ template: SessionTemplate; openDropdown: boolean } | null>(null);
@@ -66,6 +71,24 @@ export default function SessionTemplatesModal({
 
   // Template deletion confirmation modal state
   const [deleteConfirmTemplate, setDeleteConfirmTemplate] = useState<SessionTemplate | null>(null);
+
+  // Form states for "Save Current Session as Template"
+  const [saveName, setSaveName] = useState(activeSession.name || 'Nova Plantilla d\'Entrenament');
+  const [saveCategory, setSaveCategory] = useState('Transició');
+  const [saveDescription, setSaveDescription] = useState('');
+
+  // Sync activeTab & selectedSessionIdToSave when modal opens or initialTab / activeSession changes
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialTab) {
+        setActiveTab(initialTab);
+      }
+      const initialId = activeSession.id || 'dia1';
+      setSelectedSessionIdToSave(initialId);
+      const targetSess = (allSessions && allSessions[initialId]) || (activePlan && (activePlan[initialId as keyof WeeklyPlan] as TrainingSession | undefined)) || activeSession;
+      setSaveName(targetSess?.name || activeSession.name || 'Nova Plantilla d\'Entrenament');
+    }
+  }, [isOpen, initialTab, activeSession]);
 
   // Helper to handle applying template with confirmation if session is not empty
   const handleConfirmAndApplyTemplate = (tpl: SessionTemplate, targetSessionId: string) => {
@@ -82,11 +105,6 @@ export default function SessionTemplatesModal({
     if (triggerToast) triggerToast(`📥 Plantilla "${tpl.name}" carregada correctament`);
     onClose();
   };
-
-  // Form states for "Save Current Session as Template"
-  const [saveName, setSaveName] = useState(activeSession.name || 'Nova Plantilla d\'Entrenament');
-  const [saveCategory, setSaveCategory] = useState('Transició');
-  const [saveDescription, setSaveDescription] = useState('');
 
   // Form states for "Create Template From Scratch"
   const [createName, setCreateName] = useState('');
@@ -117,14 +135,19 @@ export default function SessionTemplatesModal({
     { id: 'dia8', num: 8, name: activePlan.dia8?.name || 'Sessió 8' }
   ];
 
+  // Calculate selected target session to save
+  const targetSessionToSave = (allSessions && allSessions[selectedSessionIdToSave]) 
+    || (activePlan && (activePlan[selectedSessionIdToSave as keyof WeeklyPlan] as TrainingSession | undefined))
+    || activeSession;
+
   const handleConfirmSaveCurrent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!saveName.trim()) return;
-    if (activeSession.drills.length === 0) {
+    if (!targetSessionToSave.drills || targetSessionToSave.drills.length === 0) {
       if (triggerToast) triggerToast('⚠️ No pots desar una plantilla buida. Afegeix primer exercicis a la sessió!');
       return;
     }
-    onSaveCurrentSessionAsTemplate(saveName.trim(), saveCategory, saveDescription.trim());
+    onSaveCurrentSessionAsTemplate(saveName.trim(), saveCategory, saveDescription.trim(), targetSessionToSave);
     if (triggerToast) triggerToast(`✅ S'ha guardat la plantilla "${saveName.trim()}" a la biblioteca!`);
     setActiveTab('library');
   };
@@ -557,23 +580,53 @@ export default function SessionTemplatesModal({
             </div>
           )}
 
-          {/* TAB 2: SAVE CURRENT ACTIVE SESSION AS A TEMPLATE */}
+          {/* TAB 2: SAVE SESSION AS A TEMPLATE */}
           {activeTab === 'save_current' && (
             <form onSubmit={handleConfirmSaveCurrent} className="space-y-4 max-w-2xl mx-auto bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
               <div className="border-b border-slate-150 pb-3">
                 <h3 className="text-sm font-black uppercase text-slate-900 tracking-tight flex items-center gap-1.5">
                   <Bookmark size={16} className="text-orange-500" />
-                  Desar Sessió Activa a la Biblioteca
+                  Desar Sessió com a Plantilla
                 </h3>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Convertiràs els {activeSession.drills.length} exercicis de "{activeSession.name}" en una plantilla reutilitzable.
+                  Convertiràs els {targetSessionToSave.drills?.length || 0} exercicis de "{targetSessionToSave.name}" en una plantilla reutilitzable a la biblioteca.
                 </p>
               </div>
 
               <div className="space-y-3">
+                {/* Session Selector Dropdown */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Nom de la Plantilla:
+                    Selecciona quina sessió vols convertir en plantilla:
+                  </label>
+                  <select
+                    value={selectedSessionIdToSave}
+                    onChange={(e) => {
+                      const newId = e.target.value;
+                      setSelectedSessionIdToSave(newId);
+                      const targetSess = (allSessions && allSessions[newId]) || (activePlan && (activePlan[newId as keyof WeeklyPlan] as TrainingSession | undefined)) || activeSession;
+                      if (targetSess) {
+                        setSaveName(targetSess.name || `Plantilla Sessió ${newId}`);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-white cursor-pointer"
+                  >
+                    {sessionList.map(s => {
+                      const sessObj = (allSessions && allSessions[s.id]) || (activePlan && (activePlan[s.id as keyof WeeklyPlan] as TrainingSession | undefined));
+                      const count = sessObj?.drills?.length || 0;
+                      const isActive = s.id === activeSession.id;
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {isActive ? '⭐ [SESSIÓ ACTIVA] ' : ''}Sessió {s.num}: {sessObj?.name || s.name} ({count} exercicis)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Nom de la Nova Plantilla:
                   </label>
                   <input
                     type="text"
@@ -609,8 +662,8 @@ export default function SessionTemplatesModal({
                       Durada calculada:
                     </label>
                     <div className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-md text-xs font-mono font-bold text-slate-700 flex items-center justify-between">
-                      <span>{activeSession.drills.reduce((a, b) => a + (b.duration || 10), 0)} minuts</span>
-                      <span className="text-[10px] text-orange-600 font-extrabold uppercase">{activeSession.drills.length} exercicis</span>
+                      <span>{(targetSessionToSave.drills || []).reduce((a, b) => a + (b.duration || 10), 0)} minuts</span>
+                      <span className="text-[10px] text-orange-600 font-extrabold uppercase">{targetSessionToSave.drills?.length || 0} exercicis</span>
                     </div>
                   </div>
                 </div>
@@ -631,43 +684,49 @@ export default function SessionTemplatesModal({
                 {/* Drill preview inside session to save */}
                 <div className="space-y-1 pt-2">
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">
-                    Exercicis a incloure ({activeSession.drills.length}):
+                    Exercicis a incloure ({targetSessionToSave.drills?.length || 0}):
                   </span>
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 max-h-48 overflow-y-auto no-scrollbar space-y-1.5">
-                    {activeSession.drills.map((sd, i) => {
-                      const orig = drills.find(d => d.id === sd.drillId);
-                      const isVirtual = sd.drillId.startsWith('virtual-');
-                      const title = isVirtual 
-                        ? (sd.drillId.includes('hydration') ? 'Descans d’Hidratació' : 'Tirs Lliures de Recuperació')
-                        : (orig?.title || 'Exercici');
-                      const boardState = orig?.boardState || { paths: [], pins: [] };
+                  {(!targetSessionToSave.drills || targetSessionToSave.drills.length === 0) ? (
+                    <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold">
+                      ⚠️ Aquesta sessió no té cap exercici afegit encara. Afegeix exercicis a la sessió abans de crear la plantilla.
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 max-h-48 overflow-y-auto no-scrollbar space-y-1.5">
+                      {targetSessionToSave.drills.map((sd, i) => {
+                        const orig = drills.find(d => d.id === sd.drillId);
+                        const isVirtual = sd.drillId.startsWith('virtual-');
+                        const title = isVirtual 
+                          ? (sd.drillId.includes('hydration') ? 'Descans d’Hidratació' : 'Tirs Lliures de Recuperació')
+                          : (orig?.title || 'Exercici');
+                        const boardState = orig?.boardState || { paths: [], pins: [] };
 
-                      return (
-                        <div key={i} className="text-xs bg-white border border-slate-200 p-1.5 rounded-lg flex items-center justify-between gap-2 shadow-2xs">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {!isVirtual && (
-                              <div 
+                        return (
+                          <div key={i} className="text-xs bg-white border border-slate-200 p-1.5 rounded-lg flex items-center justify-between gap-2 shadow-2xs">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              {!isVirtual && (
+                                <div 
+                                  onClick={() => orig && setLightboxDrill(orig)}
+                                  title="Clica per veure la gràfica ampliada"
+                                  className="w-16 h-12 bg-white border border-slate-200 rounded overflow-hidden shrink-0 cursor-pointer hover:border-orange-500 transition"
+                                >
+                                  <TacticalBoard boardState={boardState} onChange={() => {}} readOnly={true} />
+                                </div>
+                              )}
+                              <span 
                                 onClick={() => orig && setLightboxDrill(orig)}
-                                title="Clica per veure la gràfica ampliada"
-                                className="w-16 h-12 bg-white border border-slate-200 rounded overflow-hidden shrink-0 cursor-pointer hover:border-orange-500 transition"
+                                className={`font-bold text-slate-800 truncate uppercase text-[11px] ${orig ? 'cursor-pointer hover:text-orange-600' : ''}`}
                               >
-                                <TacticalBoard boardState={boardState} onChange={() => {}} readOnly={true} />
-                              </div>
-                            )}
-                            <span 
-                              onClick={() => orig && setLightboxDrill(orig)}
-                              className={`font-bold text-slate-800 truncate uppercase text-[11px] ${orig ? 'cursor-pointer hover:text-orange-600' : ''}`}
-                            >
-                              {i + 1}. {title}
+                                {i + 1}. {title}
+                              </span>
+                            </div>
+                            <span className="font-mono text-[11px] font-black bg-orange-100 text-orange-850 px-2 py-0.5 rounded shrink-0 ml-2">
+                              {sd.duration || 10}′
                             </span>
                           </div>
-                          <span className="font-mono text-[11px] font-black bg-orange-100 text-orange-850 px-2 py-0.5 rounded shrink-0 ml-2">
-                            {sd.duration || 10}′
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 

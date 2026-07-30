@@ -1169,20 +1169,6 @@ export default function PlayerRosterModal({
 
         </div>
 
-        {/* MODAL FOOTER */}
-        <div className="px-5 py-3 bg-slate-900 text-slate-400 border-t border-slate-800 flex items-center justify-between text-xs shrink-0">
-          <span className="font-mono text-[11px] text-slate-400">
-            CoachBoard Junior A • Dades desades en segon pla (localStorage + Núvol)
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs rounded-lg transition cursor-pointer"
-          >
-            Tancar
-          </button>
-        </div>
-
       </div>
 
       {/* SUB-MODAL: BAREMOS MANAGER CONFIGURATION */}

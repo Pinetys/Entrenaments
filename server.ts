@@ -44,6 +44,16 @@ app.post("/api/ai/coach-advice", async (req, res) => {
 
     const qNotes = matchAnnotation.quarterNotes || {};
     const keyPoints = (matchAnnotation.tacticalKeyPoints || []).join("\n• ") || "Cap especificat";
+    const ts = matchAnnotation.teamStats || {};
+
+    const teamStatsSummary = `
+- Pases perduts (bad passes): ${ts.lostPasses || 0}
+- Altres pèrdues de pilota: ${ts.otherTurnovers || 0} (Total Pèrdues: ${(ts.lostPasses || 0) + (ts.otherTurnovers || 0)})
+- Tirs de 2 anotats/fallats: ${ts.fg2Made || 0} / ${ts.fg2Missed || 0} (${(ts.fg2Made || 0) + (ts.fg2Missed || 0) > 0 ? (((ts.fg2Made || 0) / ((ts.fg2Made || 0) + (ts.fg2Missed || 0))) * 100).toFixed(1) + '%' : 'N/A'})
+- Tirs de 3 anotats/fallats: ${ts.fg3Made || 0} / ${ts.fg3Missed || 0} (${(ts.fg3Made || 0) + (ts.fg3Missed || 0) > 0 ? (((ts.fg3Made || 0) / ((ts.fg3Made || 0) + (ts.fg3Missed || 0))) * 100).toFixed(1) + '%' : 'N/A'})
+- Tirs Lliures anotats/fallats: ${ts.ftMade || 0} / ${ts.ftMissed || 0} (${(ts.ftMade || 0) + (ts.ftMissed || 0) > 0 ? (((ts.ftMade || 0) / ((ts.ftMade || 0) + (ts.ftMissed || 0))) * 100).toFixed(1) + '%' : 'N/A'})
+- Rebots Ofensius: ${ts.offRebounds || 0} | Defensius: ${ts.defRebounds || 0} (Total: ${(ts.offRebounds || 0) + (ts.defRebounds || 0)})
+- Recuperacions de pilota: ${ts.steals || 0} | Faltes personals: ${ts.fouls || 0} | Taps: ${ts.blocks || 0}`;
 
     const prompt = `Ets un Entrenador Superior de Bàsquet i Director Tècnic d'alta competició de la Categoria Junior A a la Federació Catalana de Basquetbol (FCBQ).
 Analitza les següents anotacions d'un partit disputat per l'equip i recomana idees concretes, tasques i un enfocament per al pla d'entrenament de la setmana.
@@ -58,6 +68,8 @@ DADES DEL PARTIT:
 - 4t Quart: ${qNotes.q4 || "Sense dades"}
 - Pròrroga: ${qNotes.ot || "Sense dades"}
 - Observacions Generals: ${matchAnnotation.generalNotes || "Cap observació general"}
+- ESTADÍSTIQUES I PERCENTATGES DE L'EQUIP:
+${teamStatsSummary}
 - Punts tàctics remarcats pel cos tècnic:
 • ${keyPoints}
 

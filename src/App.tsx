@@ -433,17 +433,17 @@ export default function App() {
     });
   };
 
-  const handleSaveCurrentSessionAsTemplate = (name: string, category: string, description?: string) => {
-    const activeSession = sessions[selectedSessionId] || sessions['dia1'];
-    if (!activeSession || activeSession.drills.length === 0) return;
+  const handleSaveCurrentSessionAsTemplate = (name: string, category: string, description?: string, customSession?: TrainingSession) => {
+    const sessionToSave = customSession || sessions[selectedSessionId] || sessions['dia1'];
+    if (!sessionToSave || !sessionToSave.drills || sessionToSave.drills.length === 0) return;
 
     const newTemplate: SessionTemplate = {
       id: `tpl-custom-${Date.now()}`,
       name,
       category,
       description: description || '',
-      totalDuration: activeSession.drills.reduce((a, b) => a + (b.duration || 10), 0),
-      drills: activeSession.drills.map(d => ({
+      totalDuration: sessionToSave.drills.reduce((a, b) => a + (b.duration || 10), 0),
+      drills: sessionToSave.drills.map(d => ({
         drillId: d.drillId,
         duration: d.duration || 10,
         notes: d.notes || ''
@@ -702,7 +702,8 @@ export default function App() {
       completions,
       favoriteDrillIds,
       coachProfile,
-      players
+      players,
+      sessionTemplates
     };
     const currentStateString = JSON.stringify(currentState);
 

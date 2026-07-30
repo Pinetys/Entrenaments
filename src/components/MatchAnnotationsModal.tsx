@@ -19,9 +19,16 @@ import {
   Bot,
   Loader2,
   Lightbulb,
-  Wand2
+  Wand2,
+  BarChart3,
+  Percent,
+  Minus,
+  Target,
+  TrendingDown,
+  RotateCcw,
+  Shield
 } from 'lucide-react';
-import { WeeklyPlan, MatchAnnotation, QuarterNotes } from '../types';
+import { WeeklyPlan, MatchAnnotation, QuarterNotes, TeamStats } from '../types';
 
 interface MatchAnnotationsModalProps {
   isOpen: boolean;
@@ -88,6 +95,21 @@ export default function MatchAnnotationsModal({
   const [newKeyPoint, setNewKeyPoint] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
 
+  // Team Statistics Counter States
+  const [lostPasses, setLostPasses] = useState<number>(0);
+  const [otherTurnovers, setOtherTurnovers] = useState<number>(0);
+  const [fg2Made, setFg2Made] = useState<number>(0);
+  const [fg2Missed, setFg2Missed] = useState<number>(0);
+  const [fg3Made, setFg3Made] = useState<number>(0);
+  const [fg3Missed, setFg3Missed] = useState<number>(0);
+  const [ftMade, setFtMade] = useState<number>(0);
+  const [ftMissed, setFtMissed] = useState<number>(0);
+  const [offRebounds, setOffRebounds] = useState<number>(0);
+  const [defRebounds, setDefRebounds] = useState<number>(0);
+  const [steals, setSteals] = useState<number>(0);
+  const [fouls, setFouls] = useState<number>(0);
+  const [blocks, setBlocks] = useState<number>(0);
+
   // AI Advice states
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [loadingAi, setLoadingAi] = useState<boolean>(false);
@@ -113,9 +135,23 @@ export default function MatchAnnotationsModal({
       });
       setGeneralNotes(existing.generalNotes || '');
       setTacticalKeyPoints(existing.tacticalKeyPoints || []);
+
+      const ts = existing.teamStats || {};
+      setLostPasses(ts.lostPasses || 0);
+      setOtherTurnovers(ts.otherTurnovers || 0);
+      setFg2Made(ts.fg2Made || 0);
+      setFg2Missed(ts.fg2Missed || 0);
+      setFg3Made(ts.fg3Made || 0);
+      setFg3Missed(ts.fg3Missed || 0);
+      setFtMade(ts.ftMade || 0);
+      setFtMissed(ts.ftMissed || 0);
+      setOffRebounds(ts.offRebounds || 0);
+      setDefRebounds(ts.defRebounds || 0);
+      setSteals(ts.steals || 0);
+      setFouls(ts.fouls || 0);
+      setBlocks(ts.blocks || 0);
     } else {
       // Reset form
-      const dayObj = WEEKEND_MATCH_DAYS.find(d => d.index === selectedDateIndex);
       setOpponent('');
       setIsHome(true);
       setOurScore('');
@@ -123,6 +159,20 @@ export default function MatchAnnotationsModal({
       setQuarterNotes({ q1: '', q2: '', q3: '', q4: '', ot: '' });
       setGeneralNotes('');
       setTacticalKeyPoints([]);
+
+      setLostPasses(0);
+      setOtherTurnovers(0);
+      setFg2Made(0);
+      setFg2Missed(0);
+      setFg3Made(0);
+      setFg3Missed(0);
+      setFtMade(0);
+      setFtMissed(0);
+      setOffRebounds(0);
+      setDefRebounds(0);
+      setSteals(0);
+      setFouls(0);
+      setBlocks(0);
     }
   }, [selectedDateIndex, activePlan]);
 
@@ -139,7 +189,22 @@ export default function MatchAnnotationsModal({
       opponentScore: opponentScore ? parseInt(opponentScore) : undefined,
       quarterNotes,
       generalNotes: generalNotes.trim(),
-      tacticalKeyPoints
+      tacticalKeyPoints,
+      teamStats: {
+        lostPasses,
+        otherTurnovers,
+        fg2Made,
+        fg2Missed,
+        fg3Made,
+        fg3Missed,
+        ftMade,
+        ftMissed,
+        offRebounds,
+        defRebounds,
+        steals,
+        fouls,
+        blocks
+      }
     };
 
     try {
@@ -217,6 +282,71 @@ export default function MatchAnnotationsModal({
     setTacticalKeyPoints(prev => prev.filter((_, i) => i !== idx));
   };
 
+  // Statistical Calculations & Percentages
+  const totalTurnovers = lostPasses + otherTurnovers;
+  const totalFg2 = fg2Made + fg2Missed;
+  const fg2Pct = totalFg2 > 0 ? ((fg2Made / totalFg2) * 100).toFixed(1) : '0.0';
+
+  const totalFg3 = fg3Made + fg3Missed;
+  const fg3Pct = totalFg3 > 0 ? ((fg3Made / totalFg3) * 100).toFixed(1) : '0.0';
+
+  const totalFt = ftMade + ftMissed;
+  const ftPct = totalFt > 0 ? ((ftMade / totalFt) * 100).toFixed(1) : '0.0';
+
+  const totalFgMade = fg2Made + fg3Made;
+  const totalFgAttempts = totalFg2 + totalFg3;
+  const totalFgPct = totalFgAttempts > 0 ? ((totalFgMade / totalFgAttempts) * 100).toFixed(1) : '0.0';
+
+  const totalRebounds = offRebounds + defRebounds;
+
+  // Auto-generate improvement diagnostic list
+  const getAutoImprovementAspects = (): string[] => {
+    const aspects: string[] = [];
+    if (lostPasses >= 8) {
+      aspects.push(`⚠️ Elevat nombre de pases perduts (${lostPasses} pases erraments). Treballar l'angle de passada, la finta de passe i el desmarcatge.`);
+    }
+    if (totalTurnovers >= 14) {
+      aspects.push(`⚠️ Total de pèrdues de pilota elevat (${totalTurnovers} pèrdues). Prioritzar balanç defensiu i protecció de pilota.`);
+    }
+    if (totalFt > 0 && parseFloat(ftPct) < 70) {
+      aspects.push(`⚠️ Percentatge baix de Tirs Lliures (${ftPct}% - ${ftMade}/${totalFt}). Incorporar rutines de tir lliure sota fatiga.`);
+    }
+    if (totalFg3 > 0 && parseFloat(fg3Pct) < 30) {
+      aspects.push(`⚠️ Encert en Tir de 3 punts baix (${fg3Pct}% - ${fg3Made}/${totalFg3}). Millorar selecció de tir i mecanismes de peus.`);
+    }
+    if (totalFg2 > 0 && parseFloat(fg2Pct) < 45) {
+      aspects.push(`⚠️ Efectivitat en Tir de 2 punts baixa (${fg2Pct}% - ${fg2Made}/${totalFg2}). Treballar finalitzacions amb contacte.`);
+    }
+    if (offRebounds < 8 && (totalFg2 > 0 || totalFg3 > 0)) {
+      aspects.push(`⚠️ Pocs rebots ofensius (${offRebounds} rebots d'atac). Treballar l'agressivitat al rebot ofensiu des del costat feble.`);
+    }
+    return aspects;
+  };
+
+  const handleApplyAutoDiagnosticsToTacticalKeyPoints = () => {
+    const aspects = getAutoImprovementAspects();
+    if (aspects.length === 0) {
+      if (triggerToast) triggerToast('ℹ️ No s’han detectat millores crítiques de percentatge amb les dades actuals.');
+      return;
+    }
+
+    let addedCount = 0;
+    setTacticalKeyPoints(prev => {
+      const next = [...prev];
+      aspects.forEach(asp => {
+        if (!next.includes(asp)) {
+          next.push(asp);
+          addedCount++;
+        }
+      });
+      return next;
+    });
+
+    if (triggerToast) {
+      triggerToast(`✅ Afegits ${addedCount} aspectes a millorar als punts tàctics d'entrenament!`);
+    }
+  };
+
   const handleSave = () => {
     const dayObj = WEEKEND_MATCH_DAYS.find(d => d.index === selectedDateIndex);
     const annotation: MatchAnnotation = {
@@ -230,6 +360,21 @@ export default function MatchAnnotationsModal({
       quarterNotes,
       generalNotes: generalNotes.trim(),
       tacticalKeyPoints,
+      teamStats: {
+        lostPasses,
+        otherTurnovers,
+        fg2Made,
+        fg2Missed,
+        fg3Made,
+        fg3Missed,
+        ftMade,
+        ftMissed,
+        offRebounds,
+        defRebounds,
+        steals,
+        fouls,
+        blocks
+      },
       updatedAt: new Date().toISOString()
     };
 
@@ -251,6 +396,17 @@ export default function MatchAnnotationsModal({
     if (opponent) summary += `Rival: ${opponent} (${isHome ? 'Local 🏠' : 'Visitant ✈️'})\n`;
     if (ourScore || opponentScore) summary += `Resultat: ${ourScore || '0'} - ${opponentScore || '0'}\n`;
     summary += `-----------------------------------\n`;
+
+    if (totalTurnovers > 0 || totalFgAttempts > 0 || totalRebounds > 0) {
+      summary += `📊 ESTADÍSTIQUES I PERCENTATGES DE L'EQUIP:\n`;
+      summary += `• Pases Perduts: ${lostPasses} | Altres Pèrdues: ${otherTurnovers} (Total Pèrdues: ${totalTurnovers})\n`;
+      summary += `• Tirs de 2P: ${fg2Made}/${totalFg2} (${fg2Pct}%)\n`;
+      summary += `• Tirs de 3P: ${fg3Made}/${totalFg3} (${fg3Pct}%)\n`;
+      summary += `• Tirs Lliures (TL): ${ftMade}/${totalFt} (${ftPct}%)\n`;
+      summary += `• Tir de Camp Total (FG): ${totalFgMade}/${totalFgAttempts} (${totalFgPct}%)\n`;
+      summary += `• Rebots: ${offRebounds} Ofensius | ${defRebounds} Defensius (Total: ${totalRebounds})\n`;
+      summary += `• Recuperacions: ${steals} | Faltes: ${fouls} | Taps: ${blocks}\n\n`;
+    }
 
     if (quarterNotes.q1) summary += `📌 1r Quart:\n${quarterNotes.q1}\n\n`;
     if (quarterNotes.q2) summary += `📌 2n Quart:\n${quarterNotes.q2}\n\n`;
@@ -421,6 +577,425 @@ export default function MatchAnnotationsModal({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* TEAM MATCH STATISTICS & PERCENTAGES CARD */}
+          <div className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div>
+                <span className="text-xs font-black uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
+                  <BarChart3 size={15} className="text-orange-500" /> Estadístiques de Partit i Càlcul de Mitjanes de l'Equip
+                </span>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Registra les pèrdues de pilota, pases erraments, tirs i rebots per calcular percentatges en temps real i detectar punts a millorar.
+                </p>
+              </div>
+
+              {(totalTurnovers > 0 || totalFgAttempts > 0 || totalRebounds > 0) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLostPasses(0);
+                    setOtherTurnovers(0);
+                    setFg2Made(0);
+                    setFg2Missed(0);
+                    setFg3Made(0);
+                    setFg3Missed(0);
+                    setFtMade(0);
+                    setFtMissed(0);
+                    setOffRebounds(0);
+                    setDefRebounds(0);
+                    setSteals(0);
+                    setFouls(0);
+                    setBlocks(0);
+                  }}
+                  className="text-[10px] font-extrabold text-slate-400 hover:text-slate-700 flex items-center gap-1 cursor-pointer transition shrink-0"
+                  title="Reiniciar comptadors d'estadístiques"
+                >
+                  <RotateCcw size={12} /> Reiniciar comptadors
+                </button>
+              )}
+            </div>
+
+            {/* LIVE PERCENTAGE DASHBOARD BADGES */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Turnovers badge */}
+              <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center justify-between">
+                  <span>Pèrdues Totals</span>
+                  <span className="text-rose-600 font-mono font-black">{totalTurnovers}</span>
+                </span>
+                <div className="mt-1 flex items-baseline justify-between">
+                  <span className="text-xs font-black text-slate-800">
+                    {lostPasses} <span className="text-[10px] text-slate-400 font-normal">pases perduts</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {steals > 0 ? `(Rob: ${steals})` : ''}
+                  </span>
+                </div>
+              </div>
+
+              {/* 2P Shot % */}
+              <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center justify-between">
+                  <span>% Tir 2 Punts</span>
+                  <span className={`font-mono font-black ${parseFloat(fg2Pct) >= 50 ? 'text-emerald-600' : parseFloat(fg2Pct) > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                    {fg2Pct}%
+                  </span>
+                </span>
+                <div className="mt-1 flex items-baseline justify-between text-xs font-black text-slate-800">
+                  <span>{fg2Made} / {totalFg2}</span>
+                  <span className="text-[10px] text-slate-400 font-medium font-mono">fallats: {fg2Missed}</span>
+                </div>
+              </div>
+
+              {/* 3P Shot % */}
+              <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center justify-between">
+                  <span>% Tir 3 Punts</span>
+                  <span className={`font-mono font-black ${parseFloat(fg3Pct) >= 35 ? 'text-emerald-600' : parseFloat(fg3Pct) > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                    {fg3Pct}%
+                  </span>
+                </span>
+                <div className="mt-1 flex items-baseline justify-between text-xs font-black text-slate-800">
+                  <span>{fg3Made} / {totalFg3}</span>
+                  <span className="text-[10px] text-slate-400 font-medium font-mono">fallats: {fg3Missed}</span>
+                </div>
+              </div>
+
+              {/* FT Shot % */}
+              <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg flex flex-col justify-between">
+                <span className="text-[10px] font-extrabold uppercase text-slate-500 flex items-center justify-between">
+                  <span>% Tirs Lliures (TL)</span>
+                  <span className={`font-mono font-black ${parseFloat(ftPct) >= 70 ? 'text-emerald-600' : parseFloat(ftPct) > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                    {ftPct}%
+                  </span>
+                </span>
+                <div className="mt-1 flex items-baseline justify-between text-xs font-black text-slate-800">
+                  <span>{ftMade} / {totalFt}</span>
+                  <span className="text-[10px] text-slate-400 font-medium font-mono">fallats: {ftMissed}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CONTROLLERS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+              
+              {/* GROUP 1: TURNOVERS & PASSES */}
+              <div className="bg-rose-50/40 border border-rose-200/80 p-3 rounded-xl space-y-2.5">
+                <div className="flex items-center gap-1.5 text-rose-950 font-black text-xs uppercase tracking-wider border-b border-rose-200/60 pb-1.5">
+                  <TrendingDown size={14} className="text-rose-600" /> 1. Pèrdues de Pilota i Pases
+                </div>
+
+                {/* Lost passes counter */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>⚠️ Pases Perduts:</span>
+                    <span className="font-mono font-black text-rose-700 text-xs">{lostPasses}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setLostPasses(prev => Math.max(0, prev - 1))}
+                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={lostPasses}
+                      onChange={(e) => setLostPasses(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLostPasses(prev => prev + 1)}
+                      className="w-7 h-7 rounded bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Other turnovers counter */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>🚫 Altres Pèrdues (Passos/Violacions):</span>
+                    <span className="font-mono font-black text-rose-700 text-xs">{otherTurnovers}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setOtherTurnovers(prev => Math.max(0, prev - 1))}
+                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={otherTurnovers}
+                      onChange={(e) => setOtherTurnovers(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setOtherTurnovers(prev => prev + 1)}
+                      className="w-7 h-7 rounded bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Steals */}
+                <div className="space-y-1 pt-1 border-t border-rose-200/40">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>⚡ Recuperacions / Robades:</span>
+                    <span className="font-mono font-black text-emerald-700 text-xs">{steals}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setSteals(prev => Math.max(0, prev - 1))}
+                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={steals}
+                      onChange={(e) => setSteals(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSteals(prev => prev + 1)}
+                      className="w-7 h-7 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* GROUP 2: SHOOTING STATS (TIRS ANOTATS I FALLATS) */}
+              <div className="bg-amber-50/40 border border-amber-200/80 p-3 rounded-xl space-y-2.5">
+                <div className="flex items-center gap-1.5 text-amber-950 font-black text-xs uppercase tracking-wider border-b border-amber-200/60 pb-1.5">
+                  <Target size={14} className="text-amber-600" /> 2. Comptador de Tirs i Fallos
+                </div>
+
+                {/* Tiro 2P */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>🏀 Tiro de 2 Punts:</span>
+                    <span className="font-mono font-bold text-amber-900 text-[11px]">
+                      {fg2Made} Anot. / <span className="text-rose-600">{fg2Missed} Fall.</span>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFg2Made(prev => prev + 1)}
+                      className="py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                    >
+                      <Plus size={12} /> +1 Anotat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFg2Missed(prev => prev + 1)}
+                      className="py-1 px-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                    >
+                      <Plus size={12} /> +1 Fallat
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tiro 3P */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>🎯 Tiro de 3 Punts:</span>
+                    <span className="font-mono font-bold text-amber-900 text-[11px]">
+                      {fg3Made} Anot. / <span className="text-rose-600">{fg3Missed} Fall.</span>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFg3Made(prev => prev + 1)}
+                      className="py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                    >
+                      <Plus size={12} /> +1 Anotat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFg3Missed(prev => prev + 1)}
+                      className="py-1 px-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                    >
+                      <Plus size={12} /> +1 Fallat
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tirs lliures (TL) */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>📋 Tirs Lliures (TL):</span>
+                    <span className="font-mono font-bold text-amber-900 text-[11px]">
+                      {ftMade} Anot. / <span className="text-rose-600">{ftMissed} Fall.</span>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFtMade(prev => prev + 1)}
+                      className="py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                    >
+                      <Plus size={12} /> +1 TL Anotat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFtMissed(prev => prev + 1)}
+                      className="py-1 px-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10.5px] rounded transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                    >
+                      <Plus size={12} /> +1 TL Fallat
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* GROUP 3: REBOUNDS & DEFENSIVE DISCIPLINE */}
+              <div className="bg-sky-50/40 border border-sky-200/80 p-3 rounded-xl space-y-2.5">
+                <div className="flex items-center gap-1.5 text-sky-950 font-black text-xs uppercase tracking-wider border-b border-sky-200/60 pb-1.5">
+                  <Shield size={14} className="text-sky-600" /> 3. Rebots i Defensa
+                </div>
+
+                {/* Offensive Rebounds */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>💥 Rebot Ofensiu (Atac):</span>
+                    <span className="font-mono font-black text-sky-900 text-xs">{offRebounds}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setOffRebounds(prev => Math.max(0, prev - 1))}
+                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={offRebounds}
+                      onChange={(e) => setOffRebounds(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setOffRebounds(prev => prev + 1)}
+                      className="w-7 h-7 rounded bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Defensive Rebounds */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>🛡️ Rebot Defensiu:</span>
+                    <span className="font-mono font-black text-sky-900 text-xs">{defRebounds}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setDefRebounds(prev => Math.max(0, prev - 1))}
+                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={defRebounds}
+                      onChange={(e) => setDefRebounds(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setDefRebounds(prev => prev + 1)}
+                      className="w-7 h-7 rounded bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Fouls */}
+                <div className="space-y-1 pt-1 border-t border-sky-200/40">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                    <span>🛑 Faltes Personals de L'Equip:</span>
+                    <span className="font-mono font-black text-slate-900 text-xs">{fouls}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFouls(prev => Math.max(0, prev - 1))}
+                      className="w-7 h-7 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold transition cursor-pointer active:scale-95"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={fouls}
+                      onChange={(e) => setFouls(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="flex-1 text-center text-xs font-black font-mono py-1 bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFouls(prev => prev + 1)}
+                      className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* AUTOMATIC TEAM IMPROVEMENT DIAGNOSTICS */}
+            {getAutoImprovementAspects().length > 0 && (
+              <div className="bg-amber-50 border border-amber-300 p-3 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase text-amber-950 flex items-center gap-1.5">
+                    <Lightbulb size={15} className="text-amber-600" /> Diagnòstic Automàtic d'Aspectes a Millorar de l'Equip:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleApplyAutoDiagnosticsToTacticalKeyPoints}
+                    className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-[10px] uppercase tracking-wider rounded transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                  >
+                    <Plus size={12} /> Afegir a Punts Tàctics
+                  </button>
+                </div>
+                <div className="space-y-1 font-medium text-xs text-amber-900">
+                  {getAutoImprovementAspects().map((aspect, idx) => (
+                    <div key={idx} className="bg-white/80 p-2 rounded border border-amber-200 leading-snug">
+                      {aspect}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* QUARTER-BY-QUARTER LIVE NOTES & QUICK TAGS */}
