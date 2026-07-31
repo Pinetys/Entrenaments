@@ -39,7 +39,7 @@ import DrillManualBooklet from './components/DrillManualBooklet';
 import CoachProfileModal from './components/CoachProfileModal';
 import MatchAnnotationsModal from './components/MatchAnnotationsModal';
 import PlayerRosterModal from './components/PlayerRosterModal';
-import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile } from './lib/firebase';
+import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile, DEFAULT_SYNC_CODE } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
 
@@ -116,12 +116,11 @@ export default function App() {
       const savedCode = localStorage.getItem('basket_planner_sync_code');
       if (savedCode) return savedCode;
       
-      // Auto-generate on first-ever load so every device is ready
-      const newCode = generateSyncCode();
-      localStorage.setItem('basket_planner_sync_code', newCode);
-      return newCode;
+      // Auto-use DEFAULT_SYNC_CODE ('PINETY-JUNIORA') so computer and mobile share the exact same database by default
+      localStorage.setItem('basket_planner_sync_code', DEFAULT_SYNC_CODE);
+      return DEFAULT_SYNC_CODE;
     } catch (e) {}
-    return '';
+    return DEFAULT_SYNC_CODE;
   });
 
   const [isLinked, setIsLinked] = useState<boolean>(() => {
@@ -570,6 +569,7 @@ export default function App() {
     favoriteDrillIds: string[];
     coachProfile: CoachProfile;
     players: Player[];
+    sessionTemplates: SessionTemplate[];
   }>({
     drills: [],
     weeklyPlans: [],
@@ -578,7 +578,8 @@ export default function App() {
     completions: [],
     favoriteDrillIds: [],
     coachProfile: DEFAULT_COACH_PROFILE,
-    players: []
+    players: [],
+    sessionTemplates: []
   });
 
   // Keep latestStateRef updated on every render
@@ -590,7 +591,34 @@ export default function App() {
     completions,
     favoriteDrillIds,
     coachProfile,
-    players
+    players,
+    sessionTemplates
+  };
+
+  // Helper to build normalized state object with all fields strictly typed
+  const buildNormalizedState = (customData?: Partial<{
+    drills: Drill[];
+    weeklyPlans: WeeklyPlan[];
+    selectedWeeklyPlanId: string;
+    selectedSessionId: string;
+    completions: any[];
+    favoriteDrillIds: string[];
+    coachProfile: CoachProfile;
+    players: Player[];
+    sessionTemplates: SessionTemplate[];
+  }>) => {
+    const cur = latestStateRef.current;
+    return {
+      drills: customData?.drills || cur.drills || drills,
+      weeklyPlans: (customData?.weeklyPlans && customData.weeklyPlans.length > 0) ? customData.weeklyPlans : (cur.weeklyPlans && cur.weeklyPlans.length > 0 ? cur.weeklyPlans : weeklyPlans),
+      selectedWeeklyPlanId: customData?.selectedWeeklyPlanId || cur.selectedWeeklyPlanId || selectedWeeklyPlanId || 'plan-default',
+      selectedSessionId: customData?.selectedSessionId || cur.selectedSessionId || selectedSessionId || 'dia1',
+      completions: customData?.completions || cur.completions || completions || [],
+      favoriteDrillIds: customData?.favoriteDrillIds || cur.favoriteDrillIds || favoriteDrillIds || [],
+      coachProfile: customData?.coachProfile || cur.coachProfile || coachProfile || DEFAULT_COACH_PROFILE,
+      players: customData?.players || cur.players || players || [],
+      sessionTemplates: customData?.sessionTemplates || cur.sessionTemplates || sessionTemplates || []
+    };
   };
 
   const triggerToast = (msg: string) => {
@@ -618,7 +646,7 @@ export default function App() {
       localStorage.setItem('basket_planner_sync_code', sanitized);
       localStorage.setItem('basket_planner_sync_code_manually_entered', 'true');
       
-      // Clean up URL parameter to avoid bookmark/refresh loops with old parameters, but preserve hash parameter so hash router doesn't break
+      // Clean up URL parameter to avoid bookmark/refresh loops with old parameters
       try {
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.hash;
         window.history.replaceState({ path: newUrl }, '', newUrl);
@@ -639,15 +667,16 @@ export default function App() {
               }
             });
 
-            setDrills(mergedDrills);
-
+            if (mergedDrills.length > 0) setDrills(mergedDrills);
             if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
             if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
             if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
             if (cloudData.completions) setCompletions(cloudData.completions);
             if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
             if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
-            
+            if (cloudData.players && Array.isArray(cloudData.players)) setPlayers(cloudData.players);
+            if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) setSessionTemplates(cloudData.sessionTemplates);
+
             setSyncCode(codeToUse);
             if (cloudData.updatedAt) {
               setLastSynced(new Date(cloudData.updatedAt));
@@ -657,21 +686,36 @@ export default function App() {
               lastSavedTimeStrRef.current = null;
             }
 
-            lastSeenStateStringRef.current = JSON.stringify({
+            const normState = buildNormalizedState({
               drills: mergedDrills,
-              weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans : latestStateRef.current.weeklyPlans,
-              selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
-              selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
-              completions: cloudData.completions || latestStateRef.current.completions,
-              favoriteDrillIds: cloudData.favoriteDrillIds || latestStateRef.current.favoriteDrillIds,
-              coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
+              weeklyPlans: cloudData.weeklyPlans,
+              selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
+              selectedSessionId: cloudData.selectedSessionId,
+              completions: cloudData.completions,
+              favoriteDrillIds: cloudData.favoriteDrillIds,
+              coachProfile: cloudData.coachProfile,
+              players: cloudData.players,
+              sessionTemplates: cloudData.sessionTemplates
             });
 
+            const stateStr = JSON.stringify(normState);
+            lastSeenStateStringRef.current = stateStr;
             ignoreNextAutoSaveRef.current = true;
+
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
+            } catch (e) {}
+
             triggerToast('🔄 Dades sincronitzades correctament des del núvol!');
           } else {
-            // Document doesn't exist yet, we will save the current data for it
+            // Document doesn't exist yet in cloud, save current local state so it initializes in Firestore
             setSyncCode(codeToUse);
+            const initialState = buildNormalizedState();
+            saveToCloud(codeToUse, initialState).then((savedTime) => {
+              setLastSynced(new Date(savedTime));
+              lastSavedTimeStrRef.current = savedTime;
+              lastSeenStateStringRef.current = JSON.stringify(initialState);
+            }).catch(() => {});
           }
         })
         .catch(err => {
@@ -682,10 +726,6 @@ export default function App() {
           setHasLoadedFromCloud(true);
         });
     } else {
-      // If there is no code, we generate one
-      const newCode = generateSyncCode();
-      setSyncCode(newCode);
-      localStorage.setItem('basket_planner_sync_code', newCode);
       setHasLoadedFromCloud(true);
     }
   }, []);
@@ -694,7 +734,7 @@ export default function App() {
   useEffect(() => {
     if (!hasLoadedFromCloud || !syncCode) return;
 
-    const currentState = {
+    const currentState = buildNormalizedState({
       drills,
       weeklyPlans,
       selectedWeeklyPlanId,
@@ -704,10 +744,10 @@ export default function App() {
       coachProfile,
       players,
       sessionTemplates
-    };
+    });
     const currentStateString = JSON.stringify(currentState);
 
-    // Also persist to localStorage for instant client reload and Render resilience
+    // Persist to localStorage for instant client reload
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
     } catch (e) {}
@@ -737,14 +777,14 @@ export default function App() {
       } finally {
         setIsSyncing(false);
       }
-    }, 2000); // reduced timeout to 2 seconds for faster cloud backup response
+    }, 1500);
 
     return () => clearTimeout(timer);
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, syncCode, hasLoadedFromCloud]);
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, sessionTemplates, syncCode, hasLoadedFromCloud]);
 
   const handleForceSaveSession = async () => {
     setIsSyncing(true);
-    const currentState = {
+    const currentState = buildNormalizedState({
       drills,
       weeklyPlans,
       selectedWeeklyPlanId,
@@ -752,8 +792,9 @@ export default function App() {
       completions,
       favoriteDrillIds,
       coachProfile,
-      players
-    };
+      players,
+      sessionTemplates
+    });
     const currentStateString = JSON.stringify(currentState);
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
@@ -762,8 +803,9 @@ export default function App() {
         setLastSynced(new Date(savedTimeStr));
         lastSavedTimeStrRef.current = savedTimeStr;
         lastSeenStateStringRef.current = currentStateString;
+        ignoreNextAutoSaveRef.current = true;
       }
-      triggerToast('💾 Sessió i planificació desades immediatament a la memòria i al núvol!');
+      triggerToast(`💾 Sessió desada i sincronitzada immediatament al núvol! (Codi: ${syncCode})`);
     } catch (e: any) {
       triggerToast('💾 Sessió desada localment a la memòria del navegador.');
     } finally {
@@ -778,14 +820,10 @@ export default function App() {
     const unsubscribe = subscribeToCloud(syncCode, (cloudData) => {
       if (!cloudData) return;
 
-      // Check if cloudData is actually newer than our last saved/synced updatedAt timestamp
-      // Comparing raw strings avoids any client clock skew or timezone offsets.
       if (cloudData.updatedAt && lastSavedTimeStrRef.current && cloudData.updatedAt === lastSavedTimeStrRef.current) {
-        // This update is our own write (or we already applied it), skip updating to avoid local reset
         return;
       }
 
-      // Update local state from cloud using the latest non-stale state from latestStateRef
       const currentLocalDrills = latestStateRef.current.drills;
       let mergedDrills = currentLocalDrills;
 
@@ -822,6 +860,9 @@ export default function App() {
       if (cloudData.players && Array.isArray(cloudData.players)) {
         setPlayers(cloudData.players);
       }
+      if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) {
+        setSessionTemplates(cloudData.sessionTemplates);
+      }
 
       if (cloudData.updatedAt) {
         setLastSynced(new Date(cloudData.updatedAt));
@@ -832,22 +873,27 @@ export default function App() {
         lastSavedTimeStrRef.current = fallbackNow.toISOString();
       }
 
-      // Important: Update lastSeenStateStringRef to the exact applied state to block redundant auto-saves
-      const appliedState = {
+      const appliedState = buildNormalizedState({
         drills: mergedDrills,
-        weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans : latestStateRef.current.weeklyPlans,
-        selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
-        selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
-        completions: cloudData.completions || latestStateRef.current.completions,
-        favoriteDrillIds: cloudData.favoriteDrillIds || latestStateRef.current.favoriteDrillIds,
-        coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
-      };
+        weeklyPlans: cloudData.weeklyPlans,
+        selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
+        selectedSessionId: cloudData.selectedSessionId,
+        completions: cloudData.completions,
+        favoriteDrillIds: cloudData.favoriteDrillIds,
+        coachProfile: cloudData.coachProfile,
+        players: cloudData.players,
+        sessionTemplates: cloudData.sessionTemplates
+      });
       
-      lastSeenStateStringRef.current = JSON.stringify(appliedState);
+      const appliedString = JSON.stringify(appliedState);
+      lastSeenStateStringRef.current = appliedString;
       ignoreNextAutoSaveRef.current = true;
+
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, appliedString);
+      } catch (e) {}
       
-      // Silent in-background synchronization (no continuous toasts to prevent UX noise)
-      console.log('🔄 Sincronització en segon pla completada correctament.');
+      console.log('🔄 Sincronització en segon pla completada correctament des del núvol.');
     });
 
     return () => unsubscribe();
@@ -987,15 +1033,8 @@ export default function App() {
     setShowSyncModal(true);
     if (syncCode && hasLoadedFromCloud) {
       setIsSyncing(true);
-      saveToCloud(syncCode, {
-        drills,
-        weeklyPlans,
-        selectedWeeklyPlanId,
-        selectedSessionId,
-        completions,
-        favoriteDrillIds,
-        coachProfile
-      }).then((savedTimeStr) => {
+      const stateToSave = buildNormalizedState();
+      saveToCloud(syncCode, stateToSave).then((savedTimeStr) => {
         setLastSynced(new Date(savedTimeStr));
       }).catch(e => {
         console.warn('Auto-save on opening sync modal failed:', e);
@@ -1028,6 +1067,8 @@ export default function App() {
       let mergedCompletions = completions;
       let mergedFavs = favoriteDrillIds;
       let mergedProfile = coachProfile;
+      let mergedPlayers = players;
+      let mergedTemplates = sessionTemplates;
 
       if (cloudData) {
         // 2. Bidirectional Merge: Drills (Union of both lists by id)
@@ -1049,20 +1090,24 @@ export default function App() {
         const cloudFavs = cloudData.favoriteDrillIds || [];
         mergedFavs = Array.from(new Set([...cloudFavs, ...favoriteDrillIds]));
 
-        // 6. Merge Coach Profile
+        // 6. Merge Coach Profile, Players, and Templates
         mergedProfile = cloudData.coachProfile || coachProfile;
+        mergedPlayers = (cloudData.players && cloudData.players.length > 0) ? cloudData.players : players;
+        mergedTemplates = (cloudData.sessionTemplates && cloudData.sessionTemplates.length > 0) ? cloudData.sessionTemplates : sessionTemplates;
       }
 
       // 7. Push merged state back to cloud
-      const currentState = {
+      const currentState = buildNormalizedState({
         drills: mergedDrills,
         weeklyPlans: mergedPlans,
         selectedWeeklyPlanId,
         selectedSessionId,
         completions: mergedCompletions,
         favoriteDrillIds: mergedFavs,
-        coachProfile: mergedProfile
-      };
+        coachProfile: mergedProfile,
+        players: mergedPlayers,
+        sessionTemplates: mergedTemplates
+      });
 
       const savedTimeStr = await saveToCloud(syncCode, currentState);
       
@@ -1073,6 +1118,8 @@ export default function App() {
       setCompletions(mergedCompletions);
       setFavoriteDrillIds(mergedFavs);
       setCoachProfile(mergedProfile);
+      setPlayers(mergedPlayers);
+      setSessionTemplates(mergedTemplates);
 
       setLastSynced(new Date(savedTimeStr));
       lastSavedTimeStrRef.current = savedTimeStr;
@@ -2246,7 +2293,7 @@ export default function App() {
                   <input
                     id="input-sync-code"
                     type="text"
-                    placeholder="Ex: PINETY-ABCD o ABCD"
+                    placeholder="Ex: PINETY-JUNIORA o ABCD"
                     value={inputSyncCode}
                     onChange={(e) => setInputSyncCode(e.target.value)}
                     className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono flex-1 focus:outline-none focus:ring-1 focus:ring-amber-500 uppercase"
@@ -2260,6 +2307,16 @@ export default function App() {
                     {isSyncing ? 'Sincronitzant...' : 'Enllaçar'}
                   </button>
                 </div>
+
+                <button
+                  id="btn-use-default-sync-code"
+                  type="button"
+                  onClick={() => handleLoadCloudData(DEFAULT_SYNC_CODE)}
+                  disabled={isSyncing}
+                  className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 font-bold text-[11px] rounded-xl transition border border-emerald-200/80 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs mt-2"
+                >
+                  💚 Vincular al Codi Predeterminat de l'Equip ({DEFAULT_SYNC_CODE})
+                </button>
               </div>
 
             </div>

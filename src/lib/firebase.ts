@@ -21,6 +21,8 @@ export interface CoachProfile {
   avatar: string;
 }
 
+export const DEFAULT_SYNC_CODE = 'PINETY-JUNIORA';
+
 export interface SyncData {
   drills: any[];
   weeklyPlans: any[];
@@ -32,6 +34,7 @@ export interface SyncData {
   syncCode: string;
   coachProfile?: CoachProfile;
   players?: any[];
+  sessionTemplates?: any[];
 }
 
 // Function to generate a random 6-character alphanumeric code
