@@ -35,6 +35,7 @@ export interface SyncData {
   coachProfile?: CoachProfile;
   players?: any[];
   sessionTemplates?: any[];
+  baremosConfig?: any[];
 }
 
 // Function to generate a random 6-character alphanumeric code

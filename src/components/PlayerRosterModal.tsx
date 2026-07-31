@@ -31,6 +31,8 @@ interface PlayerRosterModalProps {
   onAddPlayer: (newPlayer: Omit<Player, 'id'>) => void;
   onUpdatePlayer: (id: string, updated: Partial<Player>) => void;
   onDeletePlayer: (id: string) => void;
+  baremosConfig?: BaremoItem[];
+  onUpdateBaremosConfig?: (newList: BaremoItem[]) => void;
   triggerToast?: (msg: string) => void;
 }
 
@@ -59,6 +61,8 @@ export default function PlayerRosterModal({
   onAddPlayer,
   onUpdatePlayer,
   onDeletePlayer,
+  baremosConfig,
+  onUpdateBaremosConfig,
   triggerToast
 }: PlayerRosterModalProps) {
   if (!isOpen) return null;
@@ -72,18 +76,7 @@ export default function PlayerRosterModal({
   const [mobileTab, setMobileTab] = useState<'list' | 'detail'>('list');
 
   // Baremo configuration state
-  const [baremos, setBaremos] = useState<BaremoItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('coachboard_baremos_config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {
-      console.error('Error loading baremos config:', e);
-    }
-    return DEFAULT_BAREMOS;
-  });
+  const baremos = (baremosConfig && baremosConfig.length > 0) ? baremosConfig : DEFAULT_BAREMOS;
 
   const [showBaremoModal, setShowBaremoModal] = useState(false);
   const [newBaremoLabel, setNewBaremoLabel] = useState('');
@@ -107,7 +100,9 @@ export default function PlayerRosterModal({
   const [newImprovement, setNewImprovement] = useState('');
 
   const saveBaremosList = (newList: BaremoItem[]) => {
-    setBaremos(newList);
+    if (onUpdateBaremosConfig) {
+      onUpdateBaremosConfig(newList);
+    }
     try {
       localStorage.setItem('coachboard_baremos_config', JSON.stringify(newList));
     } catch (e) {

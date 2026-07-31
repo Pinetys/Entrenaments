@@ -38,7 +38,7 @@ import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import CoachProfileModal from './components/CoachProfileModal';
 import MatchAnnotationsModal from './components/MatchAnnotationsModal';
-import PlayerRosterModal from './components/PlayerRosterModal';
+import PlayerRosterModal, { DEFAULT_BAREMOS, BaremoItem } from './components/PlayerRosterModal';
 import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile, DEFAULT_SYNC_CODE } from './lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
@@ -142,7 +142,6 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const lastSavedTimeStrRef = useRef<string | null>(null);
   const lastSeenStateStringRef = useRef<string | null>(null);
-  const ignoreNextAutoSaveRef = useRef<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem('basket_planner_coach_profile', JSON.stringify(coachProfile));
@@ -302,7 +301,34 @@ export default function App() {
     return DEFAULT_JUNIOR_PLAYERS;
   });
 
+  const [baremosConfig, setBaremosConfig] = useState<BaremoItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('coachboard_baremos_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_BAREMOS;
+  });
+
   const [showPlayerRosterModal, setShowPlayerRosterModal] = useState<boolean>(false);
+
+  const syncStateToCloudImmediately = (overrideState?: any) => {
+    if (!syncCode || !hasLoadedFromCloud) return;
+    const newState = buildNormalizedState(overrideState);
+    const newStateStr = JSON.stringify(newState);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, newStateStr);
+    } catch (e) {}
+    saveToCloud(syncCode, newState).then(savedTime => {
+      setLastSynced(new Date(savedTime));
+      lastSavedTimeStrRef.current = savedTime;
+      lastSeenStateStringRef.current = newStateStr;
+    }).catch(err => {
+      console.warn('Instant cloud sync failed:', err);
+    });
+  };
 
   const handleAddPlayer = (newPlayer: Omit<Player, 'id'>) => {
     const created: Player = {
@@ -310,15 +336,21 @@ export default function App() {
       id: `player-${Date.now()}`,
       updatedAt: new Date().toISOString()
     };
-    setPlayers(prev => [...prev, created]);
+    const nextPlayers = [...players, created];
+    setPlayers(nextPlayers);
+    syncStateToCloudImmediately({ players: nextPlayers });
   };
 
   const handleUpdatePlayer = (id: string, updated: Partial<Player>) => {
-    setPlayers(prev => prev.map(p => p.id === id ? { ...p, ...updated, updatedAt: new Date().toISOString() } : p));
+    const nextPlayers = players.map(p => p.id === id ? { ...p, ...updated, updatedAt: new Date().toISOString() } : p);
+    setPlayers(nextPlayers);
+    syncStateToCloudImmediately({ players: nextPlayers });
   };
 
   const handleDeletePlayer = (id: string) => {
-    setPlayers(prev => prev.filter(p => p.id !== id));
+    const nextPlayers = players.filter(p => p.id !== id);
+    setPlayers(nextPlayers);
+    syncStateToCloudImmediately({ players: nextPlayers });
   };
 
   // Match annotations state
@@ -570,6 +602,7 @@ export default function App() {
     coachProfile: CoachProfile;
     players: Player[];
     sessionTemplates: SessionTemplate[];
+    baremosConfig: BaremoItem[];
   }>({
     drills: [],
     weeklyPlans: [],
@@ -579,7 +612,8 @@ export default function App() {
     favoriteDrillIds: [],
     coachProfile: DEFAULT_COACH_PROFILE,
     players: [],
-    sessionTemplates: []
+    sessionTemplates: [],
+    baremosConfig: DEFAULT_BAREMOS
   });
 
   // Keep latestStateRef updated on every render
@@ -592,7 +626,8 @@ export default function App() {
     favoriteDrillIds,
     coachProfile,
     players,
-    sessionTemplates
+    sessionTemplates,
+    baremosConfig
   };
 
   // Helper to build normalized state object with all fields strictly typed
@@ -606,6 +641,7 @@ export default function App() {
     coachProfile: CoachProfile;
     players: Player[];
     sessionTemplates: SessionTemplate[];
+    baremosConfig: BaremoItem[];
   }>) => {
     const cur = latestStateRef.current;
     return {
@@ -617,7 +653,8 @@ export default function App() {
       favoriteDrillIds: customData?.favoriteDrillIds || cur.favoriteDrillIds || favoriteDrillIds || [],
       coachProfile: customData?.coachProfile || cur.coachProfile || coachProfile || DEFAULT_COACH_PROFILE,
       players: customData?.players || cur.players || players || [],
-      sessionTemplates: customData?.sessionTemplates || cur.sessionTemplates || sessionTemplates || []
+      sessionTemplates: customData?.sessionTemplates || cur.sessionTemplates || sessionTemplates || [],
+      baremosConfig: customData?.baremosConfig || cur.baremosConfig || baremosConfig || DEFAULT_BAREMOS
     };
   };
 
@@ -676,6 +713,9 @@ export default function App() {
             if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
             if (cloudData.players && Array.isArray(cloudData.players)) setPlayers(cloudData.players);
             if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) setSessionTemplates(cloudData.sessionTemplates);
+            if (cloudData.baremosConfig && Array.isArray(cloudData.baremosConfig) && cloudData.baremosConfig.length > 0) {
+              setBaremosConfig(cloudData.baremosConfig);
+            }
 
             setSyncCode(codeToUse);
             if (cloudData.updatedAt) {
@@ -695,12 +735,12 @@ export default function App() {
               favoriteDrillIds: cloudData.favoriteDrillIds,
               coachProfile: cloudData.coachProfile,
               players: cloudData.players,
-              sessionTemplates: cloudData.sessionTemplates
+              sessionTemplates: cloudData.sessionTemplates,
+              baremosConfig: cloudData.baremosConfig
             });
 
             const stateStr = JSON.stringify(normState);
             lastSeenStateStringRef.current = stateStr;
-            ignoreNextAutoSaveRef.current = true;
 
             try {
               localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
@@ -743,7 +783,8 @@ export default function App() {
       favoriteDrillIds,
       coachProfile,
       players,
-      sessionTemplates
+      sessionTemplates,
+      baremosConfig
     });
     const currentStateString = JSON.stringify(currentState);
 
@@ -751,12 +792,6 @@ export default function App() {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
     } catch (e) {}
-
-    if (ignoreNextAutoSaveRef.current) {
-      ignoreNextAutoSaveRef.current = false;
-      lastSeenStateStringRef.current = currentStateString;
-      return;
-    }
 
     // If local state hasn't changed relative to what was last saved or loaded from the cloud, SKIP saving!
     if (lastSeenStateStringRef.current === currentStateString) {
@@ -777,10 +812,10 @@ export default function App() {
       } finally {
         setIsSyncing(false);
       }
-    }, 1500);
+    }, 1000);
 
     return () => clearTimeout(timer);
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, sessionTemplates, syncCode, hasLoadedFromCloud]);
+  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, sessionTemplates, baremosConfig, syncCode, hasLoadedFromCloud]);
 
   const handleForceSaveSession = async () => {
     setIsSyncing(true);
@@ -793,7 +828,8 @@ export default function App() {
       favoriteDrillIds,
       coachProfile,
       players,
-      sessionTemplates
+      sessionTemplates,
+      baremosConfig
     });
     const currentStateString = JSON.stringify(currentState);
     try {
@@ -803,7 +839,6 @@ export default function App() {
         setLastSynced(new Date(savedTimeStr));
         lastSavedTimeStrRef.current = savedTimeStr;
         lastSeenStateStringRef.current = currentStateString;
-        ignoreNextAutoSaveRef.current = true;
       }
       triggerToast(`💾 Sessió desada i sincronitzada immediatament al núvol! (Codi: ${syncCode})`);
     } catch (e: any) {
@@ -863,6 +898,9 @@ export default function App() {
       if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) {
         setSessionTemplates(cloudData.sessionTemplates);
       }
+      if (cloudData.baremosConfig && Array.isArray(cloudData.baremosConfig) && cloudData.baremosConfig.length > 0) {
+        setBaremosConfig(cloudData.baremosConfig);
+      }
 
       if (cloudData.updatedAt) {
         setLastSynced(new Date(cloudData.updatedAt));
@@ -882,12 +920,12 @@ export default function App() {
         favoriteDrillIds: cloudData.favoriteDrillIds,
         coachProfile: cloudData.coachProfile,
         players: cloudData.players,
-        sessionTemplates: cloudData.sessionTemplates
+        sessionTemplates: cloudData.sessionTemplates,
+        baremosConfig: cloudData.baremosConfig
       });
       
       const appliedString = JSON.stringify(appliedState);
       lastSeenStateStringRef.current = appliedString;
-      ignoreNextAutoSaveRef.current = true;
 
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, appliedString);
@@ -1003,17 +1041,19 @@ export default function App() {
           lastSavedTimeStrRef.current = null;
         }
 
-        lastSeenStateStringRef.current = JSON.stringify({
+        lastSeenStateStringRef.current = JSON.stringify(buildNormalizedState({
           drills: mergedDrills,
           weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans : latestStateRef.current.weeklyPlans,
           selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
           selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
           completions: cloudData.completions || latestStateRef.current.completions,
           favoriteDrillIds: cloudData.favoriteDrillIds || latestStateRef.current.favoriteDrillIds,
-          coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile
-        });
+          coachProfile: cloudData.coachProfile || latestStateRef.current.coachProfile,
+          players: cloudData.players || latestStateRef.current.players,
+          sessionTemplates: cloudData.sessionTemplates || latestStateRef.current.sessionTemplates,
+          baremosConfig: cloudData.baremosConfig || latestStateRef.current.baremosConfig
+        }));
 
-        ignoreNextAutoSaveRef.current = true;
         setShowSyncModal(false);
         triggerToast('🔄 Sincronització completada amb èxit! Dades recuperades.');
       } else {
@@ -1069,6 +1109,7 @@ export default function App() {
       let mergedProfile = coachProfile;
       let mergedPlayers = players;
       let mergedTemplates = sessionTemplates;
+      let mergedBaremos = baremosConfig;
 
       if (cloudData) {
         // 2. Bidirectional Merge: Drills (Union of both lists by id)
@@ -1090,10 +1131,11 @@ export default function App() {
         const cloudFavs = cloudData.favoriteDrillIds || [];
         mergedFavs = Array.from(new Set([...cloudFavs, ...favoriteDrillIds]));
 
-        // 6. Merge Coach Profile, Players, and Templates
+        // 6. Merge Coach Profile, Players, Templates and Baremos
         mergedProfile = cloudData.coachProfile || coachProfile;
         mergedPlayers = (cloudData.players && cloudData.players.length > 0) ? cloudData.players : players;
         mergedTemplates = (cloudData.sessionTemplates && cloudData.sessionTemplates.length > 0) ? cloudData.sessionTemplates : sessionTemplates;
+        mergedBaremos = (cloudData.baremosConfig && cloudData.baremosConfig.length > 0) ? cloudData.baremosConfig : baremosConfig;
       }
 
       // 7. Push merged state back to cloud
@@ -1106,13 +1148,13 @@ export default function App() {
         favoriteDrillIds: mergedFavs,
         coachProfile: mergedProfile,
         players: mergedPlayers,
-        sessionTemplates: mergedTemplates
+        sessionTemplates: mergedTemplates,
+        baremosConfig: mergedBaremos
       });
 
       const savedTimeStr = await saveToCloud(syncCode, currentState);
       
       // 8. Update local state with the merged version
-      ignoreNextAutoSaveRef.current = true;
       setDrills(mergedDrills);
       setWeeklyPlans(mergedPlans);
       setCompletions(mergedCompletions);
@@ -1120,6 +1162,7 @@ export default function App() {
       setCoachProfile(mergedProfile);
       setPlayers(mergedPlayers);
       setSessionTemplates(mergedTemplates);
+      setBaremosConfig(mergedBaremos);
 
       setLastSynced(new Date(savedTimeStr));
       lastSavedTimeStrRef.current = savedTimeStr;
@@ -2411,6 +2454,14 @@ export default function App() {
           onAddPlayer={handleAddPlayer}
           onUpdatePlayer={handleUpdatePlayer}
           onDeletePlayer={handleDeletePlayer}
+          baremosConfig={baremosConfig}
+          onUpdateBaremosConfig={(newBaremos) => {
+            setBaremosConfig(newBaremos);
+            try {
+              localStorage.setItem('coachboard_baremos_config', JSON.stringify(newBaremos));
+            } catch (e) {}
+            syncStateToCloudImmediately({ baremosConfig: newBaremos });
+          }}
           triggerToast={triggerToast}
         />
       )}
