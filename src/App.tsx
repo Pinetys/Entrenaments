@@ -777,9 +777,18 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlSyncCode = params.get('sync');
+    const urlView = params.get('view');
+    const urlSession = params.get('session');
     
     let codeToUse = urlSyncCode || localStorage.getItem('basket_planner_sync_code') || DEFAULT_SYNC_CODE;
     
+    if (urlView) {
+      setActiveView(urlView);
+    }
+    if (urlSession) {
+      setSelectedSessionId(urlSession);
+    }
+
     if (urlSyncCode) {
       let sanitized = urlSyncCode.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase();
       if (!sanitized.startsWith('PINETY-') && sanitized.length === 4) {
@@ -1429,98 +1438,52 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashRouter);
   }, []);
 
-  // Generate compact, un-bloated mobile link using the server-side short URL service (protects QR sizes!)
+  // Generate direct mobile court QR link seamlessly connected with Firestore real-time cloud sync
   const handleGenerateShareCode = async () => {
     try {
-      const activeSession = sessions[selectedSessionId] || sessions['dia1'] || { drills: [] };
-      const scheduledDrillIds = new Set((activeSession.drills || []).map(d => d.drillId));
-      
-      // Keep only paths with coordinate points to avoid bloat, and only drills scheduled in activeSession
-      const compactDrills = drills
-        .filter(d => scheduledDrillIds.has(d.id))
-        .map(d => {
-          // If there are multiple boardStates in the drill, keep them but compact their paths too
-          const compactBoardStates = (d.boardStates || []).map(state => ({
-            ...state,
-            pins: state.pins || [],
-            paths: (state.paths || []).map(p => ({
-              ...p,
-              points: p.points ? p.points.slice(0, 30) : []
-            }))
-          }));
-
-          return {
-            ...d,
-            boardState: {
-              pins: d.boardState?.pins || [],
-              paths: (d.boardState?.paths || []).map(p => ({
-                ...p,
-                points: p.points ? p.points.slice(0, 30) : []
-              }))
-            },
-            boardStates: compactBoardStates
-          };
-        });
-
-      const dataToPack = {
-        compactSession: activeSession,
-        compactDrills,
-        selectedSessionId
-      };
-
-      const response = await fetch('/api/share-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payload: dataToPack })
+      setIsSyncing(true);
+      const nowIso = new Date().toISOString();
+      const currentState = buildNormalizedState({
+        drills,
+        weeklyPlans,
+        selectedWeeklyPlanId,
+        selectedSessionId,
+        completions,
+        favoriteDrillIds,
+        coachProfile,
+        players,
+        sessionTemplates,
+        baremosConfig
       });
-
-      if (!response.ok) {
-        throw new Error('Sessió nos s’ha pogut desar al servidor');
+      const stateWithTimestamp = { ...currentState, updatedAt: nowIso };
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateWithTimestamp));
+        if (syncCode) {
+          const savedTimeStr = await saveToCloud(syncCode, currentState);
+          setLastSynced(new Date(savedTimeStr));
+          lastSavedTimeStrRef.current = savedTimeStr;
+          lastSavedDataJsonRef.current = JSON.stringify(currentState);
+        }
+      } catch (e) {
+        console.warn('Sync before share warning:', e);
+      } finally {
+        setIsSyncing(false);
       }
 
-      const resJson = await response.json();
-      if (!resJson.success || !resJson.code) {
-        throw new Error('Codi de resposta no vàlid');
-      }
-
-      const absoluteUrl = `${window.location.origin}${window.location.pathname}?sync=${syncCode}#plan=${resJson.code}`;
+      const activeCode = syncCode || DEFAULT_SYNC_CODE;
+      const targetSession = selectedSessionId || 'dia1';
+      const absoluteUrl = `${window.location.origin}${window.location.pathname}?sync=${encodeURIComponent(activeCode)}&view=mobile&session=${encodeURIComponent(targetSession)}`;
       setShareUrl(absoluteUrl);
       setShowShareModal(true);
       setCopied(false);
-    } catch (e) {
-      console.warn('Could not store state in server, falling back to local base64 compression', e);
-      // Fallback base64 link support (guarantees offline support!)
-      try {
-        const activeSession = sessions[selectedSessionId] || sessions['dia1'] || { drills: [] };
-        const scheduledDrillIds = new Set((activeSession.drills || []).map(d => d.drillId));
-        const compactDrills = drills
-          .filter(d => scheduledDrillIds.has(d.id))
-          .map(d => ({
-            ...d,
-            boardState: {
-              pins: d.boardState?.pins || [],
-              paths: (d.boardState?.paths || []).map(p => ({
-                ...p,
-                points: p.points ? p.points.slice(0, 30) : []
-              }))
-            }
-          }));
-
-        const dataToPack = {
-          compactSession: activeSession,
-          compactDrills,
-          selectedSessionId
-        };
-        const jsonStr = JSON.stringify(dataToPack);
-        const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-        const absoluteUrl = `${window.location.origin}${window.location.pathname}?sync=${syncCode}#plan=${base64Str}`;
-        setShareUrl(absoluteUrl);
-        setShowShareModal(true);
-        setCopied(false);
-      } catch (err) {
-        console.error('Failed both server share and base64 compression', err);
-        triggerToast('Error en generar l’enllaç de compartició.');
-      }
+      triggerToast('📱 Codi QR de Pista generat! Escaneja amb el mòbil per obrir la sessió sincronitzada.');
+    } catch (err) {
+      console.error('Error generating share link:', err);
+      const activeCode = syncCode || DEFAULT_SYNC_CODE;
+      const absoluteUrl = `${window.location.origin}${window.location.pathname}?sync=${encodeURIComponent(activeCode)}&view=mobile`;
+      setShareUrl(absoluteUrl);
+      setShowShareModal(true);
+      setCopied(false);
     }
   };
 
@@ -1536,7 +1499,40 @@ export default function App() {
   };
 
   const handleEditDrillInDatabase = (updatedDrill: Drill) => {
+    // 1. Update drill in drills library directly without duplicating
     setDrills(prev => prev.map(d => d.id === updatedDrill.id ? updatedDrill : d));
+
+    // 2. Also update in any sessions containing this drill
+    setSessions(prev => {
+      let changed = false;
+      const updated: Record<string, TrainingSession> = {};
+      Object.keys(prev).forEach(key => {
+        const sess = prev[key];
+        let sessChanged = false;
+        const newDrills = (sess.drills || []).map(sd => {
+          if (sd.drillId === updatedDrill.id) {
+            sessChanged = true;
+            return {
+              ...sd,
+              duration: updatedDrill.duration || sd.duration
+            };
+          }
+          return sd;
+        });
+
+        if (sessChanged) {
+          changed = true;
+          updated[key] = {
+            ...sess,
+            drills: newDrills,
+            totalDuration: newDrills.reduce((acc, d) => acc + (d.duration || 10), 0)
+          };
+        } else {
+          updated[key] = sess;
+        }
+      });
+      return changed ? updated : prev;
+    });
   };
 
   const handleDeleteDrillFromDatabase = (drillId: string) => {
@@ -2258,18 +2254,31 @@ export default function App() {
           />
         ) : activeView === 'creator' ? (
           <DrillCreator
+            editingDrill={editingDrill}
             initialDrill={editingDrill}
             onSaveDrill={(savedDrill) => {
-              if (drills.some(d => d.id === savedDrill.id)) {
+              if (editingDrill) {
+                // Directly update the existing drill without creating a copy
+                handleEditDrillInDatabase({
+                  ...savedDrill,
+                  id: editingDrill.id
+                });
+                triggerToast(`Exercici "${savedDrill.title}" actualitzat correctament!`);
+              } else if (drills.some(d => d.id === savedDrill.id)) {
                 handleEditDrillInDatabase(savedDrill);
+                triggerToast(`Exercici "${savedDrill.title}" actualitzat correctament!`);
               } else {
                 handleAddDrillToDatabase(savedDrill);
+                triggerToast(`Exercici "${savedDrill.title}" creat a la biblioteca!`);
               }
               setEditingDrill(null);
               setActiveView('database');
-              triggerToast("Exercici guardat correctament a la biblioteca!");
             }}
             onCancel={() => {
+              setEditingDrill(null);
+              setActiveView('database');
+            }}
+            onNavigateToLibrary={() => {
               setEditingDrill(null);
               setActiveView('database');
             }}
@@ -2278,6 +2287,8 @@ export default function App() {
           <div className={`${isSharedMobile || activeView === 'mobile' ? 'p-0' : 'py-2'}`}>
             <MobileCourtView
               session={activeSession}
+              allSessions={sessions}
+              selectedSessionId={selectedSessionId}
               drills={drills}
               onBackToPlanner={() => setActiveView('planner')}
               onNavigateView={setActiveView}
@@ -2297,6 +2308,7 @@ export default function App() {
               onOpenSync={handleOpenSyncModal}
               isSyncing={isSyncing}
               lastSynced={lastSynced}
+              onForceSaveSession={handleForceSaveSession}
             />
           </div>
         )}

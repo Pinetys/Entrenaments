@@ -28,7 +28,11 @@ import {
   Filter,
   Moon,
   Activity,
-  Gauge
+  Gauge,
+  Save,
+  RefreshCw,
+  Cloud,
+  CalendarDays
 } from 'lucide-react';
 import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
@@ -129,6 +133,8 @@ const TacticalBoardContainer = React.memo(
 
 interface MobileCourtViewProps {
   session: TrainingSession;
+  allSessions?: Record<string, TrainingSession>;
+  selectedSessionId?: string;
   drills: Drill[];
   onBackToPlanner: () => void;
   onPreviewDrill?: (drill: Drill) => void;
@@ -148,10 +154,13 @@ interface MobileCourtViewProps {
   onOpenSync?: () => void;
   isSyncing?: boolean;
   lastSynced?: Date | null;
+  onForceSaveSession?: () => void;
 }
 
 export default function MobileCourtView({ 
   session, 
+  allSessions,
+  selectedSessionId,
   drills, 
   onBackToPlanner, 
   onPreviewDrill,
@@ -170,7 +179,8 @@ export default function MobileCourtView({
   isLinked = false,
   onOpenSync,
   isSyncing = false,
-  lastSynced = null
+  lastSynced = null,
+  onForceSaveSession
 }: MobileCourtViewProps) {
   const [activeDrillIndex, setActiveDrillIndex] = useState(0);
   const [isFullscreenBoard, setIsFullscreenBoard] = useState(false);
@@ -784,7 +794,7 @@ export default function MobileCourtView({
     <div id="mobile-court-view-layout" className="w-full max-w-md mx-auto bg-slate-950 text-white min-h-screen md:min-h-[750px] flex flex-col md:rounded-3xl md:border md:border-slate-800 md:shadow-2xl relative overflow-hidden select-none">
       
       {/* Network & Completion Control Center for fully supported offline session tracking */}
-      <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between text-xs font-sans shrink-0 gap-3">
+      <div className="px-4 py-2 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between text-xs font-sans shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse shadow-xs shadow-emerald-400' : 'bg-amber-500 shadow-xs shadow-amber-400 animate-ping'}`}></span>
           <span className="text-[9px] font-bold font-mono tracking-wide text-slate-300">
@@ -792,63 +802,79 @@ export default function MobileCourtView({
           </span>
         </div>
 
-        {syncCode && isLinked ? (
-          <button
-            type="button"
-            onClick={onOpenSync}
-            className="px-2.5 py-1 rounded bg-slate-900 border border-emerald-500 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-widest flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
-            title="Sincronització Núvol Activa. Codi vinculat."
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="font-mono">{syncCode}</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenSync}
-            className="px-2.5 py-1 rounded bg-amber-950/85 border border-amber-500 hover:bg-amber-900 text-[9px] font-black text-amber-300 tracking-widest flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse shadow-lg shadow-amber-500/15"
-            title="Estat Local. Prem per vincular amb l'ordinador per sincronitzar exercicis."
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
-            <span>VINCULAR MÒBIL</span>
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => setShowPerformanceSummary(true)}
-          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
-          title="Obrir Resum de Rendiment post-entrenament i registrar escala RPE"
-        >
-          <Activity size={10} strokeWidth={3} />
-          <span>Resum Rendiment</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setShowPerformanceSummary(true);
-            if (onToggleCompleteSession && !isSessionCompleted) {
-              onToggleCompleteSession(session.id);
-            }
-          }}
-          className={`px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer border ${
-            isSessionCompleted 
-              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-450 hover:bg-emerald-500/20' 
-              : 'bg-orange-600 hover:bg-orange-700 text-white border-orange-700/50 shadow-xs'
-          }`}
-        >
-          {isSessionCompleted ? (
-            <>
-              <Check size={10} strokeWidth={3.5} />
-              <span>Sessió Feta ✓</span>
-            </>
+        <div className="flex items-center gap-1.5 ml-auto">
+          {syncCode && isLinked ? (
+            <button
+              type="button"
+              id="btn-mobile-sync-active"
+              onClick={onOpenSync}
+              className="px-2 py-1 rounded bg-slate-900 border border-emerald-500 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-widest flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
+              title="Sincronització Núvol Activa. Codi vinculat amb l'ordinador."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="font-mono">{syncCode}</span>
+            </button>
           ) : (
-            <>
-              <span>Finalitzar Sessió</span>
-            </>
+            <button
+              type="button"
+              id="btn-mobile-sync-link"
+              onClick={onOpenSync}
+              className="px-2 py-1 rounded bg-amber-950/85 border border-amber-500 hover:bg-amber-900 text-[9px] font-black text-amber-300 tracking-widest flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse shadow-lg shadow-amber-500/15"
+              title="Estat Local. Prem per vincular amb l'ordinador per sincronitzar exercicis."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+              <span>VINCULAR MÒBIL</span>
+            </button>
           )}
-        </button>
+
+          {onForceSaveSession && (
+            <button
+              type="button"
+              id="btn-mobile-force-save"
+              onClick={onForceSaveSession}
+              disabled={isSyncing}
+              className="px-2 py-1 rounded bg-amber-600/90 hover:bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer disabled:opacity-50"
+              title="Desar sessió i sincronitzar amb el núvol immediatament"
+            >
+              <RefreshCw size={10} className={isSyncing ? "animate-spin" : ""} />
+              <span>{isSyncing ? "Desant..." : "Desar"}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowPerformanceSummary(true)}
+            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
+            title="Obrir Resum de Rendiment post-entrenament i registrar escala RPE"
+          >
+            <Activity size={10} strokeWidth={3} />
+            <span>Resum</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowPerformanceSummary(true);
+              if (onToggleCompleteSession && !isSessionCompleted) {
+                onToggleCompleteSession(session.id);
+              }
+            }}
+            className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer border ${
+              isSessionCompleted 
+                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-450 hover:bg-emerald-500/20' 
+                : 'bg-orange-600 hover:bg-orange-700 text-white border-orange-700/50 shadow-xs'
+            }`}
+          >
+            {isSessionCompleted ? (
+              <>
+                <Check size={10} strokeWidth={3.5} />
+                <span>Feta ✓</span>
+              </>
+            ) : (
+              <span>Finalitzar</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* DISMISSIBLE SYNC REMINDER CALLOUT */}
@@ -872,24 +898,105 @@ export default function MobileCourtView({
       )}
 
       {/* HEADER BAR FOR MOBILE */}
-      <div id="mobile-header" className="px-5 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0">
+      <div id="mobile-header" className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0">
         {!isSharedMobile ? (
           <button
             id="btn-mobile-back"
             onClick={onBackToPlanner}
             className="text-xs px-2.5 py-1.5 font-bold rounded-lg bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
           >
-            <ChevronLeft size={16} /> Volver
+            <ChevronLeft size={16} /> Planificador
           </button>
         ) : (
           <div className="w-[85px]" />
         )}
         <div className="text-center">
           <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono">Modo Pista (Junior A)</span>
-          <span className="text-xs font-semibold text-slate-200 truncate max-w-40 block">{session.name}</span>
+          <span className="text-xs font-semibold text-slate-200 truncate max-w-44 block">{session.name}</span>
         </div>
-        <div className="w-[85px]" />
+        <div className="flex items-center gap-1">
+          {onNavigateView && (
+            <button
+              id="btn-mobile-open-library"
+              onClick={() => onNavigateView('database')}
+              className="text-[10px] px-2 py-1 font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
+              title="Obrir Biblioteca d'Exercicis"
+            >
+              <BookOpen size={13} className="text-orange-400" />
+              <span>Biblioteca</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* S1-S10 HORIZONTAL SESSION SELECTOR STRIP */}
+      {allSessions && (
+        <div id="mobile-sessions-strip" className="px-3 py-2 bg-slate-950 border-b border-slate-800/90 shrink-0">
+          <div className="flex items-center justify-between mb-1 px-0.5">
+            <span className="text-[9px] font-extrabold text-orange-400 uppercase tracking-widest flex items-center gap-1">
+              <CalendarDays size={11} className="text-orange-400" />
+              Sessions Planificades (S1 - S10)
+            </span>
+            <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-400">
+              <span className="text-slate-400 font-sans">Toca per canviar:</span>
+            </div>
+          </div>
+          
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-800">
+            {[
+              { id: 'dia1', label: 'S1', defaultTitle: 'Dil 31 Ago' },
+              { id: 'dia2', label: 'S2', defaultTitle: 'Dmc 2 Set' },
+              { id: 'dia3', label: 'S3', defaultTitle: 'Dij 3 Set' },
+              { id: 'dia4', label: 'S4', defaultTitle: 'Dim 8 Set' },
+              { id: 'dia5', label: 'S5', defaultTitle: 'Dij 10 Set' },
+              { id: 'dia6', label: 'S6', defaultTitle: 'Dim 15 Set' },
+              { id: 'dia7', label: 'S7', defaultTitle: 'Dij 17 Set' },
+              { id: 'dia8', label: 'S8', defaultTitle: 'Dim 22 Set' },
+              { id: 'dia9', label: 'S9', defaultTitle: 'Dij 24 Set' },
+              { id: 'dia10', label: 'S10', defaultTitle: 'Dim 29 Set' },
+            ].map(s => {
+              const currentSess = allSessions[s.id];
+              const drillCount = currentSess?.drills?.length || 0;
+              const isSelected = (selectedSessionId || session.id) === s.id;
+              const isDone = completions.some(c => c.planId === activePlanId && c.sessionId === s.id);
+
+              return (
+                <button
+                  key={s.id}
+                  id={`btn-mobile-select-sess-${s.id}`}
+                  type="button"
+                  onClick={() => onSelectSessionId?.(s.id)}
+                  className={`px-2.5 py-1.5 rounded-xl text-left shrink-0 transition-all flex flex-col justify-between min-w-[70px] cursor-pointer border ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-orange-600 to-amber-700 text-white border-orange-400 shadow-md shadow-orange-900/40 ring-1 ring-orange-400/50'
+                      : drillCount > 0
+                        ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-700/80'
+                        : 'bg-slate-950/60 hover:bg-slate-900 text-slate-500 border-slate-850 opacity-70'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 w-full">
+                    <span className={`text-[11px] font-black font-mono ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                      {s.label}
+                    </span>
+                    {isDone ? (
+                      <span className="text-[8px] text-emerald-400 font-bold bg-emerald-950/80 px-1 rounded border border-emerald-500/40">✓</span>
+                    ) : drillCount > 0 ? (
+                      <span className={`text-[8px] font-bold px-1 rounded ${isSelected ? 'bg-orange-950/60 text-orange-200' : 'bg-slate-800 text-slate-400'}`}>
+                        {drillCount} ex.
+                      </span>
+                    ) : (
+                      <span className="text-[8px] text-slate-600 font-mono">0 ex.</span>
+                    )}
+                  </div>
+                  <span className={`text-[9px] font-medium truncate max-w-[66px] mt-0.5 ${isSelected ? 'text-orange-100 font-bold' : 'text-slate-400'}`}>
+                    {currentSess?.name || s.defaultTitle}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
   {/* TIMING DOUBLE STOPWATCH UNIT */}
       <div id="mobile-stopwatch-unit" className="px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0 flex flex-col gap-2">

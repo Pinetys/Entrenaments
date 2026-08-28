@@ -36,29 +36,30 @@ export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr:
 
 export function formatSessionOptionName(sessId: string, sess?: Partial<TrainingSession>): { title: string; subtitle: string } {
   const meta = CALENDAR_SESSION_METADATA[sessId];
+  const sessName = sess?.name?.trim();
+
+  // If the session object already has a descriptive name or custom title, prioritize it!
+  if (sessName) {
+    const num = sessId.replace('dia', '');
+    const prefix = `Sessió ${num}`;
+    const displayTitle = sessName.startsWith(prefix) ? sessName : `${prefix}: ${sessName}`;
+    const day = sess.dayOfWeek || meta?.dayOfWeek || 'Entrenament';
+    const date = meta?.dateStr ? ` • ${meta.dateStr}` : '';
+    return {
+      title: displayTitle,
+      subtitle: `${day}${date}`
+    };
+  }
+
   if (!meta) {
     return {
-      title: sess?.name || `Sessió ${sessId}`,
+      title: sess?.name || `Sessió ${sessId.replace('dia', '')}`,
       subtitle: sess?.dayOfWeek || 'Entrenament'
     };
   }
 
-  const rawName = sess?.name || '';
-  let customSuffix = meta.defaultTitle;
-  if (rawName.includes(' - ')) {
-    const parts = rawName.split(' - ');
-    const candidate = parts.slice(1).join(' - ').trim();
-    if (candidate) customSuffix = candidate;
-  } else if (rawName.includes(': ')) {
-    const parts = rawName.split(': ');
-    const candidate = parts.slice(1).join(': ').trim();
-    if (candidate && !candidate.toLowerCase().includes('dimarts') && !candidate.toLowerCase().includes('dilluns') && !candidate.toLowerCase().includes('dimecres') && !candidate.toLowerCase().includes('dijous')) {
-      customSuffix = candidate;
-    }
-  }
-
   return {
-    title: `Sessió ${sessId.replace('dia', '')}: ${meta.dateStr} - ${customSuffix}`,
+    title: `Sessió ${sessId.replace('dia', '')}: ${meta.dateStr} - ${meta.defaultTitle}`,
     subtitle: `${meta.dayOfWeek} • ${meta.dateStr}`
   };
 }
