@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
@@ -101,6 +102,68 @@ Siusplau, respon en CATALÀ amb un estil professional, directe i motivador per a
   } catch (err: any) {
     console.error("[GeminiCoachAdvice] Error:", err);
     res.status(500).json({ error: err.message || "Error al comunicar amb la IA de Gemini." });
+  }
+});
+
+// In-memory and file-backed cache for cross-device state synchronization
+const syncStateCache = new Map<string, any>();
+const SYNC_CACHE_FILE = path.join(process.cwd(), ".sync_cache.json");
+
+// Load initial sync cache from disk if available
+try {
+  if (fs.existsSync(SYNC_CACHE_FILE)) {
+    const raw = fs.readFileSync(SYNC_CACHE_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+    Object.keys(parsed).forEach(k => syncStateCache.set(k, parsed[k]));
+    console.log(`[SyncState] Loaded ${syncStateCache.size} synced documents from cache.`);
+  }
+} catch (e) {
+  console.warn("[SyncState] Could not load sync cache file:", e);
+}
+
+const persistSyncCache = () => {
+  try {
+    const obj: Record<string, any> = {};
+    syncStateCache.forEach((v, k) => { obj[k] = v; });
+    fs.writeFileSync(SYNC_CACHE_FILE, JSON.stringify(obj, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("[SyncState] Could not save sync cache file:", e);
+  }
+};
+
+// POST endpoint to save sync state
+app.post("/api/sync-state", (req, res) => {
+  try {
+    const { syncCode, data } = req.body;
+    if (!syncCode || !data) {
+      return res.status(400).json({ error: "Falten syncCode o data" });
+    }
+    const cleanCode = syncCode.trim().toUpperCase();
+    syncStateCache.set(cleanCode, data);
+    persistSyncCache();
+    console.log(`[SyncState] Updated state for code: ${cleanCode} at ${data.updatedAt || new Date().toISOString()}`);
+    res.json({ success: true, syncCode: cleanCode, updatedAt: data.updatedAt });
+  } catch (err: any) {
+    console.error("[SyncState POST] Error:", err);
+    res.status(500).json({ error: err.message || "Error al desar l'estat sincronitzat." });
+  }
+});
+
+// GET endpoint to fetch sync state
+app.get("/api/sync-state", (req, res) => {
+  try {
+    const code = (req.query.code as string || "").trim().toUpperCase();
+    if (!code) {
+      return res.status(400).json({ error: "Falta el paràmetre 'code'" });
+    }
+    const data = syncStateCache.get(code);
+    if (!data) {
+      return res.status(404).json({ error: "No hi ha dades sincronitzades per aquest codi" });
+    }
+    res.json({ success: true, syncCode: code, data });
+  } catch (err: any) {
+    console.error("[SyncState GET] Error:", err);
+    res.status(500).json({ error: err.message || "Error al recuperar l'estat sincronitzat." });
   }
 });
 

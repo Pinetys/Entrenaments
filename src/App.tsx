@@ -773,7 +773,75 @@ export default function App() {
     }, 4500);
   };
 
-  // Load from cloud or URL parameter on startup
+  // Helper to re-fetch and apply cloud state seamlessly
+  const refreshFromCloud = async (forceCode?: string) => {
+    const codeToQuery = forceCode || syncCode || DEFAULT_SYNC_CODE;
+    if (!codeToQuery) return;
+    
+    try {
+      const cloudData = await loadFromCloud(codeToQuery);
+      if (cloudData) {
+        if (cloudData.updatedAt && lastSavedTimeStrRef.current && cloudData.updatedAt === lastSavedTimeStrRef.current) {
+          return;
+        }
+
+        const cloudDrills = cloudData.drills || [];
+        const localDrills = latestStateRef.current.drills;
+        const mergedDrills = [...cloudDrills];
+        localDrills.forEach(localDrill => {
+          if (localDrill.isCustom && !mergedDrills.some(cd => cd.id === localDrill.id)) {
+            mergedDrills.push(localDrill);
+          }
+        });
+
+        if (mergedDrills.length > 0) setDrills(mergedDrills);
+        if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
+          setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
+        }
+        if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
+        if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
+        if (cloudData.completions) setCompletions(cloudData.completions);
+        if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
+        if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
+        if (cloudData.players && Array.isArray(cloudData.players)) setPlayers(cloudData.players);
+        if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) setSessionTemplates(cloudData.sessionTemplates);
+        if (cloudData.baremosConfig && Array.isArray(cloudData.baremosConfig) && cloudData.baremosConfig.length > 0) {
+          setBaremosConfig(cloudData.baremosConfig);
+        }
+
+        if (cloudData.updatedAt) {
+          setLastSynced(new Date(cloudData.updatedAt));
+          lastSavedTimeStrRef.current = cloudData.updatedAt;
+        } else {
+          setLastSynced(new Date());
+          lastSavedTimeStrRef.current = null;
+        }
+
+        const normState = buildNormalizedState({
+          drills: mergedDrills,
+          weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
+          selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
+          selectedSessionId: cloudData.selectedSessionId,
+          completions: cloudData.completions,
+          favoriteDrillIds: cloudData.favoriteDrillIds,
+          coachProfile: cloudData.coachProfile,
+          players: cloudData.players,
+          sessionTemplates: cloudData.sessionTemplates,
+          baremosConfig: cloudData.baremosConfig
+        });
+
+        lastSavedDataJsonRef.current = JSON.stringify(normState);
+        const stateStr = JSON.stringify({ ...normState, updatedAt: cloudData.updatedAt || new Date().toISOString() });
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn('[AutoSync] Background refresh failed:', e);
+    }
+  };
+
+  // Load from cloud or URL parameter on startup with automatic cloud-first hydration
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlSyncCode = params.get('sync');
@@ -814,40 +882,7 @@ export default function App() {
       loadFromCloud(codeToUse)
         .then(cloudData => {
           if (cloudData) {
-            // Check local timestamp
-            let localUpdatedAt = 0;
-            let localHasUserSessions = false;
-            try {
-              const localSaved = localStorage.getItem(LOCAL_STORAGE_KEY);
-              if (localSaved) {
-                const parsed = JSON.parse(localSaved);
-                if (parsed.updatedAt) {
-                  localUpdatedAt = new Date(parsed.updatedAt).getTime();
-                }
-                if (parsed.weeklyPlans && parsed.weeklyPlans.some((p: any) => Object.keys(p).some(k => k.startsWith('dia') && p[k]?.drills?.length > 0))) {
-                  localHasUserSessions = true;
-                }
-              }
-            } catch (e) {}
-
-            const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
-            const cloudHasPlans = cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0;
-
-            // If local state is genuinely newer and has user-authored content, push local to cloud
-            if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 2000 && localHasUserSessions) {
-              console.log('Local data is newer than cloud data. Preserving local sessions and updating cloud.');
-              setSyncCode(codeToUse);
-              const curState = buildNormalizedState();
-              saveToCloud(codeToUse, curState).then((savedTime) => {
-                setLastSynced(new Date(savedTime));
-                lastSavedTimeStrRef.current = savedTime;
-                lastSavedDataJsonRef.current = JSON.stringify(curState);
-              }).catch(() => {});
-              setHasLoadedFromCloud(true);
-              return;
-            }
-
-            // Otherwise, cloud data is the source of truth
+            // Cloud data is always the primary source of truth across mobile and desktop
             const cloudDrills = cloudData.drills || [];
             const localDrills = latestStateRef.current.drills;
             const mergedDrills = [...cloudDrills];
@@ -858,7 +893,9 @@ export default function App() {
             });
 
             if (mergedDrills.length > 0) setDrills(mergedDrills);
-            if (cloudHasPlans) setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
+            if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
+              setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
+            }
             if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
             if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
             if (cloudData.completions) setCompletions(cloudData.completions);
@@ -871,6 +908,7 @@ export default function App() {
             }
 
             setSyncCode(codeToUse);
+            setIsLinked(true);
             if (cloudData.updatedAt) {
               setLastSynced(new Date(cloudData.updatedAt));
               lastSavedTimeStrRef.current = cloudData.updatedAt;
@@ -881,7 +919,7 @@ export default function App() {
 
             const normState = buildNormalizedState({
               drills: mergedDrills,
-              weeklyPlans: cloudHasPlans ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
+              weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
               selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
               selectedSessionId: cloudData.selectedSessionId,
               completions: cloudData.completions,
@@ -899,10 +937,11 @@ export default function App() {
               localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
             } catch (e) {}
 
-            triggerToast('🔄 Dades sincronitzades correctament des del núvol!');
+            triggerToast('🔄 Sessions sincronitzades automàticament des del núvol!');
           } else {
-            // Document doesn't exist yet in cloud, save current local state so it initializes in Firestore
+            // Document doesn't exist yet in cloud, save current local state so it initializes in Firestore and backend
             setSyncCode(codeToUse);
+            setIsLinked(true);
             const initialState = buildNormalizedState();
             saveToCloud(codeToUse, initialState).then((savedTime) => {
               setLastSynced(new Date(savedTime));
@@ -922,6 +961,43 @@ export default function App() {
       setHasLoadedFromCloud(true);
     }
   }, []);
+
+  // Multi-event automatic synchronization: triggers on window focus, mobile screen unlock (visibilitychange), and network recovery
+  useEffect(() => {
+    if (!hasLoadedFromCloud) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshFromCloud();
+      }
+    };
+
+    const handleFocus = () => {
+      refreshFromCloud();
+    };
+
+    const handleOnline = () => {
+      refreshFromCloud();
+    };
+
+    // Periodic safety sync poll every 12 seconds
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshFromCloud();
+      }
+    }, 12000);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [hasLoadedFromCloud, syncCode]);
 
   // Auto-save changes to cloud and always persist to localStorage immediately
   useEffect(() => {
@@ -999,7 +1075,7 @@ export default function App() {
         lastSavedTimeStrRef.current = savedTimeStr;
         lastSavedDataJsonRef.current = JSON.stringify(currentState);
       }
-      triggerToast(`💾 Sessió desada i sincronitzada amb el mòbil! (Codi: ${syncCode})`);
+      triggerToast(`💾 Sessió sincronitzada amb el núvol en temps real!`);
     } catch (e: any) {
       triggerToast('💾 Sessió desada localment a la memòria del navegador.');
     } finally {
@@ -1015,24 +1091,6 @@ export default function App() {
       if (!cloudData) return;
 
       if (cloudData.updatedAt && lastSavedTimeStrRef.current && cloudData.updatedAt === lastSavedTimeStrRef.current) {
-        return;
-      }
-
-      // Check local timestamp to prevent older snapshot from wiping recent local changes
-      let localUpdatedAt = 0;
-      try {
-        const localSaved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (localSaved) {
-          const parsed = JSON.parse(localSaved);
-          if (parsed.updatedAt) {
-            localUpdatedAt = new Date(parsed.updatedAt).getTime();
-          }
-        }
-      } catch (e) {}
-
-      const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
-      if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 2000) {
-        console.log('Local data is newer than incoming cloud snapshot. Skipping snapshot overwrite.');
         return;
       }
 

@@ -803,29 +803,16 @@ export default function MobileCourtView({
         </div>
 
         <div className="flex items-center gap-1.5 ml-auto">
-          {syncCode && isLinked ? (
-            <button
-              type="button"
-              id="btn-mobile-sync-active"
-              onClick={onOpenSync}
-              className="px-2 py-1 rounded bg-slate-900 border border-emerald-500 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-widest flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
-              title="Sincronització Núvol Activa. Codi vinculat amb l'ordinador."
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="font-mono">{syncCode}</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              id="btn-mobile-sync-link"
-              onClick={onOpenSync}
-              className="px-2 py-1 rounded bg-amber-950/85 border border-amber-500 hover:bg-amber-900 text-[9px] font-black text-amber-300 tracking-widest flex items-center gap-1 active:scale-95 transition cursor-pointer animate-pulse shadow-lg shadow-amber-500/15"
-              title="Estat Local. Prem per vincular amb l'ordinador per sincronitzar exercicis."
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
-              <span>VINCULAR MÒBIL</span>
-            </button>
-          )}
+          <button
+            type="button"
+            id="btn-mobile-sync-active"
+            onClick={onOpenSync}
+            className="px-2 py-1 rounded bg-slate-900 border border-emerald-500/80 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-wide flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
+            title="Sincronització automàtica activa amb l'ordinador. Prem per veure opcions."
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-500 animate-pulse'}`}></span>
+            <span className="font-mono">{isSyncing ? 'SINCRONITZANT...' : (syncCode || 'AUTO-SYNC')}</span>
+          </button>
 
           {onForceSaveSession && (
             <button
@@ -834,10 +821,10 @@ export default function MobileCourtView({
               onClick={onForceSaveSession}
               disabled={isSyncing}
               className="px-2 py-1 rounded bg-amber-600/90 hover:bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer disabled:opacity-50"
-              title="Desar sessió i sincronitzar amb el núvol immediatament"
+              title="Forçar actualització i desar amb el núvol immediatament"
             >
               <RefreshCw size={10} className={isSyncing ? "animate-spin" : ""} />
-              <span>{isSyncing ? "Desant..." : "Desar"}</span>
+              <span>{isSyncing ? "Actualitzant..." : "Actualitzar"}</span>
             </button>
           )}
 
