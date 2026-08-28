@@ -196,9 +196,11 @@ export default function App() {
 
   const [isLinked, setIsLinked] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('basket_planner_sync_code_manually_entered') === 'true';
+      const stored = localStorage.getItem('basket_planner_sync_code_manually_entered');
+      if (stored !== null) return stored === 'true';
+      return true; // Auto-linked by default to PINETY-JUNIORA
     } catch (e) {}
-    return false;
+    return true;
   });
 
   const [hasLoadedFromCloud, setHasLoadedFromCloud] = useState<boolean>(false);
@@ -212,7 +214,8 @@ export default function App() {
   });
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const lastSavedTimeStrRef = useRef<string | null>(null);
-  const lastSeenStateStringRef = useRef<string | null>(null);
+  const lastSavedDataJsonRef = useRef<string | null>(null);
+  const isInitialMountRef = useRef<boolean>(true);
 
   useEffect(() => {
     localStorage.setItem('basket_planner_coach_profile', JSON.stringify(coachProfile));
@@ -429,7 +432,7 @@ export default function App() {
     saveToCloud(syncCode, newState).then(savedTime => {
       setLastSynced(new Date(savedTime));
       lastSavedTimeStrRef.current = savedTime;
-      lastSeenStateStringRef.current = newStateStr;
+      lastSavedDataJsonRef.current = JSON.stringify(newState);
     }).catch(err => {
       console.warn('Instant cloud sync failed:', err);
     });
@@ -775,7 +778,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const urlSyncCode = params.get('sync');
     
-    let codeToUse = urlSyncCode || localStorage.getItem('basket_planner_sync_code');
+    let codeToUse = urlSyncCode || localStorage.getItem('basket_planner_sync_code') || DEFAULT_SYNC_CODE;
     
     if (urlSyncCode) {
       let sanitized = urlSyncCode.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase();
@@ -793,6 +796,8 @@ export default function App() {
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.hash;
         window.history.replaceState({ path: newUrl }, '', newUrl);
       } catch (e) {}
+    } else {
+      localStorage.setItem('basket_planner_sync_code', codeToUse);
     }
 
     if (codeToUse) {
@@ -800,8 +805,9 @@ export default function App() {
       loadFromCloud(codeToUse)
         .then(cloudData => {
           if (cloudData) {
-            // Check timestamps between local storage and cloud to prevent overwriting user changes!
+            // Check local timestamp
             let localUpdatedAt = 0;
+            let localHasUserSessions = false;
             try {
               const localSaved = localStorage.getItem(LOCAL_STORAGE_KEY);
               if (localSaved) {
@@ -809,25 +815,30 @@ export default function App() {
                 if (parsed.updatedAt) {
                   localUpdatedAt = new Date(parsed.updatedAt).getTime();
                 }
+                if (parsed.weeklyPlans && parsed.weeklyPlans.some((p: any) => Object.keys(p).some(k => k.startsWith('dia') && p[k]?.drills?.length > 0))) {
+                  localHasUserSessions = true;
+                }
               }
             } catch (e) {}
 
             const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
+            const cloudHasPlans = cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0;
 
-            // If local state is newer than cloud data (e.g. user planned sessions locally before refresh),
-            // PRESERVE local sessions and upload them to update the cloud instead of getting overwritten!
-            if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 1000) {
+            // If local state is genuinely newer and has user-authored content, push local to cloud
+            if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 2000 && localHasUserSessions) {
               console.log('Local data is newer than cloud data. Preserving local sessions and updating cloud.');
               setSyncCode(codeToUse);
               const curState = buildNormalizedState();
               saveToCloud(codeToUse, curState).then((savedTime) => {
                 setLastSynced(new Date(savedTime));
                 lastSavedTimeStrRef.current = savedTime;
-                lastSeenStateStringRef.current = JSON.stringify(curState);
+                lastSavedDataJsonRef.current = JSON.stringify(curState);
               }).catch(() => {});
+              setHasLoadedFromCloud(true);
               return;
             }
 
+            // Otherwise, cloud data is the source of truth
             const cloudDrills = cloudData.drills || [];
             const localDrills = latestStateRef.current.drills;
             const mergedDrills = [...cloudDrills];
@@ -838,7 +849,7 @@ export default function App() {
             });
 
             if (mergedDrills.length > 0) setDrills(mergedDrills);
-            if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
+            if (cloudHasPlans) setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
             if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
             if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
             if (cloudData.completions) setCompletions(cloudData.completions);
@@ -861,7 +872,7 @@ export default function App() {
 
             const normState = buildNormalizedState({
               drills: mergedDrills,
-              weeklyPlans: cloudData.weeklyPlans,
+              weeklyPlans: cloudHasPlans ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
               selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
               selectedSessionId: cloudData.selectedSessionId,
               completions: cloudData.completions,
@@ -872,8 +883,8 @@ export default function App() {
               baremosConfig: cloudData.baremosConfig
             });
 
+            lastSavedDataJsonRef.current = JSON.stringify(normState);
             const stateStr = JSON.stringify({ ...normState, updatedAt: cloudData.updatedAt || new Date().toISOString() });
-            lastSeenStateStringRef.current = stateStr;
 
             try {
               localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
@@ -887,7 +898,7 @@ export default function App() {
             saveToCloud(codeToUse, initialState).then((savedTime) => {
               setLastSynced(new Date(savedTime));
               lastSavedTimeStrRef.current = savedTime;
-              lastSeenStateStringRef.current = JSON.stringify(initialState);
+              lastSavedDataJsonRef.current = JSON.stringify(initialState);
             }).catch(() => {});
           }
         })
@@ -917,19 +928,22 @@ export default function App() {
       sessionTemplates,
       baremosConfig
     });
-    const nowIso = new Date().toISOString();
-    const currentStateWithTime = { ...currentState, updatedAt: nowIso };
-    const currentStateString = JSON.stringify(currentStateWithTime);
+    
+    const currentStateDataJson = JSON.stringify(currentState);
+
+    // Skip saving on the very first mount before initial cloud hydration completes
+    if (!hasLoadedFromCloud) return;
 
     // Persist to localStorage immediately for instant client reload
+    const nowIso = new Date().toISOString();
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ ...currentState, updatedAt: nowIso }));
     } catch (e) {}
 
-    if (!hasLoadedFromCloud || !syncCode) return;
+    if (!syncCode) return;
 
-    // If local state hasn't changed relative to what was last saved or loaded from the cloud, SKIP saving!
-    if (lastSeenStateStringRef.current === currentStateString) {
+    // If local state content hasn't changed relative to what was last saved or loaded from cloud, SKIP saving!
+    if (lastSavedDataJsonRef.current === currentStateDataJson) {
       return;
     }
 
@@ -939,7 +953,7 @@ export default function App() {
         const savedTimeStr = await saveToCloud(syncCode, currentState);
         setLastSynced(new Date(savedTimeStr));
         lastSavedTimeStrRef.current = savedTimeStr;
-        lastSeenStateStringRef.current = currentStateString;
+        lastSavedDataJsonRef.current = currentStateDataJson;
         setSyncError(null);
       } catch (e: any) {
         console.warn('Auto-save to cloud failed:', e);
@@ -947,7 +961,7 @@ export default function App() {
       } finally {
         setIsSyncing(false);
       }
-    }, 500);
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, sessionTemplates, baremosConfig, syncCode, hasLoadedFromCloud]);
@@ -968,16 +982,15 @@ export default function App() {
       baremosConfig
     });
     const stateWithTimestamp = { ...currentState, updatedAt: nowIso };
-    const currentStateString = JSON.stringify(stateWithTimestamp);
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateWithTimestamp));
       if (syncCode) {
         const savedTimeStr = await saveToCloud(syncCode, currentState);
         setLastSynced(new Date(savedTimeStr));
         lastSavedTimeStrRef.current = savedTimeStr;
-        lastSeenStateStringRef.current = currentStateString;
+        lastSavedDataJsonRef.current = JSON.stringify(currentState);
       }
-      triggerToast(`💾 Sessió desada i sincronitzada immediatament! (Codi: ${syncCode})`);
+      triggerToast(`💾 Sessió desada i sincronitzada amb el mòbil! (Codi: ${syncCode})`);
     } catch (e: any) {
       triggerToast('💾 Sessió desada localment a la memòria del navegador.');
     } finally {
@@ -1009,7 +1022,7 @@ export default function App() {
       } catch (e) {}
 
       const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
-      if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 1000) {
+      if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 2000) {
         console.log('Local data is newer than incoming cloud snapshot. Skipping snapshot overwrite.');
         return;
       }
@@ -1068,7 +1081,7 @@ export default function App() {
 
       const appliedState = buildNormalizedState({
         drills: mergedDrills,
-        weeklyPlans: cloudData.weeklyPlans,
+        weeklyPlans: cloudData.weeklyPlans ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
         selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
         selectedSessionId: cloudData.selectedSessionId,
         completions: cloudData.completions,
@@ -1079,8 +1092,8 @@ export default function App() {
         baremosConfig: cloudData.baremosConfig
       });
       
+      lastSavedDataJsonRef.current = JSON.stringify(appliedState);
       const appliedString = JSON.stringify({ ...appliedState, updatedAt: cloudData.updatedAt || new Date().toISOString() });
-      lastSeenStateStringRef.current = appliedString;
 
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, appliedString);
@@ -1196,9 +1209,9 @@ export default function App() {
           lastSavedTimeStrRef.current = null;
         }
 
-        lastSeenStateStringRef.current = JSON.stringify(buildNormalizedState({
+        lastSavedDataJsonRef.current = JSON.stringify(buildNormalizedState({
           drills: mergedDrills,
-          weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans : latestStateRef.current.weeklyPlans,
+          weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : latestStateRef.current.weeklyPlans,
           selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
           selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
           completions: cloudData.completions || latestStateRef.current.completions,
@@ -1321,7 +1334,7 @@ export default function App() {
 
       setLastSynced(new Date(savedTimeStr));
       lastSavedTimeStrRef.current = savedTimeStr;
-      lastSeenStateStringRef.current = JSON.stringify(currentState);
+      lastSavedDataJsonRef.current = JSON.stringify(currentState);
       setSyncError(null);
       
       triggerToast('🔄 Sincronització completada amb èxit! Dades fusionades.');
@@ -1416,24 +1429,6 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashRouter);
   }, []);
 
-  // Save changes to localStorage (runs ONLY when actual configuration changes, NOT on every second stopwatch timer tick!)
-  useEffect(() => {
-    try {
-      const dataToSave = {
-        drills,
-        weeklyPlans,
-        selectedWeeklyPlanId,
-        selectedSessionId,
-        completions,
-        favoriteDrillIds
-      };
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
-    } catch (e) {
-      console.warn('Could not persist application configuration changes to localStorage. This is expected inside isolated mobile browsers/private sandbox frames:', e);
-    }
-  }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds]);
-
-  // Generate compact, un-bloated mobile link
   // Generate compact, un-bloated mobile link using the server-side short URL service (protects QR sizes!)
   const handleGenerateShareCode = async () => {
     try {
