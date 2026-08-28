@@ -51,11 +51,24 @@ const DEFAULT_COACH_PROFILE: CoachProfile = {
   avatar: "/src/assets/images/coach_avatar_profile_1782414908020.jpg"
 };
 
+export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr: string; dayOfWeek: string; defaultTitle: string }> = {
+  dia1: { label: 'S1', dateStr: 'Dilluns 31 d’Agost', dayOfWeek: 'Dilluns', defaultTitle: 'Pretemporada & Ritme' },
+  dia2: { label: 'S2', dateStr: 'Dimecres 2 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Fonaments i Intensitat Defensiva' },
+  dia3: { label: 'S3', dateStr: 'Dijous 3 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Ritme de Transició i Tir' },
+  dia4: { label: 'S4', dateStr: 'Dimarts 8 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Defensa de l’1v1 i Ajudes' },
+  dia5: { label: 'S5', dateStr: 'Dijous 10 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Transició i Joc Continu' },
+  dia6: { label: 'S6', dateStr: 'Dimarts 15 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Pick & Roll Situacions' },
+  dia7: { label: 'S7', dateStr: 'Dijous 17 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Construcció del Contraatac' },
+  dia8: { label: 'S8', dateStr: 'Dimarts 22 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Defensa d’Ajudes Col·lectives' },
+  dia9: { label: 'S9', dateStr: 'Dijous 24 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Presió a Tot Camp' },
+  dia10: { label: 'S10', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
+};
+
 export const DEFAULT_SESSIONS: Record<string, TrainingSession> = {
   dia1: { 
     id: 'dia1', 
     name: 'Sessió 1: Dilluns 31 d’Agost - Pretemporada & Ritme', 
-    dayOfWeek: 'Lunes', 
+    dayOfWeek: 'Dilluns', 
     totalDuration: 75, 
     drills: [
       { drillId: 'drill-rueda-11', duration: 15, notes: "Activa ritme de cames ràpides i passe fort de sortida." },
@@ -69,7 +82,7 @@ export const DEFAULT_SESSIONS: Record<string, TrainingSession> = {
   dia2: { 
     id: 'dia2', 
     name: 'Sessió 2: Dimecres 2 de Setembre - Fonaments i Intensitat Defensiva', 
-    dayOfWeek: 'Miércoles', 
+    dayOfWeek: 'Dimecres', 
     totalDuration: 75, 
     drills: [
       { drillId: 'drill-defensa-shell', duration: 20, notes: "Control d'ajuda i recuperació de línies de passe." },
@@ -80,15 +93,71 @@ export const DEFAULT_SESSIONS: Record<string, TrainingSession> = {
       { drillId: 'drill-dejan-cikic-decisions', duration: 10, notes: "Lectura ràpida de l'avantatge espacial en la trena." }
     ] 
   },
-  dia3: { id: 'dia3', name: 'Sessió 3: Dijous 3 de Setembre - Ritme de Transició i Tir', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia4: { id: 'dia4', name: 'Sessió 4: Dimarts 8 de Setembre - Defensa de l’1v1 i Ajudes', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia5: { id: 'dia5', name: 'Sessió 5: Dijous 10 de Setembre - Transició i Joc Continu', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia6: { id: 'dia6', name: 'Sessió 6: Dimarts 15 de Setembre - Pick & Roll Situacions', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia7: { id: 'dia7', name: 'Sessió 7: Dijous 17 de Setembre - Construcció del Contraatac', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia8: { id: 'dia8', name: 'Sessió 8: Dimarts 22 de Setembre - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia9: { id: 'dia9', name: 'Sessió 9: Dijous 24 de Setembre - Presió a Tot Camp', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia10: { id: 'dia10', name: 'Sessió 10: Dimarts 29 de Setembre - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+  dia3: { id: 'dia3', name: 'Sessió 3: Dijous 3 de Setembre - Ritme de Transició i Tir', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
+  dia4: { id: 'dia4', name: 'Sessió 4: Dimarts 8 de Setembre - Defensa de l’1v1 i Ajudes', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
+  dia5: { id: 'dia5', name: 'Sessió 5: Dijous 10 de Setembre - Transició i Joc Continu', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
+  dia6: { id: 'dia6', name: 'Sessió 6: Dimarts 15 de Setembre - Pick & Roll Situacions', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
+  dia7: { id: 'dia7', name: 'Sessió 7: Dijous 17 de Setembre - Construcció del Contraatac', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
+  dia8: { id: 'dia8', name: 'Sessió 8: Dimarts 22 de Setembre - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
+  dia9: { id: 'dia9', name: 'Sessió 9: Dijous 24 de Setembre - Presió a Tot Camp', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
+  dia10: { id: 'dia10', name: 'Sessió 10: Dimarts 29 de Setembre - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
 };
+
+export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSession>): TrainingSession {
+  const fallback = DEFAULT_SESSIONS[sessId] || {
+    id: sessId,
+    name: `Sessió ${sessId.replace('dia', '')}`,
+    dayOfWeek: 'Dimarts',
+    totalDuration: 0,
+    drills: []
+  };
+
+  const meta = CALENDAR_SESSION_METADATA[sessId];
+  let rawName = (sess && sess.name) ? sess.name : fallback.name;
+  let dayOfWeek = meta ? meta.dayOfWeek : (sess?.dayOfWeek || fallback.dayOfWeek);
+
+  if (meta) {
+    let customSubtitle = meta.defaultTitle;
+    if (rawName.includes(' - ')) {
+      const parts = rawName.split(' - ');
+      const candidate = parts.slice(1).join(' - ').trim();
+      if (candidate) customSubtitle = candidate;
+    } else if (rawName.includes(': ')) {
+      const parts = rawName.split(': ');
+      const candidate = parts.slice(1).join(': ').trim();
+      if (candidate && !candidate.toLowerCase().includes('dimarts') && !candidate.toLowerCase().includes('dilluns') && !candidate.toLowerCase().includes('dimecres') && !candidate.toLowerCase().includes('dijous') && !candidate.toLowerCase().includes('lunes') && !candidate.toLowerCase().includes('martes') && !candidate.toLowerCase().includes('miércoles') && !candidate.toLowerCase().includes('jueves')) {
+        customSubtitle = candidate;
+      }
+    }
+    rawName = `Sessió ${sessId.replace('dia', '')}: ${meta.dateStr} - ${customSubtitle}`;
+  }
+
+  return {
+    id: sessId,
+    name: rawName,
+    dayOfWeek: dayOfWeek,
+    totalDuration: (sess?.drills || []).reduce((acc, d) => acc + (d.duration || 10), 0),
+    drills: sess?.drills || fallback.drills || [],
+    scheduledTime: sess?.scheduledTime
+  };
+}
+
+export function sanitizeWeeklyPlan(plan: any): WeeklyPlan {
+  return {
+    ...plan,
+    startDate: plan.startDate === '2026-09-03' ? '2026-08-31' : (plan.startDate || '2026-08-31'),
+    dia1: sanitizePlanSession('dia1', plan.dia1),
+    dia2: sanitizePlanSession('dia2', plan.dia2),
+    dia3: sanitizePlanSession('dia3', plan.dia3),
+    dia4: sanitizePlanSession('dia4', plan.dia4),
+    dia5: sanitizePlanSession('dia5', plan.dia5),
+    dia6: sanitizePlanSession('dia6', plan.dia6),
+    dia7: sanitizePlanSession('dia7', plan.dia7),
+    dia8: sanitizePlanSession('dia8', plan.dia8),
+    dia9: sanitizePlanSession('dia9', plan.dia9),
+    dia10: sanitizePlanSession('dia10', plan.dia10),
+  };
+}
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
@@ -161,24 +230,11 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.weeklyPlans && parsed.weeklyPlans.length > 0) {
-          return parsed.weeklyPlans.map((p: any) => ({
-            ...p,
-            startDate: p.startDate === '2026-09-03' ? '2026-08-31' : (p.startDate || '2026-08-31'),
-            dia1: p.dia1 || DEFAULT_SESSIONS.dia1,
-            dia2: p.dia2 || DEFAULT_SESSIONS.dia2,
-            dia3: p.dia3 || DEFAULT_SESSIONS.dia3,
-            dia4: p.dia4 || DEFAULT_SESSIONS.dia4,
-            dia5: p.dia5 || DEFAULT_SESSIONS.dia5,
-            dia6: p.dia6 || DEFAULT_SESSIONS.dia6,
-            dia7: p.dia7 || DEFAULT_SESSIONS.dia7,
-            dia8: p.dia8 || DEFAULT_SESSIONS.dia8,
-            dia9: p.dia9 || DEFAULT_SESSIONS.dia9,
-            dia10: p.dia10 || DEFAULT_SESSIONS.dia10,
-          }));
+          return parsed.weeklyPlans.map(sanitizeWeeklyPlan);
         }
         // Migration from old single "sessions"
         if (parsed.sessions) {
-          return [{
+          return [sanitizeWeeklyPlan({
             id: 'plan-default',
             name: 'Planificació Mensual: Pretemporada & Temporada Regular',
             startDate: '2026-08-31',
@@ -192,14 +248,14 @@ export default function App() {
             dia8: parsed.sessions.dia8 || DEFAULT_SESSIONS.dia8,
             dia9: parsed.sessions.dia9 || DEFAULT_SESSIONS.dia9,
             dia10: parsed.sessions.dia10 || DEFAULT_SESSIONS.dia10,
-          }];
+          })];
         }
       }
     } catch (e) {
       console.error('Error loading weeklyPlans from localstorage', e);
     }
     return [
-      {
+      sanitizeWeeklyPlan({
         id: 'plan-default',
         name: 'Planificació Mensual: Pretemporada & Temporada Regular',
         startDate: '2026-08-31',
@@ -213,7 +269,7 @@ export default function App() {
         dia8: DEFAULT_SESSIONS.dia8,
         dia9: DEFAULT_SESSIONS.dia9,
         dia10: DEFAULT_SESSIONS.dia10,
-      }
+      })
     ];
   });
 
@@ -782,7 +838,7 @@ export default function App() {
             });
 
             if (mergedDrills.length > 0) setDrills(mergedDrills);
-            if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
+            if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
             if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
             if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
             if (cloudData.completions) setCompletions(cloudData.completions);
@@ -974,7 +1030,7 @@ export default function App() {
       }
 
       if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
-        setWeeklyPlans(cloudData.weeklyPlans);
+        setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
       }
       if (cloudData.selectedWeeklyPlanId) {
         setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);

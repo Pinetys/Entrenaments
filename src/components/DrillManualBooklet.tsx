@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Clock, Users, Shield, Wrench, Sparkles, BookOpen, ChevronLeft, ChevronRight, Plus, Check, Calendar } from 'lucide-react';
 import { Drill, TrainingSession } from '../types';
 import TacticalBoard from './TacticalBoard';
+import { formatSessionOptionName } from './DrillDatabase';
 
 interface DrillManualBookletProps {
   drill: Drill;
@@ -350,6 +351,7 @@ export default function DrillManualBooklet({
                   const isCurrentActiveGlobal = sessId === selectedSessionId;
                   const drillCount = sess.drills?.length || 0;
                   const totalMin = sess.drills?.reduce((acc, curr) => acc + (curr.duration || 10), 0) || 0;
+                  const formatted = formatSessionOptionName(sessId, sess);
 
                   return (
                     <button
@@ -365,7 +367,7 @@ export default function DrillManualBooklet({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className={`text-xs font-black uppercase truncate ${isActive ? 'text-white' : 'text-slate-900'}`}>
-                            {sess.name}
+                            {formatted.title}
                           </span>
                           {isCurrentActiveGlobal && (
                             <span className="text-[8px] font-black uppercase bg-orange-500 text-slate-950 px-1.5 py-0.2 rounded font-mono">
@@ -374,7 +376,7 @@ export default function DrillManualBooklet({
                           )}
                         </div>
                         <span className={`text-[10px] block font-medium ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>
-                          {sess.dayOfWeek} • {drillCount} exercicis ({totalMin} min)
+                          {formatted.subtitle} • {drillCount} exercicis ({totalMin} min)
                         </span>
                       </div>
                       {isActive && <Check size={16} className="text-orange-400 shrink-0" />}

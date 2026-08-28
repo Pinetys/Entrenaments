@@ -31,7 +31,7 @@ export default function DrillCreator({
   triggerToast,
   uniqueCategories = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament']
 }: DrillCreatorProps) {
-  const activeInitialDrill = initialDrill || editingDrill;
+  const activeInitialDrill = editingDrill || initialDrill;
   // Form states
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>('Atac');
@@ -121,7 +121,7 @@ export default function DrillCreator({
       .filter(m => m.length > 0);
 
     const drillData: Drill = {
-      id: editingDrill?.id || `drill-${Date.now()}`,
+      id: activeInitialDrill?.id || `drill-${Date.now()}`,
       title: title.trim(),
       category: (category.trim() || 'Atac') as DrillCategory,
       concept: concept.trim() || undefined,

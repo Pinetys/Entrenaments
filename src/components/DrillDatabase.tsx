@@ -21,6 +21,48 @@ import DrillManualBooklet from './DrillManualBooklet';
 const EMPTY_BOARD = { paths: [], pins: [] };
 const NOOP_CHANGE = () => {};
 
+export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr: string; dayOfWeek: string; defaultTitle: string }> = {
+  dia1: { label: 'S1', dateStr: 'Dilluns 31 d’Agost', dayOfWeek: 'Dilluns', defaultTitle: 'Pretemporada & Ritme' },
+  dia2: { label: 'S2', dateStr: 'Dimecres 2 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Fonaments i Intensitat Defensiva' },
+  dia3: { label: 'S3', dateStr: 'Dijous 3 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Ritme de Transició i Tir' },
+  dia4: { label: 'S4', dateStr: 'Dimarts 8 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Defensa de l’1v1 i Ajudes' },
+  dia5: { label: 'S5', dateStr: 'Dijous 10 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Transició i Joc Continu' },
+  dia6: { label: 'S6', dateStr: 'Dimarts 15 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Pick & Roll Situacions' },
+  dia7: { label: 'S7', dateStr: 'Dijous 17 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Construcció del Contraatac' },
+  dia8: { label: 'S8', dateStr: 'Dimarts 22 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Defensa d’Ajudes Col·lectives' },
+  dia9: { label: 'S9', dateStr: 'Dijous 24 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Presió a Tot Camp' },
+  dia10: { label: 'S10', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
+};
+
+export function formatSessionOptionName(sessId: string, sess?: Partial<TrainingSession>): { title: string; subtitle: string } {
+  const meta = CALENDAR_SESSION_METADATA[sessId];
+  if (!meta) {
+    return {
+      title: sess?.name || `Sessió ${sessId}`,
+      subtitle: sess?.dayOfWeek || 'Entrenament'
+    };
+  }
+
+  const rawName = sess?.name || '';
+  let customSuffix = meta.defaultTitle;
+  if (rawName.includes(' - ')) {
+    const parts = rawName.split(' - ');
+    const candidate = parts.slice(1).join(' - ').trim();
+    if (candidate) customSuffix = candidate;
+  } else if (rawName.includes(': ')) {
+    const parts = rawName.split(': ');
+    const candidate = parts.slice(1).join(': ').trim();
+    if (candidate && !candidate.toLowerCase().includes('dimarts') && !candidate.toLowerCase().includes('dilluns') && !candidate.toLowerCase().includes('dimecres') && !candidate.toLowerCase().includes('dijous')) {
+      customSuffix = candidate;
+    }
+  }
+
+  return {
+    title: `Sessió ${sessId.replace('dia', '')}: ${meta.dateStr} - ${customSuffix}`,
+    subtitle: `${meta.dayOfWeek} • ${meta.dateStr}`
+  };
+}
+
 // Pre-populated High-Level Drills for Junior Nivel A Catalan Federation
 export const PRE_POPULATED_DRILLS: Drill[] = [
   {
@@ -493,6 +535,7 @@ export default function DrillDatabase({
                   const isCurrentActiveGlobal = sessId === selectedSessionId;
                   const drillCount = sess.drills?.length || 0;
                   const totalMin = sess.drills?.reduce((acc, curr) => acc + (curr.duration || 10), 0) || 0;
+                  const formatted = formatSessionOptionName(sessId, sess);
 
                   return (
                     <button
@@ -508,7 +551,7 @@ export default function DrillDatabase({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className={`text-xs font-black uppercase truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                            {sess.name}
+                            {formatted.title}
                           </span>
                           {isCurrentActiveGlobal && (
                             <span className="text-[8px] font-black uppercase bg-orange-500 text-slate-950 px-1.5 py-0.2 rounded font-mono">
@@ -517,7 +560,7 @@ export default function DrillDatabase({
                           )}
                         </div>
                         <span className={`text-[10px] block font-medium ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
-                          {sess.dayOfWeek} • {drillCount} exercicis ({totalMin} min)
+                          {formatted.subtitle} • {drillCount} exercicis ({totalMin} min)
                         </span>
                       </div>
                       {isSelected && <span className="text-orange-400 font-black text-sm">✓</span>}
