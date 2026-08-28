@@ -254,39 +254,63 @@ export default function App() {
 
   // Custom setSessions wrapper that writes modifications directly into the active slice of weeklyPlans
   const setSessions = (newSessionsValOrFn: any) => {
-    setWeeklyPlans(prevPlans => prevPlans.map(plan => {
-      if (plan.id === selectedWeeklyPlanId) {
-        const currentFullSessions = {
-          dia1: plan.dia1 || DEFAULT_SESSIONS.dia1,
-          dia2: plan.dia2 || DEFAULT_SESSIONS.dia2,
-          dia3: plan.dia3 || DEFAULT_SESSIONS.dia3,
-          dia4: plan.dia4 || DEFAULT_SESSIONS.dia4,
-          dia5: plan.dia5 || DEFAULT_SESSIONS.dia5,
-          dia6: plan.dia6 || DEFAULT_SESSIONS.dia6,
-          dia7: plan.dia7 || DEFAULT_SESSIONS.dia7,
-          dia8: plan.dia8 || DEFAULT_SESSIONS.dia8,
-          dia9: plan.dia9 || DEFAULT_SESSIONS.dia9,
-          dia10: plan.dia10 || DEFAULT_SESSIONS.dia10,
+    setWeeklyPlans(prevPlans => {
+      const updated = prevPlans.map(plan => {
+        if (plan.id === selectedWeeklyPlanId) {
+          const currentFullSessions = {
+            dia1: plan.dia1 || DEFAULT_SESSIONS.dia1,
+            dia2: plan.dia2 || DEFAULT_SESSIONS.dia2,
+            dia3: plan.dia3 || DEFAULT_SESSIONS.dia3,
+            dia4: plan.dia4 || DEFAULT_SESSIONS.dia4,
+            dia5: plan.dia5 || DEFAULT_SESSIONS.dia5,
+            dia6: plan.dia6 || DEFAULT_SESSIONS.dia6,
+            dia7: plan.dia7 || DEFAULT_SESSIONS.dia7,
+            dia8: plan.dia8 || DEFAULT_SESSIONS.dia8,
+            dia9: plan.dia9 || DEFAULT_SESSIONS.dia9,
+            dia10: plan.dia10 || DEFAULT_SESSIONS.dia10,
+          };
+          const resolved = typeof newSessionsValOrFn === 'function' 
+            ? newSessionsValOrFn(currentFullSessions) 
+            : newSessionsValOrFn;
+          return {
+            ...plan,
+            dia1: resolved.dia1,
+            dia2: resolved.dia2,
+            dia3: resolved.dia3,
+            dia4: resolved.dia4,
+            dia5: resolved.dia5,
+            dia6: resolved.dia6,
+            dia7: resolved.dia7,
+            dia8: resolved.dia8,
+            dia9: resolved.dia9,
+            dia10: resolved.dia10,
+          };
+        }
+        return plan;
+      });
+
+      // Synchronously write to localStorage immediately to avoid data loss on fast reloads
+      try {
+        const nowIso = new Date().toISOString();
+        const cur = latestStateRef.current;
+        const normalized = {
+          drills: cur.drills || drills,
+          weeklyPlans: updated,
+          selectedWeeklyPlanId: cur.selectedWeeklyPlanId || selectedWeeklyPlanId || 'plan-default',
+          selectedSessionId: cur.selectedSessionId || selectedSessionId || 'dia1',
+          completions: cur.completions || completions || [],
+          favoriteDrillIds: cur.favoriteDrillIds || favoriteDrillIds || [],
+          coachProfile: cur.coachProfile || coachProfile || DEFAULT_COACH_PROFILE,
+          players: cur.players || players || [],
+          sessionTemplates: cur.sessionTemplates || sessionTemplates || [],
+          baremosConfig: cur.baremosConfig || baremosConfig || DEFAULT_BAREMOS,
+          updatedAt: nowIso
         };
-        const resolved = typeof newSessionsValOrFn === 'function' 
-          ? newSessionsValOrFn(currentFullSessions) 
-          : newSessionsValOrFn;
-        return {
-          ...plan,
-          dia1: resolved.dia1,
-          dia2: resolved.dia2,
-          dia3: resolved.dia3,
-          dia4: resolved.dia4,
-          dia5: resolved.dia5,
-          dia6: resolved.dia6,
-          dia7: resolved.dia7,
-          dia8: resolved.dia8,
-          dia9: resolved.dia9,
-          dia10: resolved.dia10,
-        };
-      }
-      return plan;
-    }));
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
+      } catch (e) {}
+
+      return updated;
+    });
   };
 
   const [selectedSessionId, setSelectedSessionId] = useState<string>('dia1');
@@ -720,6 +744,34 @@ export default function App() {
       loadFromCloud(codeToUse)
         .then(cloudData => {
           if (cloudData) {
+            // Check timestamps between local storage and cloud to prevent overwriting user changes!
+            let localUpdatedAt = 0;
+            try {
+              const localSaved = localStorage.getItem(LOCAL_STORAGE_KEY);
+              if (localSaved) {
+                const parsed = JSON.parse(localSaved);
+                if (parsed.updatedAt) {
+                  localUpdatedAt = new Date(parsed.updatedAt).getTime();
+                }
+              }
+            } catch (e) {}
+
+            const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
+
+            // If local state is newer than cloud data (e.g. user planned sessions locally before refresh),
+            // PRESERVE local sessions and upload them to update the cloud instead of getting overwritten!
+            if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 1000) {
+              console.log('Local data is newer than cloud data. Preserving local sessions and updating cloud.');
+              setSyncCode(codeToUse);
+              const curState = buildNormalizedState();
+              saveToCloud(codeToUse, curState).then((savedTime) => {
+                setLastSynced(new Date(savedTime));
+                lastSavedTimeStrRef.current = savedTime;
+                lastSeenStateStringRef.current = JSON.stringify(curState);
+              }).catch(() => {});
+              return;
+            }
+
             const cloudDrills = cloudData.drills || [];
             const localDrills = latestStateRef.current.drills;
             const mergedDrills = [...cloudDrills];
@@ -764,7 +816,7 @@ export default function App() {
               baremosConfig: cloudData.baremosConfig
             });
 
-            const stateStr = JSON.stringify(normState);
+            const stateStr = JSON.stringify({ ...normState, updatedAt: cloudData.updatedAt || new Date().toISOString() });
             lastSeenStateStringRef.current = stateStr;
 
             try {
@@ -795,10 +847,8 @@ export default function App() {
     }
   }, []);
 
-  // Auto-save changes to cloud
+  // Auto-save changes to cloud and always persist to localStorage immediately
   useEffect(() => {
-    if (!hasLoadedFromCloud || !syncCode) return;
-
     const currentState = buildNormalizedState({
       drills,
       weeklyPlans,
@@ -811,12 +861,16 @@ export default function App() {
       sessionTemplates,
       baremosConfig
     });
-    const currentStateString = JSON.stringify(currentState);
+    const nowIso = new Date().toISOString();
+    const currentStateWithTime = { ...currentState, updatedAt: nowIso };
+    const currentStateString = JSON.stringify(currentStateWithTime);
 
-    // Persist to localStorage for instant client reload
+    // Persist to localStorage immediately for instant client reload
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
     } catch (e) {}
+
+    if (!hasLoadedFromCloud || !syncCode) return;
 
     // If local state hasn't changed relative to what was last saved or loaded from the cloud, SKIP saving!
     if (lastSeenStateStringRef.current === currentStateString) {
@@ -837,13 +891,14 @@ export default function App() {
       } finally {
         setIsSyncing(false);
       }
-    }, 1000);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [drills, weeklyPlans, selectedWeeklyPlanId, selectedSessionId, completions, favoriteDrillIds, coachProfile, players, sessionTemplates, baremosConfig, syncCode, hasLoadedFromCloud]);
 
   const handleForceSaveSession = async () => {
     setIsSyncing(true);
+    const nowIso = new Date().toISOString();
     const currentState = buildNormalizedState({
       drills,
       weeklyPlans,
@@ -856,7 +911,8 @@ export default function App() {
       sessionTemplates,
       baremosConfig
     });
-    const currentStateString = JSON.stringify(currentState);
+    const stateWithTimestamp = { ...currentState, updatedAt: nowIso };
+    const currentStateString = JSON.stringify(stateWithTimestamp);
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, currentStateString);
       if (syncCode) {
@@ -865,7 +921,7 @@ export default function App() {
         lastSavedTimeStrRef.current = savedTimeStr;
         lastSeenStateStringRef.current = currentStateString;
       }
-      triggerToast(`💾 Sessió desada i sincronitzada immediatament al núvol! (Codi: ${syncCode})`);
+      triggerToast(`💾 Sessió desada i sincronitzada immediatament! (Codi: ${syncCode})`);
     } catch (e: any) {
       triggerToast('💾 Sessió desada localment a la memòria del navegador.');
     } finally {
@@ -881,6 +937,24 @@ export default function App() {
       if (!cloudData) return;
 
       if (cloudData.updatedAt && lastSavedTimeStrRef.current && cloudData.updatedAt === lastSavedTimeStrRef.current) {
+        return;
+      }
+
+      // Check local timestamp to prevent older snapshot from wiping recent local changes
+      let localUpdatedAt = 0;
+      try {
+        const localSaved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (localSaved) {
+          const parsed = JSON.parse(localSaved);
+          if (parsed.updatedAt) {
+            localUpdatedAt = new Date(parsed.updatedAt).getTime();
+          }
+        }
+      } catch (e) {}
+
+      const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
+      if (localUpdatedAt > 0 && localUpdatedAt > cloudUpdatedAt + 1000) {
+        console.log('Local data is newer than incoming cloud snapshot. Skipping snapshot overwrite.');
         return;
       }
 
@@ -949,7 +1023,7 @@ export default function App() {
         baremosConfig: cloudData.baremosConfig
       });
       
-      const appliedString = JSON.stringify(appliedState);
+      const appliedString = JSON.stringify({ ...appliedState, updatedAt: cloudData.updatedAt || new Date().toISOString() });
       lastSeenStateStringRef.current = appliedString;
 
       try {

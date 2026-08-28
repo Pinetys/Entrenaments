@@ -52,11 +52,13 @@ export function generateSyncCode(): string {
 export async function saveToCloud(syncCode: string, data: Omit<SyncData, 'updatedAt' | 'syncCode'>): Promise<string> {
   const docRef = doc(db, 'syncs', syncCode);
   const updatedAt = new Date().toISOString();
-  await setDoc(docRef, {
+  // Deep clone and clean all undefined properties so Firestore never rejects the payload
+  const cleanData = JSON.parse(JSON.stringify({
     ...data,
     syncCode,
     updatedAt
-  });
+  }));
+  await setDoc(docRef, cleanData);
   return updatedAt;
 }
 
