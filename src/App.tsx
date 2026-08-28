@@ -51,11 +51,11 @@ const DEFAULT_COACH_PROFILE: CoachProfile = {
   avatar: "/src/assets/images/coach_avatar_profile_1782414908020.jpg"
 };
 
-const DEFAULT_SESSIONS = {
+export const DEFAULT_SESSIONS: Record<string, TrainingSession> = {
   dia1: { 
     id: 'dia1', 
-    name: 'Sessió 1: Jueves 3 de Setembre - Ritme de Transició', 
-    dayOfWeek: 'Jueves', 
+    name: 'Sessió 1: Dilluns 31 d’Agost - Pretemporada & Ritme', 
+    dayOfWeek: 'Lunes', 
     totalDuration: 75, 
     drills: [
       { drillId: 'drill-rueda-11', duration: 15, notes: "Activa ritme de cames ràpides i passe fort de sortida." },
@@ -68,8 +68,8 @@ const DEFAULT_SESSIONS = {
   },
   dia2: { 
     id: 'dia2', 
-    name: 'Sessió 2: Martes 8 de Setembre - Defensa de l’1v1', 
-    dayOfWeek: 'Martes', 
+    name: 'Sessió 2: Dimecres 2 de Setembre - Fonaments i Intensitat Defensiva', 
+    dayOfWeek: 'Miércoles', 
     totalDuration: 75, 
     drills: [
       { drillId: 'drill-defensa-shell', duration: 20, notes: "Control d'ajuda i recuperació de línies de passe." },
@@ -80,12 +80,14 @@ const DEFAULT_SESSIONS = {
       { drillId: 'drill-dejan-cikic-decisions', duration: 10, notes: "Lectura ràpida de l'avantatge espacial en la trena." }
     ] 
   },
-  dia3: { id: 'dia3', name: 'Sessió 3: Jueves 10 de Setembre - Transició i Joc Continu', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia4: { id: 'dia4', name: 'Sessió 4: Martes 15 de Setembre - Pick & Roll Situacions', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia5: { id: 'dia5', name: 'Sessió 5: Jueves 17 de Setembre - Construcció del Contraatac', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia6: { id: 'dia6', name: 'Sessió 6: Martes 22 de Setembre - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-  dia7: { id: 'dia7', name: 'Sessió 7: Jueves 24 de Setembre - Presió a Tot Camp', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-  dia8: { id: 'dia8', name: 'Sessió 8: Martes 29 de Setembre - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+  dia3: { id: 'dia3', name: 'Sessió 3: Dijous 3 de Setembre - Ritme de Transició i Tir', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia4: { id: 'dia4', name: 'Sessió 4: Dimarts 8 de Setembre - Defensa de l’1v1 i Ajudes', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+  dia5: { id: 'dia5', name: 'Sessió 5: Dijous 10 de Setembre - Transició i Joc Continu', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia6: { id: 'dia6', name: 'Sessió 6: Dimarts 15 de Setembre - Pick & Roll Situacions', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+  dia7: { id: 'dia7', name: 'Sessió 7: Dijous 17 de Setembre - Construcció del Contraatac', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia8: { id: 'dia8', name: 'Sessió 8: Dimarts 22 de Setembre - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
+  dia9: { id: 'dia9', name: 'Sessió 9: Dijous 24 de Setembre - Presió a Tot Camp', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+  dia10: { id: 'dia10', name: 'Sessió 10: Dimarts 29 de Setembre - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
 };
 
 const isMobileDevice = () => {
@@ -159,14 +161,27 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.weeklyPlans && parsed.weeklyPlans.length > 0) {
-          return parsed.weeklyPlans;
+          return parsed.weeklyPlans.map((p: any) => ({
+            ...p,
+            startDate: p.startDate === '2026-09-03' ? '2026-08-31' : (p.startDate || '2026-08-31'),
+            dia1: p.dia1 || DEFAULT_SESSIONS.dia1,
+            dia2: p.dia2 || DEFAULT_SESSIONS.dia2,
+            dia3: p.dia3 || DEFAULT_SESSIONS.dia3,
+            dia4: p.dia4 || DEFAULT_SESSIONS.dia4,
+            dia5: p.dia5 || DEFAULT_SESSIONS.dia5,
+            dia6: p.dia6 || DEFAULT_SESSIONS.dia6,
+            dia7: p.dia7 || DEFAULT_SESSIONS.dia7,
+            dia8: p.dia8 || DEFAULT_SESSIONS.dia8,
+            dia9: p.dia9 || DEFAULT_SESSIONS.dia9,
+            dia10: p.dia10 || DEFAULT_SESSIONS.dia10,
+          }));
         }
         // Migration from old single "sessions"
         if (parsed.sessions) {
           return [{
             id: 'plan-default',
-            name: 'Planificació Mensual: Transició i Defensa Base',
-            startDate: new Date().toISOString().substring(0, 10),
+            name: 'Planificació Mensual: Pretemporada & Temporada Regular',
+            startDate: '2026-08-31',
             dia1: parsed.sessions.dia1 || DEFAULT_SESSIONS.dia1,
             dia2: parsed.sessions.dia2 || DEFAULT_SESSIONS.dia2,
             dia3: parsed.sessions.dia3 || DEFAULT_SESSIONS.dia3,
@@ -175,6 +190,8 @@ export default function App() {
             dia6: parsed.sessions.dia6 || DEFAULT_SESSIONS.dia6,
             dia7: parsed.sessions.dia7 || DEFAULT_SESSIONS.dia7,
             dia8: parsed.sessions.dia8 || DEFAULT_SESSIONS.dia8,
+            dia9: parsed.sessions.dia9 || DEFAULT_SESSIONS.dia9,
+            dia10: parsed.sessions.dia10 || DEFAULT_SESSIONS.dia10,
           }];
         }
       }
@@ -184,8 +201,8 @@ export default function App() {
     return [
       {
         id: 'plan-default',
-        name: 'Planificació Mensual: Transició i Defensa Base',
-        startDate: '2026-09-03',
+        name: 'Planificació Mensual: Pretemporada & Temporada Regular',
+        startDate: '2026-08-31',
         dia1: DEFAULT_SESSIONS.dia1,
         dia2: DEFAULT_SESSIONS.dia2,
         dia3: DEFAULT_SESSIONS.dia3,
@@ -194,6 +211,8 @@ export default function App() {
         dia6: DEFAULT_SESSIONS.dia6,
         dia7: DEFAULT_SESSIONS.dia7,
         dia8: DEFAULT_SESSIONS.dia8,
+        dia9: DEFAULT_SESSIONS.dia9,
+        dia10: DEFAULT_SESSIONS.dia10,
       }
     ];
   });
@@ -222,12 +241,14 @@ export default function App() {
     return {
       dia1: fallbackPlan.dia1 || DEFAULT_SESSIONS.dia1,
       dia2: fallbackPlan.dia2 || DEFAULT_SESSIONS.dia2,
-      dia3: fallbackPlan.dia3 || { id: 'dia3', name: 'Sessió 3: Dimarts Setmana 2 - Transició i Joc Continu', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-      dia4: fallbackPlan.dia4 || { id: 'dia4', name: 'Sessió 4: Dijous Setmana 2 - Pick & Roll Situacions', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-      dia5: fallbackPlan.dia5 || { id: 'dia5', name: 'Sessió 5: Dimarts Setmana 3 - Construcció del Contraatac', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-      dia6: fallbackPlan.dia6 || { id: 'dia6', name: 'Sessió 6: Dijous Setmana 3 - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-      dia7: fallbackPlan.dia7 || { id: 'dia7', name: 'Sessió 7: Dimarts Setmana 4 - Presió a Tot Camp', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-      dia8: fallbackPlan.dia8 || { id: 'dia8', name: 'Sessió 8: Dijous Setmana 4 - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+      dia3: fallbackPlan.dia3 || DEFAULT_SESSIONS.dia3,
+      dia4: fallbackPlan.dia4 || DEFAULT_SESSIONS.dia4,
+      dia5: fallbackPlan.dia5 || DEFAULT_SESSIONS.dia5,
+      dia6: fallbackPlan.dia6 || DEFAULT_SESSIONS.dia6,
+      dia7: fallbackPlan.dia7 || DEFAULT_SESSIONS.dia7,
+      dia8: fallbackPlan.dia8 || DEFAULT_SESSIONS.dia8,
+      dia9: fallbackPlan.dia9 || DEFAULT_SESSIONS.dia9,
+      dia10: fallbackPlan.dia10 || DEFAULT_SESSIONS.dia10,
     };
   }, [activePlan, weeklyPlans]);
 
@@ -236,14 +257,16 @@ export default function App() {
     setWeeklyPlans(prevPlans => prevPlans.map(plan => {
       if (plan.id === selectedWeeklyPlanId) {
         const currentFullSessions = {
-          dia1: plan.dia1,
-          dia2: plan.dia2,
-          dia3: plan.dia3 || { id: 'dia3', name: 'Sessió 3: Dimarts Setmana 2 - Transició i Joc Continu', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-          dia4: plan.dia4 || { id: 'dia4', name: 'Sessió 4: Dijous Setmana 2 - Pick & Roll Situacions', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-          dia5: plan.dia5 || { id: 'dia5', name: 'Sessió 5: Dimarts Setmana 3 - Construcció del Contraatac', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-          dia6: plan.dia6 || { id: 'dia6', name: 'Sessió 6: Dijous Setmana 3 - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-          dia7: plan.dia7 || { id: 'dia7', name: 'Sessió 7: Dimarts Setmana 4 - Presió a Tot Camp', dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-          dia8: plan.dia8 || { id: 'dia8', name: 'Sessió 8: Dijous Setmana 4 - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+          dia1: plan.dia1 || DEFAULT_SESSIONS.dia1,
+          dia2: plan.dia2 || DEFAULT_SESSIONS.dia2,
+          dia3: plan.dia3 || DEFAULT_SESSIONS.dia3,
+          dia4: plan.dia4 || DEFAULT_SESSIONS.dia4,
+          dia5: plan.dia5 || DEFAULT_SESSIONS.dia5,
+          dia6: plan.dia6 || DEFAULT_SESSIONS.dia6,
+          dia7: plan.dia7 || DEFAULT_SESSIONS.dia7,
+          dia8: plan.dia8 || DEFAULT_SESSIONS.dia8,
+          dia9: plan.dia9 || DEFAULT_SESSIONS.dia9,
+          dia10: plan.dia10 || DEFAULT_SESSIONS.dia10,
         };
         const resolved = typeof newSessionsValOrFn === 'function' 
           ? newSessionsValOrFn(currentFullSessions) 
@@ -258,6 +281,8 @@ export default function App() {
           dia6: resolved.dia6,
           dia7: resolved.dia7,
           dia8: resolved.dia8,
+          dia9: resolved.dia9,
+          dia10: resolved.dia10,
         };
       }
       return plan;
@@ -1898,17 +1923,19 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* S1..S8 Direct Switcher Buttons */}
+                {/* S1..S10 Direct Switcher Buttons */}
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/80">
                   {[
-                    { id: 'dia1', label: 'S1', title: 'Setm. 1 - DiM' },
-                    { id: 'dia2', label: 'S2', title: 'Setm. 1 - DiJ' },
-                    { id: 'dia3', label: 'S3', title: 'Setm. 2 - DiM' },
-                    { id: 'dia4', label: 'S4', title: 'Setm. 2 - DiJ' },
-                    { id: 'dia5', label: 'S5', title: 'Setm. 3 - DiM' },
-                    { id: 'dia6', label: 'S6', title: 'Setm. 3 - DiJ' },
-                    { id: 'dia7', label: 'S7', title: 'Setm. 4 - DiM' },
-                    { id: 'dia8', label: 'S8', title: 'Setm. 4 - DiJ' },
+                    { id: 'dia1', label: 'S1', title: 'Dil 31 Ago' },
+                    { id: 'dia2', label: 'S2', title: 'Dmc 2 Set' },
+                    { id: 'dia3', label: 'S3', title: 'Dij 3 Set' },
+                    { id: 'dia4', label: 'S4', title: 'Dim 8 Set' },
+                    { id: 'dia5', label: 'S5', title: 'Dij 10 Set' },
+                    { id: 'dia6', label: 'S6', title: 'Dim 15 Set' },
+                    { id: 'dia7', label: 'S7', title: 'Dij 17 Set' },
+                    { id: 'dia8', label: 'S8', title: 'Dim 22 Set' },
+                    { id: 'dia9', label: 'S9', title: 'Dij 24 Set' },
+                    { id: 'dia10', label: 'S10', title: 'Dim 29 Set' },
                   ].map((item) => {
                     const itemSession = sessions[item.id];
                     const isScheduled = !!itemSession?.scheduledTime;
@@ -1944,7 +1971,7 @@ export default function App() {
 
               {isCalendarExpanded && (
                 <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-200">
-                  <p className="text-[10px] text-slate-500 font-bold">Fes clic als dies d'entrenament (dimarts/dijous) o als caps de setmana per obrir les anotacions del partit:</p>
+                  <p className="text-[10px] text-slate-500 font-bold">Fes clic als dies d'entrenament (dilluns/dimecres/dimarts/dijous) o als caps de setmana per obrir les anotacions del partit:</p>
                   <div className="grid grid-cols-7 gap-1 md:gap-1.5">
                     {/* Header days */}
                     {['Dil', 'Dim', 'Dmc', 'Dij', 'Div', 'Dis', 'Diu'].map(dayName => (
@@ -1953,28 +1980,35 @@ export default function App() {
                       </div>
                     ))}
 
-                    {/* 28 simulated calendar squares */}
-                    {Array.from({ length: 28 }).map((_, i) => {
-                      const dayNum = i + 1;
+                    {/* 35 calendar squares starting Monday 31st August 2026 */}
+                    {Array.from({ length: 35 }).map((_, i) => {
                       const dayOfWeekIndex = i % 7; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
                       const weekIndex = Math.floor(i / 7);
-                      const isDay1 = dayOfWeekIndex === 1; // Tuesday
-                      const isDay2 = dayOfWeekIndex === 3; // Thursday
                       const isWeekend = dayOfWeekIndex >= 5; // Saturday/Sunday
 
-                      let sessionCode = '';
-                      let sessionNum = 0;
-                      if (isDay1) {
-                        if (weekIndex === 0) { sessionCode = 'dia1'; sessionNum = 1; }
-                        else if (weekIndex === 1) { sessionCode = 'dia3'; sessionNum = 3; }
-                        else if (weekIndex === 2) { sessionCode = 'dia5'; sessionNum = 5; }
-                        else if (weekIndex === 3) { sessionCode = 'dia7'; sessionNum = 7; }
-                      } else if (isDay2) {
-                        if (weekIndex === 0) { sessionCode = 'dia2'; sessionNum = 2; }
-                        else if (weekIndex === 1) { sessionCode = 'dia4'; sessionNum = 4; }
-                        else if (weekIndex === 2) { sessionCode = 'dia6'; sessionNum = 6; }
-                        else if (weekIndex === 3) { sessionCode = 'dia8'; sessionNum = 8; }
-                      }
+                      let dayLabel = '';
+                      if (i === 0) dayLabel = '31 Ago';
+                      else if (i === 1) dayLabel = '1 Set';
+                      else if (i <= 30) dayLabel = `${i}`;
+                      else if (i === 31) dayLabel = '1 Oct';
+                      else dayLabel = `${i - 30}`;
+
+                      const SESSION_MAP: Record<number, { code: string; num: number }> = {
+                        0: { code: 'dia1', num: 1 },
+                        2: { code: 'dia2', num: 2 },
+                        3: { code: 'dia3', num: 3 },
+                        8: { code: 'dia4', num: 4 },
+                        10: { code: 'dia5', num: 5 },
+                        15: { code: 'dia6', num: 6 },
+                        17: { code: 'dia7', num: 7 },
+                        22: { code: 'dia8', num: 8 },
+                        24: { code: 'dia9', num: 9 },
+                        29: { code: 'dia10', num: 10 },
+                      };
+
+                      const sessionInfo = SESSION_MAP[i];
+                      const sessionCode = sessionInfo?.code || '';
+                      const sessionNum = sessionInfo?.num || 0;
 
                       const matchItem = activePlan.matchAnnotations?.[i.toString()];
                       const hasMatchData = Boolean(matchItem);
@@ -2030,9 +2064,6 @@ export default function App() {
                           onClick={() => {
                             if (sessionCode) {
                               setSelectedSessionId(sessionCode);
-                            } else if (isWeekend) {
-                              setSelectedMatchDateIndex(i);
-                              setShowMatchModal(true);
                             } else {
                               setSelectedMatchDateIndex(i);
                               setShowMatchModal(true);
@@ -2040,7 +2071,7 @@ export default function App() {
                           }}
                           className={`p-1 min-h-[36px] sm:min-h-[40px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
                         >
-                          <span className="text-[8px] font-black font-mono self-start">{dayNum}</span>
+                          <span className="text-[8px] font-black font-mono self-start">{dayLabel}</span>
                           {content}
                         </div>
                       );

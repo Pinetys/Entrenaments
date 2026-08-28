@@ -543,7 +543,9 @@ export default function SessionPlanner({
                         { id: 'dia5', num: 5 },
                         { id: 'dia6', num: 6 },
                         { id: 'dia7', num: 7 },
-                        { id: 'dia8', num: 8 }
+                        { id: 'dia8', num: 8 },
+                        { id: 'dia9', num: 9 },
+                        { id: 'dia10', num: 10 }
                       ]
                       .filter(s => s.id !== session.id)
                       .map(target => {

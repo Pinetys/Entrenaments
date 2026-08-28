@@ -40,16 +40,18 @@ interface MatchAnnotationsModalProps {
   triggerToast?: (msg: string) => void;
 }
 
-// 28 days of the microcycle formatted
+// Weekend match days of the microcycle starting on Monday 31st August
 const WEEKEND_MATCH_DAYS = [
-  { index: 5, label: 'Setmana 1 • Dissabte (Dia 6)' },
-  { index: 6, label: 'Setmana 1 • Diumenge (Dia 7)' },
-  { index: 12, label: 'Setmana 2 • Dissabte (Dia 13)' },
-  { index: 13, label: 'Setmana 2 • Diumenge (Dia 14)' },
-  { index: 19, label: 'Setmana 3 • Dissabte (Dia 20)' },
-  { index: 20, label: 'Setmana 3 • Diumenge (Dia 21)' },
-  { index: 25, label: 'Setmana 4 • Dissabte (Dia 26)' },
-  { index: 26, label: 'Setmana 4 • Diumenge (Dia 27)' },
+  { index: 5, label: 'Setmana 1 • Dissabte (5 Set)' },
+  { index: 6, label: 'Setmana 1 • Diumenge (6 Set)' },
+  { index: 12, label: 'Setmana 2 • Dissabte (12 Set)' },
+  { index: 13, label: 'Setmana 2 • Diumenge (13 Set)' },
+  { index: 19, label: 'Setmana 3 • Dissabte (19 Set)' },
+  { index: 20, label: 'Setmana 3 • Diumenge (20 Set)' },
+  { index: 26, label: 'Setmana 4 • Dissabte (26 Set)' },
+  { index: 27, label: 'Setmana 4 • Diumenge (27 Set)' },
+  { index: 33, label: 'Setmana 5 • Dissabte (3 Oct)' },
+  { index: 34, label: 'Setmana 5 • Diumenge (4 Oct)' },
 ];
 
 const PRESET_TAGS = [

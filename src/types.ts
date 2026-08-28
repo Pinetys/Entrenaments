@@ -95,7 +95,7 @@ export interface MatchAnnotation {
 export interface WeeklyPlan {
   id: string;
   name: string;
-  startDate: string; // "YYYY-MM-DD" or similar
+  startDate: string; // "YYYY-MM-DD" e.g. "2026-08-31"
   dia1: TrainingSession;
   dia2: TrainingSession;
   dia3?: TrainingSession;
@@ -104,6 +104,10 @@ export interface WeeklyPlan {
   dia6?: TrainingSession;
   dia7?: TrainingSession;
   dia8?: TrainingSession;
+  dia9?: TrainingSession;
+  dia10?: TrainingSession;
+  dia11?: TrainingSession;
+  dia12?: TrainingSession;
   matchAnnotations?: Record<string, MatchAnnotation>; // key is dateIndex string (e.g. "5", "6", etc.)
 }
 
