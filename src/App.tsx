@@ -1799,14 +1799,15 @@ export default function App() {
   // Back up configuration package via local json download
   const handleExportJson = () => {
     try {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ drills, sessions }));
+      const fullState = buildNormalizedState();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullState, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `planificacion_basket_juniorA_${selectedSessionId}.json`);
+      downloadAnchor.setAttribute("download", `planificacion_basket_juniorA_${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
-      triggerToast('📥 S’ha descarregat la còpia de seguretat del teu planning!');
+      triggerToast('📥 S’ha descarregat la còpia de seguretat completa al teu dispositiu!');
     } catch (e) {
       triggerToast('Error en exportar el fitxer d’entrenament.');
     }
@@ -1820,10 +1821,19 @@ export default function App() {
       fileReader.onload = (event) => {
         try {
           const parsed = JSON.parse(event.target?.result as string);
-          if (parsed.drills && parsed.sessions) {
-            setDrills(parsed.drills);
-            setSessions(parsed.sessions);
-            triggerToast('✅ Planificació i biblioteca de la temporada carregades amb èxit!');
+          if (parsed && (parsed.drills || parsed.sessions || parsed.weeklyPlans)) {
+            if (parsed.drills) setDrills(filterUserOnlyDrills(parsed.drills));
+            if (parsed.sessions) setSessions(parsed.sessions);
+            if (parsed.weeklyPlans && Array.isArray(parsed.weeklyPlans)) setWeeklyPlans(parsed.weeklyPlans.map(sanitizeWeeklyPlan));
+            if (parsed.players && Array.isArray(parsed.players) && parsed.players.length > 0) setPlayers(parsed.players);
+            if (parsed.sessionTemplates && Array.isArray(parsed.sessionTemplates)) setSessionTemplates(parsed.sessionTemplates);
+            if (parsed.baremosConfig && Array.isArray(parsed.baremosConfig) && parsed.baremosConfig.length > 0) setBaremosConfig(parsed.baremosConfig);
+            if (parsed.coachProfile) setCoachProfile(parsed.coachProfile);
+            if (parsed.favoriteDrillIds) setFavoriteDrillIds(parsed.favoriteDrillIds);
+            if (parsed.completions) setCompletions(parsed.completions);
+            
+            syncStateToCloudImmediately(parsed);
+            triggerToast('✅ Còpia de seguretat restaurada i sincronitzada amb èxit!');
           } else {
             triggerToast('⚠️ El fitxer escollit no té el format de planificació correcte.');
           }
@@ -1899,15 +1909,15 @@ export default function App() {
             </div>
           </div>
 
-          {/* Row 2 on Mobile (Grid of 3 buttons) / Inline controls on Desktop */}
-          <div className="w-full md:w-auto pt-2 md:pt-0 border-t border-slate-150 md:border-none">
-            {/* Mobile 3-column action row */}
+          {/* Row 2 on Mobile (Action rows) / Inline controls on Desktop */}
+          <div className="w-full md:w-auto pt-2 md:pt-0 border-t border-slate-150 md:border-none space-y-1.5 md:space-y-0">
+            {/* Mobile action grid */}
             <div className="grid grid-cols-3 gap-1.5 md:hidden w-full">
               <button
                 id="btn-header-players-mobile"
                 onClick={() => setShowPlayerRosterModal(true)}
                 title="Plantilla de Jugadors"
-                className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs"
+                className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs cursor-pointer"
               >
                 <Users size={13} className="text-orange-400 shrink-0" />
                 <span className="truncate">Jugadors</span>
@@ -1917,7 +1927,7 @@ export default function App() {
                 id="btn-header-share-mobile"
                 onClick={handleGenerateShareCode}
                 title="Compartir QR Pista"
-                className="py-1.5 px-2 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs"
+                className="py-1.5 px-2 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs cursor-pointer"
               >
                 <Share2 size={12} className="shrink-0" />
                 <span className="truncate">Pista QR</span>
@@ -1927,11 +1937,39 @@ export default function App() {
                 id="btn-header-sync-mobile"
                 onClick={handleOpenSyncModal}
                 title="Sincronització Núvol"
-                className="py-1.5 px-2 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs"
+                className="py-1.5 px-2 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs cursor-pointer"
               >
                 <Cloud size={12} className={`shrink-0 ${isSyncing ? "animate-pulse" : ""}`} />
                 <span className="truncate">Sync</span>
               </button>
+            </div>
+
+            {/* Mobile Row 2: Export / Import JSON Quick Backup Buttons */}
+            <div className="grid grid-cols-2 gap-1.5 md:hidden w-full">
+              <button
+                id="btn-header-export-mobile"
+                onClick={handleExportJson}
+                title="Descarregar Còpia de Seguretat (JSON) al mòbil"
+                className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 active:scale-95 transition text-[10px] font-bold rounded-md text-slate-100 flex items-center justify-center gap-1.5 uppercase tracking-wider shadow-xs cursor-pointer"
+              >
+                <Download size={12} className="text-orange-400 shrink-0" />
+                <span className="truncate">Exportar JSON</span>
+              </button>
+
+              <label
+                id="lbl-header-import-mobile"
+                title="Restaurar Còpia de Seguretat (JSON) des del mòbil"
+                className="py-1.5 px-2 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 transition text-[10px] font-bold rounded-md text-slate-800 flex items-center justify-center gap-1.5 uppercase tracking-wider shadow-xs cursor-pointer text-center"
+              >
+                <Upload size={12} className="text-orange-600 shrink-0" />
+                <span className="truncate">Importar JSON</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportJson}
+                  className="hidden"
+                />
+              </label>
             </div>
 
             {/* Desktop Action Row */}
@@ -2677,6 +2715,40 @@ export default function App() {
                 >
                   🔄 Restaurar Totes les Sessions i Exercicis Anteriors
                 </button>
+
+                {/* BACKUP EXPORT / IMPORT JSON SECTION */}
+                <div className="border-t border-slate-150 pt-3 mt-3 space-y-2">
+                  <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest font-mono block text-left">
+                    💾 Còpia de Seguretat Ràpida (Arxiu JSON)
+                  </span>
+                  <p className="text-[10px] text-slate-500 leading-relaxed font-sans text-left">
+                    Descarrega o restaura totes les teves sessions i els 19 exercicis directament com a fitxer al teu mòbil o ordinador:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      id="btn-modal-export-json"
+                      type="button"
+                      onClick={handleExportJson}
+                      className="py-2 px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Download size={13} className="text-orange-400 shrink-0" />
+                      <span>Descarregar JSON</span>
+                    </button>
+                    <label
+                      id="lbl-modal-import-json"
+                      className="py-2 px-2 bg-white hover:bg-slate-50 border border-slate-300 active:scale-95 text-slate-800 font-bold text-[10px] uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-center"
+                    >
+                      <Upload size={13} className="text-orange-600 shrink-0" />
+                      <span>Restaurar JSON</span>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={handleImportJson}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
 
             </div>
