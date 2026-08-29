@@ -17,6 +17,7 @@ import { Drill, TrainingSession } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import DrillManualBooklet from './DrillManualBooklet';
+import { ALL_RECOVERED_DRILLS } from '../data/allPrePopulatedDrills';
 
 const EMPTY_BOARD = { paths: [], pins: [] };
 const NOOP_CHANGE = () => {};
@@ -64,98 +65,8 @@ export function formatSessionOptionName(sessId: string, sess?: Partial<TrainingS
   };
 }
 
-// Pre-populated High-Level Drills for Junior Nivel A Catalan Federation
-export const PRE_POPULATED_DRILLS: Drill[] = [
-  {
-    id: 'drill-rueda-11',
-    title: "Roda d'11 FCBQ de Contraatac Continuat",
-    category: 'Transició',
-    concept: 'Contraatac Ràpid',
-    duration: 12,
-    objectives: [
-      "Desenvolupament del primer passe de sortida (outlet pass) en menys de 2 segons.",
-      "Coordinació espacial de les tres línies de carril de contraatac a màxima velocitat.",
-      "Entrenar la finalització en velocitat sota pressió i el balanç defensiu dinàmic."
-    ],
-    description: "Exercici insígnia de l'Escola d'Entrenadors del Bàsquet Català per a escalfaments competitius. Es col·loquen tres files a línia de fons (un passador a l'eix i dos corredors a les cantonades). El jugador amb pilota llança voluntàriament contra el taulell, agafa el rebot ràpid d'embranzida, gira l'eix de malucs per obrir el passe ràpid a la banda i inicia una trena de pista sencera a 3 passades sense botar fins a resoldre en entrada.",
-    setupInstructions: "Dividir el grup en 3 files darrere de la línia de fons. El d'enmig comença amb pilota llançant al taulell. Els dos dels costats corren pegats a la banda preparant-se per a la trena de transició.",
-    playersNeeded: 10,
-    materials: ['Pilotes de bàsquet (S7)', 'Cons de demarcació'],
-    boardState: {
-      courtType: 'full',
-      paths: [
-        { id: 'p1', points: [{ x: 50, y: 88 }, { x: 50, y: 55 }, { x: 20, y: 75 }], color: '#0ea5e9', type: 'dashed' }
-      ],
-      pins: [
-        { id: 'att1', label: '1', x: 50, y: 90, type: 'attacker' },
-        { id: 'att2', label: '2', x: 20, y: 92, type: 'attacker' },
-        { id: 'att3', label: '3', x: 80, y: 92, type: 'attacker' },
-        { id: 'cone1', label: '▲', x: 20, y: 50, type: 'cone' },
-        { id: 'cone2', label: '▲', x: 80, y: 50, type: 'cone' }
-      ]
-    }
-  },
-  {
-    id: 'drill-pnr-def',
-    title: 'Defensa de Bloqueig Directe (Pick & Roll) Central Drop',
-    category: 'Defensa',
-    concept: 'Pick & Roll',
-    duration: 15,
-    objectives: [
-      "Negar el pas central al base contrari forçant-lo cap a la banda per reduir angle de decisió.",
-      "Treballar la comunicació verbal ràpida del defensor de l'home gran ('Bloqueig!', 'Drop!').",
-      "Assegurar l'ajuda de fons (costat feble) en la recuperació de la continuació (Roll)."
-    ],
-    description: "Syllabus de Nivell A de la Federació Catalana. Treball defensiu de 3x3 de Pick & Roll central. Apliquem la defensa de contenció tipus 'Drop' mentre el defensor del base lluita per sobre de la pantalla atacant per darrere o recuperant l'eix d'ajudes.",
-    setupInstructions: "Situar un 3 contra 3 a mitja pista. Pilota en posició de base central. Ajustar el cos de fons defensant especialment les ajudes de segon esforç des de cantonades.",
-    playersNeeded: 6,
-    materials: ['Pilotes de joc', 'Petos de contrast'],
-    boardState: {
-      paths: [
-        { id: 'path-block', points: [{ x: 65, y: 55 }, { x: 50, y: 65 }], color: '#000000', type: 'solid' },
-        { id: 'path-def', points: [{ x: 50, y: 72 }, { x: 40, y: 78 }], color: '#000000', type: 'dashed' }
-      ],
-      pins: [
-        { id: 'att1', label: '1', x: 50, y: 65, type: 'attacker' },
-        { id: 'att2', label: '5', x: 65, y: 55, type: 'attacker' },
-        { id: 'att3', label: '2', x: 25, y: 75, type: 'attacker' },
-        { id: 'def1', label: '1', x: 50, y: 72, type: 'defender' },
-        { id: 'def2', label: '5', x: 61, y: 59, type: 'defender' },
-        { id: 'def3', label: '2', x: 28, y: 72, type: 'defender' },
-        { id: 'ball', label: '🏀', x: 48, y: 65, type: 'ball' }
-      ]
-    }
-  },
-  {
-    id: 'drill-press-break',
-    title: 'Sortida de Pressió 1-3-1 amb Connexió Vertical',
-    category: 'Transició',
-    concept: 'Sortida de Pressió',
-    duration: 15,
-    objectives: [
-      "Batre la trapa de cantonada a línia de fons sense esgotar el bot.",
-      "Fixar la segona línia de la zona de pressió atacant l'eix central amb la finta de cos.",
-      "Trobar el jugador 'flash' al cercle central per generar superioritat de 3v2."
-    ],
-    description: "Estructura de sortida de pressió adaptada per a equips Júnior A. Davant defenses agressives a tota pista, establim 3 línies de passada curtes a camp propi per rebre en moviment i girar el joc al costat feble.",
-    setupInstructions: "5v5 a pista sencera. Equip defensor col·locat en pressió zonal 1-2-1-1.",
-    playersNeeded: 10,
-    materials: ['Pilota de joc'],
-    boardState: {
-      courtType: 'full',
-      paths: [
-        { id: 'p1', points: [{ x: 50, y: 92 }, { x: 20, y: 80 }], color: '#0ea5e9', type: 'dashed' }
-      ],
-      pins: [
-        { id: 'a1', label: '1', x: 50, y: 95, type: 'attacker' },
-        { id: 'a2', label: '2', x: 20, y: 80, type: 'attacker' },
-        { id: 'a3', label: '3', x: 80, y: 80, type: 'attacker' },
-        { id: 'a4', label: '4', x: 50, y: 60, type: 'attacker' },
-        { id: 'a5', label: '5', x: 50, y: 30, type: 'attacker' }
-      ]
-    }
-  }
-];
+// Pre-populated High-Level Drills including all user-created and Catalan Federation drills (25 drills in total)
+export const PRE_POPULATED_DRILLS: Drill[] = ALL_RECOVERED_DRILLS;
 
 interface DrillDatabaseProps {
   drills: Drill[];

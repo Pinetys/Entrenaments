@@ -137,7 +137,7 @@ try {
 // If cache is empty or missing standard keys, populate from recovered state
 const baseState = getBaseRecoveredState();
 if (baseState) {
-  const standardCodes = ["PINETY-KCSA", "PINETY-JUNIORA", "PINETY-DEFAULT", "DEFAULT"];
+  const standardCodes = ["PINETY-GA5Z", "PINETY-JUNIORA", "PINETY-DJAG", "PINETY-KCSA", "PINETY-734D", "PINETY-DEFAULT", "DEFAULT"];
   standardCodes.forEach(code => {
     if (!syncStateCache.has(code)) {
       syncStateCache.set(code, {
