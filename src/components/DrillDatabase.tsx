@@ -17,7 +17,7 @@ import { Drill, TrainingSession } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import DrillManualBooklet from './DrillManualBooklet';
-import { ALL_RECOVERED_DRILLS } from '../data/allPrePopulatedDrills';
+import { USER_CUSTOM_DRILLS } from '../data/userCustomDrills';
 
 const EMPTY_BOARD = { paths: [], pins: [] };
 const NOOP_CHANGE = () => {};
@@ -65,8 +65,8 @@ export function formatSessionOptionName(sessId: string, sess?: Partial<TrainingS
   };
 }
 
-// Pre-populated High-Level Drills including all user-created and Catalan Federation drills (25 drills in total)
-export const PRE_POPULATED_DRILLS: Drill[] = ALL_RECOVERED_DRILLS;
+// User-created drills database
+export const PRE_POPULATED_DRILLS: Drill[] = USER_CUSTOM_DRILLS;
 
 interface DrillDatabaseProps {
   drills: Drill[];

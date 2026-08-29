@@ -1,1291 +1,6 @@
 {
   "drills": [
     {
-      "id": "drill-rueda-11",
-      "duration": 12,
-      "setupInstructions": "Dividir el grup en 3 files darrere de la lÃ­nia de fons. El d'enmig comenÃ§a amb pilota llanÃ§ant al taulell. Els dos dels costats corren pegats a la banda preparant-se per a la trena de transiciÃ³.",
-      "boardState": {
-        "paths": [
-          {
-            "points": [
-              {
-                "x": 50,
-                "y": 88
-              },
-              {
-                "x": 50,
-                "y": 55
-              },
-              {
-                "x": 20,
-                "y": 75
-              }
-            ],
-            "type": "dashed",
-            "color": "#0ea5e9",
-            "id": "p1"
-          }
-        ],
-        "courtType": "full",
-        "pins": [
-          {
-            "x": 50,
-            "y": 90,
-            "type": "attacker",
-            "id": "att1",
-            "label": "1"
-          },
-          {
-            "x": 20,
-            "id": "att2",
-            "type": "attacker",
-            "y": 92,
-            "label": "2"
-          },
-          {
-            "x": 80,
-            "label": "3",
-            "type": "attacker",
-            "y": 92,
-            "id": "att3"
-          },
-          {
-            "label": "â–²",
-            "y": 50,
-            "type": "cone",
-            "id": "cone1",
-            "x": 20
-          },
-          {
-            "x": 80,
-            "id": "cone2",
-            "y": 50,
-            "type": "cone",
-            "label": "â–²"
-          }
-        ]
-      },
-      "title": "Roda d'11 FCBQ de Contraatac Continuat",
-      "objectives": [
-        "Desenvolupament del primer passe de sortida (outlet pass) en menys de 2 segons.",
-        "CoordinaciÃ³ espacial de les tres lÃ­nies de carril de contraatac a mÃ xima velocitat.",
-        "Entrenar la finalitzaciÃ³ en velocitat sota pressiÃ³ i el balanÃ§ defensiu dinÃ mic."
-      ],
-      "playersNeeded": 10,
-      "materials": [
-        "Pilotes de bÃ squet (S7)",
-        "Cons de demarcaciÃ³"
-      ],
-      "description": "Exercici insÃ­gnia de l'Escola d'Entrenadors del BÃ squet CatalÃ  per a escalfaments competitius. Es colÂ·loquen tres files a lÃ­nia de fons (un passador a l'eix i dos corredors a les cantonades). El jugador amb pilota llanÃ§a voluntÃ riament contra el taulell, agafa el rebot rÃ pid d'embranzida, gira l'eix de malucs per obrir el passe rÃ pid a la banda i inicia una trena de pista sencera a 3 passades sense botar fins a resoldre en entrada.",
-      "category": "TransiciÃ³n"
-    },
-    {
-      "title": "Defensa de Bloqueig Directe (Pick & Roll) Central Drop",
-      "concept": "Pick & Roll",
-      "playersNeeded": 6,
-      "materials": [
-        "Pilotes de joc",
-        "Petos de contrast"
-      ],
-      "duration": 15,
-      "id": "drill-pnr-def",
-      "category": "Defensa",
-      "setupInstructions": "Situar un 3 contra 3 a mitja pista. Pilota en posiciÃ³ de base central. Ajustar el cos de fons defensant especialment les ajudes de segon esforÃ§ des de cantonades.",
-      "description": "Syllabus de Nivell A de la FederaciÃ³ Catalana. Treball defensiu de 3x3 de Pick & Roll central. Apliquem la defense de contenciÃ³ tipus 'Drop' (l'home de l'interior recula fins a lÃ­nia de lliures per protegir la penetraciÃ³) mentre que el defensor del base lluita per sobre de la pantalla atacant per darrere o recuperant l'eix d'ajudes.",
-      "boardState": {
-        "paths": [
-          {
-            "color": "#000000",
-            "id": "path-block",
-            "points": [
-              {
-                "y": 55,
-                "x": 65
-              },
-              {
-                "y": 65,
-                "x": 50
-              }
-            ],
-            "type": "solid"
-          },
-          {
-            "type": "dashed",
-            "color": "#000000",
-            "id": "path-def",
-            "points": [
-              {
-                "y": 72,
-                "x": 50
-              },
-              {
-                "x": 40,
-                "y": 78
-              }
-            ]
-          }
-        ],
-        "pins": [
-          {
-            "label": "1",
-            "x": 50,
-            "y": 65,
-            "type": "attacker",
-            "id": "att1"
-          },
-          {
-            "type": "attacker",
-            "x": 65,
-            "label": "5",
-            "y": 55,
-            "id": "att2"
-          },
-          {
-            "label": "2",
-            "y": 75,
-            "type": "attacker",
-            "x": 25,
-            "id": "att3"
-          },
-          {
-            "label": "1",
-            "id": "def1",
-            "type": "defender",
-            "x": 50,
-            "y": 72
-          },
-          {
-            "label": "5",
-            "type": "defender",
-            "y": 59,
-            "id": "def2",
-            "x": 61
-          },
-          {
-            "type": "defender",
-            "label": "2",
-            "x": 28,
-            "y": 72,
-            "id": "def3"
-          },
-          {
-            "label": "ğŸ€",
-            "id": "ball",
-            "x": 48,
-            "y": 65,
-            "type": "ball"
-          }
-        ]
-      },
-      "objectives": [
-        "Negar el pas central al base contrari forÃ§ant-lo cap a la banda per reduir angle de decisiÃ³.",
-        "Treballar la comunicaciÃ³ verbal rÃ pida del defensor de l'home gran ('Bloqueig!', 'Drop!').",
-        "Assegurar l'ajuda de fons (costat feble) en la recuperaciÃ³ de la continuaciÃ³ (Roll)."
-      ]
-    },
-    {
-      "id": "drill-press-break",
-      "duration": 15,
-      "setupInstructions": "Muntar 4 contra 4 a camp sencer simulant un llanÃ§ament lliure contrari anotat. Un cop la pilota es posa en joc, s'activen les llanÃ§adores d'ajuda al pivot central de connexiÃ³ rÃ pida.",
-      "boardState": {
-        "courtType": "full",
-        "paths": [
-          {
-            "points": [
-              {
-                "y": 97,
-                "x": 50
-              },
-              {
-                "y": 85,
-                "x": 25
-              }
-            ],
-            "type": "dashed",
-            "id": "pass-in",
-            "color": "#0ea5e9"
-          },
-          {
-            "points": [
-              {
-                "y": 85,
-                "x": 25
-              },
-              {
-                "y": 60,
-                "x": 50
-              }
-            ],
-            "type": "dashed",
-            "color": "#0ea5e9",
-            "id": "pass-mid"
-          }
-        ],
-        "pins": [
-          {
-            "y": 97,
-            "type": "attacker",
-            "id": "att1",
-            "label": "4",
-            "x": 50
-          },
-          {
-            "id": "att2",
-            "type": "attacker",
-            "y": 85,
-            "label": "1",
-            "x": 25
-          },
-          {
-            "x": 50,
-            "id": "att3",
-            "type": "attacker",
-            "y": 60,
-            "label": "5"
-          },
-          {
-            "x": 25,
-            "label": "1",
-            "id": "def1",
-            "y": 80,
-            "type": "defender"
-          },
-          {
-            "type": "defender",
-            "y": 70,
-            "id": "def2",
-            "label": "2",
-            "x": 45
-          },
-          {
-            "x": 50,
-            "id": "ball",
-            "y": 97,
-            "type": "ball",
-            "label": "ğŸ€"
-          }
-        ]
-      },
-      "title": "Sortida de PressiÃ³ 1-3-1 amb ConnexiÃ³ Vertical",
-      "playersNeeded": 8,
-      "objectives": [
-        "Evitar rebre l'embolcall doble de la defensa (Traps) a les cantonades fatÃ­diques del camp.",
-        "Exigir el 'tercer home' al mig del camp per canviar l'eix de visiÃ³ de la lÃ­nia de pressiÃ³ bÃ sica.",
-        "Assegurar una recepciÃ³ en moviment llanÃ§ant passades diagonals de seguretat de dalt a baix."
-      ],
-      "description": "Estructura defensiva de l'Escola de l'FCBQ per combatre defenses zonals en premsa (com la 1-2-1-1). Es defineix un sacador rÃ pid (pivot), el base que fa el rebuig i el 'post de fons' situat al mig de la pista per fer d'enllaÃ§ amortidor. Queda absolutament penalitzat fer servir el bot abans de canviar l'eix de costat de camp.",
-      "materials": [
-        "Pilotes de bÃ squet",
-        "Petos bicolor"
-      ],
-      "category": "Sistemas"
-    },
-    {
-      "title": "Rueda de Tiro Nivel A (Salida de Indirecto)",
-      "playersNeeded": 8,
-      "description": "Consiste en una rueda dinÃ¡mica con dos balones. Jugador pasa e indirectamente va al poste a poner un bloqueo virtual, para que el tirador salga rizado o abierto al perimetro a recibir y tirar. RotaciÃ³n rÃ¡pida: Pasador -> Bloqueador -> Tirador -> Reboteador.",
-      "boardState": {
-        "pins": [
-          {
-            "x": 50,
-            "id": "att1",
-            "y": 55,
-            "type": "attacker",
-            "label": "P1"
-          },
-          {
-            "type": "attacker",
-            "id": "att2",
-            "y": 85,
-            "x": 65,
-            "label": "T1"
-          },
-          {
-            "id": "cone1",
-            "y": 80,
-            "label": "â–²",
-            "x": 70,
-            "type": "cone"
-          },
-          {
-            "x": 50,
-            "id": "ball",
-            "type": "ball",
-            "y": 55,
-            "label": "ğŸ€"
-          }
-        ],
-        "paths": [
-          {
-            "type": "dotted",
-            "color": "#38bdf8",
-            "id": "sp-pass",
-            "points": [
-              {
-                "y": 55,
-                "x": 50
-              },
-              {
-                "x": 80,
-                "y": 72
-              }
-            ]
-          },
-          {
-            "type": "solid",
-            "id": "sp-run",
-            "points": [
-              {
-                "y": 85,
-                "x": 65
-              },
-              {
-                "x": 80,
-                "y": 72
-              }
-            ],
-            "color": "#fbbf24"
-          }
-        ]
-      },
-      "duration": 10,
-      "setupInstructions": "Dos filas de pasadores en el medio campo, dos filas de tiradores/bloqueadores en la esquina. Ritmo y exigencia de pies listos (\"catch and shoot\") de Nivel A.",
-      "materials": [
-        "3 Balones",
-        "Conos marcadores"
-      ],
-      "category": "Tiro",
-      "id": "drill-rueda-tiro-competitiva",
-      "objectives": [
-        "Llegar y tirar en situaciones reales de partido",
-        "Calidad de pases a las manos del tirador",
-        "Competir por equipos (meter 25 triples en 4 minutos)"
-      ]
-    },
-    {
-      "boardState": {
-        "pins": [
-          {
-            "id": "att1",
-            "y": 45,
-            "type": "attacker",
-            "label": "1",
-            "x": 50
-          },
-          {
-            "x": 25,
-            "label": "2",
-            "id": "att2",
-            "y": 45,
-            "type": "attacker"
-          },
-          {
-            "x": 75,
-            "id": "att3",
-            "type": "attacker",
-            "y": 45,
-            "label": "3"
-          },
-          {
-            "x": 35,
-            "label": "D1",
-            "id": "def1",
-            "y": 15,
-            "type": "defender"
-          },
-          {
-            "label": "D2",
-            "y": 15,
-            "type": "defender",
-            "id": "def2",
-            "x": 65
-          },
-          {
-            "x": 48,
-            "label": "ğŸ€",
-            "id": "ball",
-            "type": "ball",
-            "y": 45
-          }
-        ],
-        "courtType": "full",
-        "paths": [
-          {
-            "points": [
-              {
-                "y": 40,
-                "x": 50
-              },
-              {
-                "x": 35,
-                "y": 20
-              }
-            ],
-            "color": "#f97316",
-            "id": "path-t1",
-            "type": "solid"
-          },
-          {
-            "id": "path-t2",
-            "color": "#22c55e",
-            "type": "dotted",
-            "points": [
-              {
-                "x": 35,
-                "y": 20
-              },
-              {
-                "x": 15,
-                "y": 15
-              }
-            ]
-          }
-        ]
-      },
-      "setupInstructions": "Tres files a mitja pista amb pilotes, dos defensors colÂ·locats a la zona de l'altre camp. Es juega el 3 contra 2. Els dos defensors surten atacant en 2 contra 1 contra el tirador que recula a defensar.",
-      "duration": 15,
-      "id": "drill-junior-transicion-3x2",
-      "category": "TransiciÃ³n",
-      "description": "Exercici clÃ ssic de ritme i transiciÃ³ per a equips Junior de rendiment. Tres atacants inicien un 3x2 a un camp. El jugador que llenÃ§a (o perd la pilota) i l'atacant mÃ©s allunyat han de fer balanÃ§ defensiu rÃ pid, convertint-se en defensors. Els dos defensors inicials que agafen el rebot o reben la pilota ataquen rÃ pidament l'altre cÃ¨rcol en un contraatac 2x1 dinamitzat de mÃ xima intensitat.",
-      "materials": [
-        "Pilotes de bÃ squet (S7)",
-        "Petos de colors per diferenciar parelles"
-      ],
-      "playersNeeded": 10,
-      "objectives": [
-        "Treballar la presa de decisions en superioritat numÃ¨rica rÃ pida (3x2 en transiciÃ³).",
-        "Exigir un balanÃ§ defensiu rÃ pid (recuperaciÃ³ Sprint) on el llanÃ§ador i un atacant addicional repliquen en 2x1 cap a l'altre costat.",
-        "Maximitzar la comunicaciÃ³ dels dos defensors establint assignacions de 'Home-Pilota' i 'Home-Cistella'."
-      ],
-      "title": "3x2 Continu amb Retorn en 2x1 (TransiciÃ³ dâ€™Alt Nivell)"
-    },
-    {
-      "id": "drill-spacing-junior-spacing",
-      "duration": 12,
-      "setupInstructions": "ColÂ·locar 4 atacants a l'exterior de la lÃ­nia de tres punts (posicions clares) i 1 defensor fictici que realitza ajudes intencionals sobre les penetracions.",
-      "boardState": {
-        "paths": [
-          {
-            "color": "#f97316",
-            "id": "p-drive",
-            "type": "solid",
-            "points": [
-              {
-                "y": 65,
-                "x": 15
-              },
-              {
-                "y": 85,
-                "x": 15
-              }
-            ]
-          },
-          {
-            "color": "#3b82f6",
-            "id": "p-kick",
-            "type": "dotted",
-            "points": [
-              {
-                "x": 15,
-                "y": 85
-              },
-              {
-                "x": 50,
-                "y": 80
-              }
-            ]
-          }
-        ],
-        "pins": [
-          {
-            "label": "1",
-            "id": "att1",
-            "type": "attacker",
-            "y": 55,
-            "x": 50
-          },
-          {
-            "x": 15,
-            "label": "2",
-            "id": "att2",
-            "y": 65,
-            "type": "attacker"
-          },
-          {
-            "x": 85,
-            "label": "3",
-            "y": 65,
-            "type": "attacker",
-            "id": "att3"
-          },
-          {
-            "label": "4",
-            "type": "attacker",
-            "y": 80,
-            "id": "att4",
-            "x": 50
-          },
-          {
-            "x": 30,
-            "id": "def1",
-            "y": 75,
-            "type": "defender",
-            "label": "D1"
-          },
-          {
-            "x": 18,
-            "id": "ball",
-            "type": "ball",
-            "y": 65,
-            "label": "ğŸ€"
-          }
-        ]
-      },
-      "title": "Espaiat de Joc DinÃ mic (Spacing) i ReemplaÃ§aments Extra Passe",
-      "objectives": [
-        "Interioritzar la rotaciÃ³ de l'espaiat (spacing) d'atac de 4 oberts i 1 a dins (4 Out 1 In).",
-        "Puntuar la velocitat del passe en l'extrapasse o inversiÃ³ rÃ pida de pilota per desplaÃ§ar la defensa zonal.",
-        "Exercitar les lÃ­nies de penetraciÃ³ recta de fons i el reemplaÃ§ament dinÃ mic de lÃ­nia de passada."
-      ],
-      "playersNeeded": 8,
-      "materials": [
-        "Pilotes de bÃ squet",
-        "Cons baixos de referÃ¨ncia espacial"
-      ],
-      "description": "Treball fonamental en categoria JÃºnior per polir el 'drive and kick' (penetrar i descarregar). Els jugadors se situen en posicions de base, rÃ fegues (wings) i cantonades. Quan un jugador d'un costat penetra per lÃ­nia de fons o eix central, els altres tres han de rotar per oferir lÃ­nies de passada de seguretat (Safety) i d'extrapasse, assegurant que mai hi ha dos jugadors colÂ·locats en un mateix sector de la pista.",
-      "category": "TÃ¡ctica"
-    },
-    {
-      "boardState": {
-        "paths": [
-          {
-            "points": [
-              {
-                "y": 65,
-                "x": 50
-              },
-              {
-                "y": 75,
-                "x": 42
-              }
-            ],
-            "type": "solid",
-            "color": "#ef4444",
-            "id": "p-slide-1"
-          },
-          {
-            "points": [
-              {
-                "y": 70,
-                "x": 80
-              },
-              {
-                "y": 82,
-                "x": 60
-              }
-            ],
-            "type": "solid",
-            "color": "#ef4444",
-            "id": "p-slide-2"
-          }
-        ],
-        "pins": [
-          {
-            "y": 55,
-            "type": "attacker",
-            "id": "att1",
-            "label": "1",
-            "x": 50
-          },
-          {
-            "label": "2",
-            "id": "att2",
-            "y": 65,
-            "type": "attacker",
-            "x": 15
-          },
-          {
-            "x": 85,
-            "id": "att3",
-            "type": "attacker",
-            "y": 65,
-            "label": "3"
-          },
-          {
-            "label": "4",
-            "id": "att4",
-            "y": 90,
-            "type": "attacker",
-            "x": 50
-          },
-          {
-            "type": "defender",
-            "y": 62,
-            "id": "def1",
-            "label": "D1",
-            "x": 50
-          },
-          {
-            "label": "D2",
-            "type": "defender",
-            "y": 68,
-            "id": "def2",
-            "x": 25
-          },
-          {
-            "id": "def3",
-            "type": "defender",
-            "y": 72,
-            "label": "D3",
-            "x": 70
-          },
-          {
-            "label": "D4",
-            "type": "defender",
-            "y": 82,
-            "id": "def4",
-            "x": 50
-          },
-          {
-            "label": "ğŸ€",
-            "type": "ball",
-            "y": 65,
-            "id": "ball",
-            "x": 18
-          }
-        ]
-      },
-      "setupInstructions": "Posicionar 4 atacants a l'exterior i 4 defensors en posiciÃ³ individual. La pilota es mou en rotaciÃ³ perifÃ¨rica per forÃ§ar els canvis defensius d'eix de fons.",
-      "duration": 15,
-      "id": "drill-defensa-shell",
-      "category": "Defensa",
-      "description": "L'exercici per excelÂ·lÃ¨ncia de l'FCBQ per ensenyar els fonaments colÂ·lectius de la defensa individual. Quatre atacants es passen la pilota des de fora de la lÃ­nia de tres de forma estÃ tica, mentre que els quatre defensors es mouen dinÃ micament en funciÃ³ de la pilota. Quan la pilota estÃ  a la cantonada, el defensor de l'atacant mÃ©s distant (costat feble) ha d'estar posicionat dins de la zona (lÃ­nia d'ajuda), mentre que el defensor de la pilota exerceix pressiÃ³ de mans actives.",
-      "materials": [
-        "Pilotes de joc",
-        "Petos de fons de contrast extrem"
-      ],
-      "playersNeeded": 8,
-      "objectives": [
-        "Alinear perfectament la defensa segons la posiciÃ³ de la pilota: LÃ­nia de Passe (Deny), Ajuda (Help) o Helpin' (pistola).",
-        "Coordinar la comunicaciÃ³ verbal colÂ·lectiva cridant 'Pilota!', 'NegaciÃ³!' i 'Ajuda!'.",
-        "Executar relliscades defensives rÃ pides davant de talls de fons (backdoor cuts) en JÃºnior de mÃ xim rendiment."
-      ],
-      "title": "Roda de Defensa Shell 4x4 (AlineaciÃ³ i Ajudes de la LÃ­nia de Passe)"
-    },
-    {
-      "materials": [
-        "Pilotes de bÃ squet (S7)",
-        "Cons de color dâ€™alt contrast"
-      ],
-      "description": "Exercici extret directament dels populars manuals de Dejan Cikic, reconegut coordinador de formaciÃ³ en el bÃ squet eslovÃ¨. Circuit dinÃ mic a 2 pilotes de passada contÃ­nua on el jugador de l'eix central ha de reaccionar i decidir rÃ pidament si realitza una penetraciÃ³ explosiva, un passe lateral addicional o un tir en suspensiÃ³ immediat, tot en funciÃ³ de l'estÃ­mul defensiu fictici o senyal acÃºstic.",
-      "category": "TÃ©cnica",
-      "title": "Roda de Decisions i Passades de Dejan Cikic",
-      "objectives": [
-        "Perfeccionar el passe de beisbol i la recepciÃ³ en carrera amb pressiÃ³ de llanÃ§ament rÃ pid.",
-        "ForÃ§ar la presa de decisions instantÃ nia davant el moviment defensiu de contenciÃ³.",
-        "Entrenar la reubicaciÃ³ espacial directa ocupant cantonades i prolongaciÃ³ de lliures."
-      ],
-      "playersNeeded": 10,
-      "setupInstructions": "Dividir els jugadors en quatre cantonades de la mitja pista i un pivot de recolzament dinÃ mic a la lÃ­nia de tirs lliures per forÃ§ar l'extrapasse rÃ pid.",
-      "boardState": {
-        "paths": [
-          {
-            "type": "dotted",
-            "color": "#22c55e",
-            "id": "p-cikic-1",
-            "points": [
-              {
-                "x": 15,
-                "y": 65
-              },
-              {
-                "y": 65,
-                "x": 50
-              }
-            ]
-          },
-          {
-            "id": "p-cikic-2",
-            "color": "#f97316",
-            "type": "solid",
-            "points": [
-              {
-                "y": 65,
-                "x": 50
-              },
-              {
-                "x": 80,
-                "y": 80
-              }
-            ]
-          }
-        ],
-        "pins": [
-          {
-            "id": "att1",
-            "y": 65,
-            "type": "attacker",
-            "label": "1",
-            "x": 15
-          },
-          {
-            "type": "attacker",
-            "y": 65,
-            "id": "att2",
-            "label": "2",
-            "x": 50
-          },
-          {
-            "x": 85,
-            "label": "3",
-            "id": "att3",
-            "y": 80,
-            "type": "attacker"
-          },
-          {
-            "label": "D1",
-            "id": "def1",
-            "y": 72,
-            "type": "defender",
-            "x": 45
-          },
-          {
-            "label": "ğŸ€",
-            "y": 65,
-            "type": "ball",
-            "id": "ball",
-            "x": 18
-          }
-        ]
-      },
-      "id": "drill-dejan-cikic-decisions",
-      "duration": 15
-    },
-    {
-      "description": "Syllabus de formaciÃ³ d'elit dissenyat per Dejan Cikic per a categories JÃºnior i Cadet. L'exercici educa la sincronia de moviments sense pilota de tres atacants exteriors. Quan un company inicia una penetraciÃ³ forÃ§ada fins a lÃ­nia de fons, la resta reacciona a velocitat de partit per reajustar l'espaiat, oferint lÃ­nies de passada curtes (safety passes) i extrapasses a l'extrem contrari.",
-      "materials": [
-        "Pilotes de joc",
-        "Cons de marcatge espacial"
-      ],
-      "category": "TÃ¡ctica",
-      "title": "Spacing Actiu 3x0 i ReemplaÃ§aments de Fons dâ€™en Dejan Cikic",
-      "playersNeeded": 9,
-      "objectives": [
-        "Aprendre a desplaÃ§ar-se segons el principi fonamental de 'Penetrar i ReemplaÃ§ar' de fons.",
-        "Dominar els talls d'esquena (backdoor cuts) davant de situacions negatives de pressiÃ³ agressiva.",
-        "Optimitzar el sincronisme de passada generant angles d'anotaciÃ³ molt mÃ©s nets."
-      ],
-      "setupInstructions": "Tres lÃ­nies situades a fons oposat, ala dreta de 45 graus, i un organitzador al cap de l'Ã rea. Moviments rÃ pids i constants de rotaciÃ³ circular consecutiva.",
-      "boardState": {
-        "pins": [
-          {
-            "type": "attacker",
-            "y": 55,
-            "id": "att1",
-            "label": "1",
-            "x": 50
-          },
-          {
-            "y": 60,
-            "type": "attacker",
-            "id": "att2",
-            "label": "2",
-            "x": 85
-          },
-          {
-            "y": 75,
-            "type": "attacker",
-            "id": "att3",
-            "label": "3",
-            "x": 15
-          },
-          {
-            "x": 82,
-            "label": "ğŸ€",
-            "id": "ball",
-            "type": "ball",
-            "y": 60
-          }
-        ],
-        "paths": [
-          {
-            "points": [
-              {
-                "y": 60,
-                "x": 85
-              },
-              {
-                "y": 85,
-                "x": 85
-              }
-            ],
-            "type": "solid",
-            "color": "#ef4444",
-            "id": "p-cikic-sp1"
-          },
-          {
-            "points": [
-              {
-                "y": 55,
-                "x": 50
-              },
-              {
-                "y": 75,
-                "x": 15
-              }
-            ],
-            "id": "p-cikic-sp2",
-            "color": "#22c55e",
-            "type": "dotted"
-          }
-        ]
-      },
-      "id": "drill-dejan-cikic-spacing",
-      "duration": 12
-    },
-    {
-      "objectives": [
-        "Coordinar els talls de fons i vora de zona en situacions de 'Motion'.",
-        "Perfeccionar el passe de rebot desprÃ©s de bloqueig cec o 'Backscreen'.",
-        "Llegir la posiciÃ³ de l'ajuda defensiva per descarregar rÃ pidament a la banda contrÃ ria."
-      ],
-      "playersNeeded": 6,
-      "title": "Tallades i Reaccions de Tall d'en Bojan Cikic (Motion)",
-      "category": "TÃ¡ctica",
-      "materials": [
-        "Pilotes de bÃ squet",
-        "Cons de marcatge",
-        "Petos de contrast"
-      ],
-      "description": "Un exercici de referÃ¨ncia dels llibres de Bojan Cikic que perfecciona el llanÃ§ament i els lliuraments desprÃ©s de passades rÃ pides. Tres atacants passen la pilota contÃ­nuament des de l'exterior de la lÃ­nia de tres. Al senyal de fons, l'home de la cantonada realitza un tall cec fins a l'eix defensiu. Ha de llegir el desplaÃ§ament d'ajuda d'un con o defensor i realitzar un rebot rÃ pid o extrapasse curtet a l'interior.",
-      "duration": 15,
-      "boardStates": [
-        {
-          "pins": [
-            {
-              "type": "attacker",
-              "y": 75,
-              "id": "att1",
-              "label": "1",
-              "x": 20
-            },
-            {
-              "x": 80,
-              "label": "2",
-              "type": "attacker",
-              "y": 75,
-              "id": "att2"
-            },
-            {
-              "x": 50,
-              "label": "3",
-              "type": "attacker",
-              "y": 60,
-              "id": "att3"
-            },
-            {
-              "label": "D1",
-              "type": "defender",
-              "y": 70,
-              "id": "def1",
-              "x": 45
-            },
-            {
-              "x": 23,
-              "label": "ğŸ€",
-              "y": 75,
-              "type": "ball",
-              "id": "ball"
-            }
-          ],
-          "paths": [
-            {
-              "type": "dotted",
-              "id": "bc-m1",
-              "color": "#f97316",
-              "points": [
-                {
-                  "y": 75,
-                  "x": 20
-                },
-                {
-                  "y": 70,
-                  "x": 50
-                }
-              ]
-            },
-            {
-              "points": [
-                {
-                  "y": 75,
-                  "x": 80
-                },
-                {
-                  "y": 85,
-                  "x": 50
-                }
-              ],
-              "type": "solid",
-              "color": "#22c55e",
-              "id": "bc-m2"
-            }
-          ],
-          "courtType": "half"
-        },
-        {
-          "pins": [
-            {
-              "x": 50,
-              "id": "att1",
-              "type": "attacker",
-              "y": 70,
-              "label": "1"
-            },
-            {
-              "x": 50,
-              "label": "2",
-              "id": "att2",
-              "type": "attacker",
-              "y": 85
-            },
-            {
-              "x": 85,
-              "label": "3",
-              "y": 65,
-              "type": "attacker",
-              "id": "att3"
-            },
-            {
-              "x": 40,
-              "label": "D1",
-              "id": "def1",
-              "y": 75,
-              "type": "defender"
-            },
-            {
-              "x": 50,
-              "type": "ball",
-              "y": 85,
-              "id": "ball",
-              "label": "ğŸ€"
-            }
-          ],
-          "paths": [
-            {
-              "points": [
-                {
-                  "y": 85,
-                  "x": 50
-                },
-                {
-                  "x": 85,
-                  "y": 65
-                }
-              ],
-              "color": "#ef4444",
-              "id": "bc-m3",
-              "type": "dotted"
-            }
-          ],
-          "courtType": "half"
-        }
-      ],
-      "id": "drill-bojan-cikic-motion",
-      "boardState": {
-        "paths": [
-          {
-            "points": [
-              {
-                "y": 75,
-                "x": 20
-              },
-              {
-                "x": 50,
-                "y": 70
-              }
-            ],
-            "color": "#f97316",
-            "id": "bc-m1",
-            "type": "dotted"
-          },
-          {
-            "id": "bc-m2",
-            "color": "#22c55e",
-            "type": "solid",
-            "points": [
-              {
-                "y": 75,
-                "x": 80
-              },
-              {
-                "x": 50,
-                "y": 85
-              }
-            ]
-          }
-        ],
-        "pins": [
-          {
-            "x": 20,
-            "label": "1",
-            "type": "attacker",
-            "y": 75,
-            "id": "att1"
-          },
-          {
-            "label": "2",
-            "y": 75,
-            "type": "attacker",
-            "id": "att2",
-            "x": 80
-          },
-          {
-            "x": 50,
-            "type": "attacker",
-            "y": 60,
-            "id": "att3",
-            "label": "3"
-          },
-          {
-            "x": 45,
-            "label": "D1",
-            "id": "def1",
-            "type": "defender",
-            "y": 70
-          },
-          {
-            "x": 23,
-            "label": "ğŸ€",
-            "id": "ball",
-            "y": 75,
-            "type": "ball"
-          }
-        ]
-      },
-      "setupInstructions": "ColÂ·locar 3 atacants i 2 defensors semi-actius. Iniciar el moviment des de l'eix oposat. Passar, tallar a l'espai buit i reemplaÃ§ar la lÃ­nia."
-    },
-    {
-      "boardState": {
-        "paths": [
-          {
-            "color": "#3b82f6",
-            "id": "bc-trap-1",
-            "type": "dotted",
-            "points": [
-              {
-                "x": 50,
-                "y": 95
-              },
-              {
-                "y": 85,
-                "x": 20
-              }
-            ]
-          },
-          {
-            "type": "solid",
-            "id": "bc-trap-2",
-            "color": "#ef4444",
-            "points": [
-              {
-                "x": 20,
-                "y": 85
-              },
-              {
-                "y": 65,
-                "x": 28
-              }
-            ]
-          }
-        ],
-        "courtType": "full",
-        "pins": [
-          {
-            "x": 20,
-            "label": "1",
-            "type": "attacker",
-            "y": 85,
-            "id": "att1"
-          },
-          {
-            "type": "attacker",
-            "y": 95,
-            "id": "att2",
-            "label": "4",
-            "x": 50
-          },
-          {
-            "label": "D1",
-            "type": "defender",
-            "y": 80,
-            "id": "def1",
-            "x": 18
-          },
-          {
-            "x": 30,
-            "y": 82,
-            "type": "defender",
-            "id": "def2",
-            "label": "D2"
-          },
-          {
-            "type": "ball",
-            "y": 95,
-            "id": "ball",
-            "label": "ğŸ€",
-            "x": 50
-          }
-        ]
-      },
-      "setupInstructions": "ColÂ·locar els equips a camp sencer. L'atacant treu de fons i rep als 2/3 de l'amplada. El defensor de pilota i l'ajuda salten a fer pressiÃ³ doble.",
-      "duration": 15,
-      "boardStates": [
-        {
-          "courtType": "full",
-          "paths": [
-            {
-              "points": [
-                {
-                  "x": 50,
-                  "y": 95
-                },
-                {
-                  "x": 20,
-                  "y": 85
-                }
-              ],
-              "type": "dotted",
-              "id": "bc-trap-1",
-              "color": "#3b82f6"
-            },
-            {
-              "points": [
-                {
-                  "y": 85,
-                  "x": 20
-                },
-                {
-                  "x": 28,
-                  "y": 65
-                }
-              ],
-              "color": "#ef4444",
-              "id": "bc-trap-2",
-              "type": "solid"
-            }
-          ],
-          "pins": [
-            {
-              "x": 20,
-              "id": "att1",
-              "type": "attacker",
-              "y": 85,
-              "label": "1"
-            },
-            {
-              "type": "attacker",
-              "y": 95,
-              "id": "att2",
-              "label": "4",
-              "x": 50
-            },
-            {
-              "x": 18,
-              "type": "defender",
-              "y": 80,
-              "id": "def1",
-              "label": "D1"
-            },
-            {
-              "x": 30,
-              "y": 82,
-              "type": "defender",
-              "id": "def2",
-              "label": "D2"
-            },
-            {
-              "x": 50,
-              "label": "ğŸ€",
-              "id": "ball",
-              "y": 95,
-              "type": "ball"
-            }
-          ]
-        },
-        {
-          "courtType": "full",
-          "paths": [
-            {
-              "points": [
-                {
-                  "y": 65,
-                  "x": 28
-                },
-                {
-                  "x": 60,
-                  "y": 40
-                }
-              ],
-              "id": "bc-trap-3",
-              "color": "#ef4444",
-              "type": "dotted"
-            }
-          ],
-          "pins": [
-            {
-              "x": 28,
-              "type": "attacker",
-              "y": 65,
-              "id": "att1",
-              "label": "1"
-            },
-            {
-              "label": "4",
-              "type": "attacker",
-              "y": 70,
-              "id": "att2",
-              "x": 22
-            },
-            {
-              "x": 26,
-              "label": "D1",
-              "type": "defender",
-              "y": 60,
-              "id": "def1"
-            },
-            {
-              "type": "defender",
-              "y": 62,
-              "id": "def2",
-              "label": "D2",
-              "x": 34
-            },
-            {
-              "x": 28,
-              "type": "ball",
-              "y": 65,
-              "id": "ball",
-              "label": "ğŸ€"
-            }
-          ]
-        }
-      ],
-      "id": "drill-bojan-cikic-trap",
-      "category": "Defensa",
-      "materials": [
-        "Pilotes oficials",
-        "Petos de contrast"
-      ],
-      "description": "Exercici intensiu en lÃ­nia de tota la pista extret dels apunts tÃ ctics de Bojan Cikic. S'entrena la resistÃ¨ncia de la pressiÃ³ i el tancament de lÃ­nies de sortida. Amb un 4 contra 4 a tota la pista, l'equip defensor ha de forÃ§ar que el base rebi en una banda lateral i tancar-lo agressivament realitzant un Trap frontal coordinat per forÃ§ar un error de passada.",
-      "objectives": [
-        "Establir el parany (Trap) o dos contra un al lateral de la transiciÃ³.",
-        "Optimitzar la posiciÃ³ d'anticipaciÃ³ de l'home de tancament exterior.",
-        "ForÃ§ar passades bombades molt lentes per assegurar la intercepciÃ³ defensiva."
-      ],
-      "playersNeeded": 8,
-      "title": "PressiÃ³ de Mans Actives i Trap Frontal d'en Bojan Cikic"
-    },
-    {
       "setupInstructions": "",
       "concept": "Tir rÃ pid",
       "boardState": {
@@ -18211,57 +16926,1308 @@
               "x": 66.89712318661574,
               "y": 89.64260750282519,
               "type": "attacker"
-    xœì}Û+ç•Ş½¢ĞA ªùÏF"K	bãQd$Åbq‹2›l“ldÃ€ß wr•™ÜLr17™‹ ¹Ì~“y‚<B¾Uìêên²şC±(É@äíŞÍÃWÿişµ¾U§ÿşğáÅ‹ÿ~ÿê_Eq·^Ş}TÜÕÇã—rµhã‹’I©JµZ¹Ò™…)—Jò¦^¬ÜJó»ß~~S/Ú}…>í[üŞ¹Jë¹N¯¹:{×wx—••ÃÛ¸õŠ{nÔù»ß=´OOZ7¿i÷w¯Ş6ÊE½Ù|Ùroy³X•Ëº¶¥²u[:§d¹¨•X-ä/…†ùÿëúãå‘zQ)kUŞX!„—Gê+¡™¶Êyãâvt¤ô´çHõ¶ùj·o—_ìúu[,j¾^•Ö/|©¦.İÊêr¡uí[ªcofëÅ¿şú%Â]³{Ü¿xz€¯êÍjø`ÿ¡çÜ­Ÿ<»{¼÷¸l?x±¿~O7ñËız³)¹uRá?á°ÂÏ#»;®›ï‹õ¾Ø¿ÿÛ‡õ²XÇİ~[ívßîÛâ¡İÇõ¾ŞŸjêcûn·§)½û[âÅ+»mÓ>é…‡úĞ>}åğúòq_×»-ŞÀÙóow‹¯Ûæ¸ş¦=à÷ÿñyÔwŸÕ‡C½¬‹zS4»û‡mı]±¯ñ}uñÛÇ¶{¨b±Û¶‡âawX7ë÷ÿX,éyöƒØÓ(^ƒŞ!G>UİMó²=4ûõÃÓ#ß}º;«õŸ­‹M}(šz{Ümk¼ëC<á`øu± ‘ã;7ÿ¢¾Øm6uUğ¢>6uµXlê-³ƒqb	=½ñˆ­G/áÓøzì}»Ø·§¨ñÎu÷ªP4+íöıßwŞî‹ú~7>{ÄgšİáX‡é?´ÇÇ‡_lØ2‰æûnxùaS×î¿jÛeK{Ç<¿rß¯ëÍÛZovG¬Ú°ï>¡o=›ÇÅ®Ş/g¡Í6Hl’ãW¯¿ó­ yÚÅ«Ú¹óMY×Ê”ªª\İ–µ³«eÍÛf%í›{÷°[oo¿ı¡{o'DxåÄˆ5’+¡+ z1b+c™wBkÇ4ãîÍÛşğöscx¬RLZí½¶bğLhõx¦ÒF(ï™cÚNÄƒ:pNX%„S’@áé
-¯3®\J>ÏVxhïWºLë1<UI¥µ\@&+£§â™Jzé˜ßgì™"–)g”ÜğÉxºÎæö€~t>EÅ…ÓFsƒ=cšŠ§*î¸âÊK}>º=yÅcô	ï¹˜
-'+fµGÁX=6:ã+Ï¹ÆqàB*f&ÃáôÑãPY<¼rcxØÅLr®°È’@§â±
-‹æ$N”VXF3†‡ÓîD‚ĞF	i&ÂÁö
-Ë'…L™sÛc€cØN‡kìõÔÍ!å³^kã GñLÅqŒQ’¾Wÿşë7"¶Ùmv{’Ïÿ¬­’¹·"¸·§»äø‹×^ã¢Ä·~Ù¶vÙ”šìbµÔ‹rÁk	“X/µ-wìZ‰o+Ë5v–Vb
-äØƒöÖP’˜6œOİs•0:C{Á•ÔjlQæ’À°w%bÀáñ±÷F%¢ª3°Ídµ€.šˆÇYe8‹ÇÖÄlTäC¶ êˆ2†8PTf¿áØr.ÆNñ\2˜ËÊzWÃCñNŒ
-}^qÈM¥™’~2 ®´'}&<Ç_ÚŠ}VI8>8ñÜh«ÙTAÅÜAÒ3Â“üzüR[	©h¥4|²dä®’$ˆáb¢°ˆã‚_`ÇXAR‘a1'â	VqÃ¤"‡±Çô¨¦±¤'#ù £ËY?P`³c§8ÍfğÃ¨ª1•…JxR0¨î©€Ø¤¾BÁòã#4T©g4ÊééS
-yıÕ¥¬ÅÓä¦C×àØ¡zòŒÚŠ¬çapÿQÛDÁ¢—0xiÃ*œ*fl\RøÀÉqcHU0*%ƒí%`ÚÛ©+(YEË‡'†k «ÈÎ(lg˜‚{FÀŒaS5…NK:ó fc¾ˆ‘•#æ	N>ä÷T¹&aÌB“bëÁfTÎÚ'F½‡Ü³ÖK²ø&êÊÒ ¡– Ç) 4†(  !İéÉ¤Ö|ê¦‘¶ê4…•°ÁióãAÖblR”ÔğT<_iNÖæÓĞÒŒãá0@Ä8“‡OVŠW’l, Ü;º‚œ4˜·‚”4pê™PXiqèaÕb}Ä(«<ƒ„š^X;uÃ(-í088AÎóññAñjF1V£f*†ù¥”0RÊQSFÃá’ZÀÊâŒ&òø O!‡a2ì=X3@‰7aN-‡%b'«	å+çÈCçœÁ)q£ö(M	ïpŠ¦QcïÁÏÇŞƒK¥aO:8ŸZB¥`µæcêµ¬Èë2êä.B¤ŞQáxÁH¡À	§¸Çøœâ¹à*«!ıÄ™XKtôVĞJÜŒ9z¿[¿û]ı.ÏÓóµÓm£W¥X4ËR­„.Æ×åÊ3ÕŠ–¨õ×zzn.Ì=ìé`ş:&Xøİ°(àçu6Ôäg!ÈâJq˜XşÆ§ß«ª‹fÑ0j´³Îr2ĞKÊäX"	YÌ%ÜYÌÑq<Ø{†áÍ¢S£5¤$-L9~&0K£öÜ.˜B=‘
-Òjªrƒ]¥<~È<×k<|Û®îQgÄÔSËNº€[C¶Ğ¸,|E~	vŒ÷É„sã),m`w¸Ñ	Ëş‚»ß;Á<<£;òŒAkC€ÂÕƒæˆG¸ƒcia0l…[û$–VFai(Œíä¸y2“ÏEQs#½„nƒ_9¦I-ªK-¶×Ôónaœ`·@™bğÑP>à´3œ.Qô›<™Ø°ƒ T›£1S9CRZg§*5ÖÖº=S2½R[îÇ63|Y3±àõ²)m³¬K¨0WÖ¢á¥^Õ‚ÎÎúõJÃíÆ6¢É–LŒ{sádn>Dºkƒ)Ï,şÏÊñ é}Òb#SÊ&;~0v”…¬q¾F7ºª`ò3º»“^Âd“ö"9cÊFÀKº99c¤hÜRfÅ¨“8$«SKÇ±8İ>À$q°Läd9§Ûv¡!R¸€`œ+pqŞÅ¼-×8ã.Æl€d™£)Nˆ¿T 5WdˆÂ	0M1¡^ÔíC_ÆĞ=<ëH›p,7òó¡µ0ÊĞ|ÎOäÕ	ÁYP`Ã"°qy¡s
-£W`±)mlr8XâL(–‘Óóß8Ô& é>)äU3E¾8©Aè4¸ù$®Æ½É¹B_ÉW$¼¢×á:
-zè©˜~s'í¯Ùoµó-ÄÕ²´KïJì1_z]/JÕ’[-V­¨¯5¿ ,]¯Â¹‡`0£·¹:KØC†’S&®Š®Xgƒ{Î%şŒzP”Ù ­£õ·$>¦$51ûÎNÃÃ³’‘ì%Ã8l§+ğ^	90d+xÈ–tŠ|ùéê»„Ï5cĞq£T!-äfBN¾—3U¡¨2Å”Å­”lÕ]xÀÙ€»¿lôr|¦»jŠqÂÖC{‰sİ3èº ÎÈø%’…£d5|%gğ^?U•rL´(F!Gå0¶27Yj¡ùä»ÿÔì†¹¬u·$ŒöÊ	£¼
-(îyÂPœ.Y(‹N8ìR?~±:S\SfM'4(GÛæÖáòìÈÂóÏ/¾óîa½MJ“­Ç·	ôCúüÙ+§3Ë±e(»ÂTÁÂxó'¯æ]s+Æ332šKõ	‘’ãQŒ>óÙ+OÙş–ÂCäŸsÁßæÒõ¹ş®ÓHŞRQÀÜ,Gùì•“(fBAØ‘¦8£¾ğÈÎT^+¬…ÁYĞÂ¼]Š«ŸY>óÙ+İ4ÃŒ§$A÷
-Æî¥g¶4‡÷Œ;ËåÜÏü¶´e¼èåi¡¿`DPl[QüşÂ3{8D°Û(QJ@œ>ë3_(	V°Ì¾=.=ÀYåŠÌÔø!Õœ²%iT<Tãçx|­æÛbI£Òy£jvÛv\	üÓşŸ—¥<,ò0ù|B^Z*X5»Öu¹ş,(ÿ<(z€ü…øÒhX.J4%œ	V*Õò²Ş–âK+u½Tù[pN–´XjÂÈ}ëkÊ(—ÊøRÉV—Î—¥µ¡jÑ´SF®”¦àë)2ri—
-8@ğØ˜¤œÖ³KÎ¼¹­0uãJï$Ö¯],±~L”ş*DšU“99Éß:67gi
-3OÌEqÑ€-î{…5R¯M½—Ss±`j´ærBÑT(rÉ¨îç4^:5øîÁâ©¦|7^BÕãFŠ¨òpJ©zÜH*&n¼¤jˆY‹ª2qã¥U‰±‹LÜx‰UIğÏÄ–Z¡“`±U&l´äjˆ ‹®2aã¥W=n¤ø*7^‚5pBEXy°	¥Xl°+7^’ÕãFŠ²Ş†ÎE4¸^Âë©5ıJ´&ê—„B­AÎKµ2wh¼`ë&r>¡pkóÁÒ­<Ü”®AĞK¸2B7‘ô)]ƒ¬†É3
-»zàHiW&pÂåŞ f‚úLàø-æ f‚¥^y¸)_ƒÀ–|e'~?Xú•	œP 6 Ó3ã…`C0!˜v™‰/ëq#%a™¸	…ap0$8¥@l æ‘dÇÅzÜX©X&p¼`l 'f'õÈ‘|–LàxÙ€,!ËÄ’¸Á„š<Ü„‚²7’W“‰/,ëq#¥e™¸ñ³7Xb–‰/4+ÒŠS2q
-ÎàpÉY&rBŞò€.=ËCN(@ëca™À	…h7B¤s¼cÏss/¦¡Ò´T?wBÚD?7¡LmX´p¡Zæ¢ÅËÕn"âekƒfæÁ&”¯¸Á¶LÜxÛ â‚	/™¸ñr¶A¥Ú2qãemn8£(8^Şvk1¡Ìm°Ëƒ…n™ÁÅx¹ÛM<¯„²·›xšÑò·5X —‰-ƒ`ƒ…pÙ‘ãX9Ü€,ˆËS©“×ŠPúZªJP7U¥Æ‹än#	2ŒÎ¹‘ãEsp°l.Û±ˆÏ²/˜°š‰/¢»n¼˜î&¸	Eun°¬.; -®»MĞ)¡Èî6Àñb»[EÙbEw·
-+FŠïn›R„wà„b¼›,pJQŞ £ÃeyÙwÑâ¼›„3ãEz7‰*¦ëİ$¬˜qİ)Û»İı^Ü©Î°o–g0¡˜o¢±˜PÒW¤õe†Aâ¥}=n¤¸/7ZâW¤ùåâÆKızàH±_.p´ä¯Çıe†â¥=î¬	t	%€=î¬Ù	¥€½š7Ç ¡$°fÇK‡øK¨8ğfy3óú )¥‚·	í%”Ş$†šR:x“‹IQ˜ÿzõİ—J	Ç£4çå„E  ğùìË~…*ü)æi;t¡¸°”I†ı‚%†óàm‰R(6|ûÁz²Ş–W”Í7‚·E ô°_‚páN?‚péÎ|#¸Ğa+Ö}+R'V$UŠÍ4‚Ëı¬kÍ½‘kÉ©ƒöñQÎ-±GÉ§2$Bk9ï†L¥2ÊKEŒE°Œqˆº‡
-,TÊXŒ3æ,Ó”’Æ´¥œ[:&.¥š<J“g"PÍ×ïép=_şDd;f¨š)%E èñ65¢FÍÎPwÃáÓk—^©ÅJñn=&Í7˜4ÙÖ¥i–+azÑÚòdR­cW÷ ;AJIƒZ”7âUîG,¥uŠ"­V]™Âá+ªñ]¥Ttû€k*‡qrO#vWF‹s*Qf-½#ßùñÒ+æ0{<0Ñ’²[œ¦ĞŞ-®Œ‹Êx
-	ÒKÎ…VX<å(+|úë‚qy%0Ğ_TŸ¨©0É^íQ3FW‡?&%š±à‘›Šv2DuÅµ>P7l\å7–,N{ñ:`[ÑY’ŠÊØT(y~Ö
-î«W—M¡;ŸxÌ›ßü W\Ëº©—¦¤4&XV0ªü¢a¥[Õj]/¸XÎ#î3JŸ±¥“’8Ş]y%Qú,aæaÍ¨´İÓ®Ã•”ğ¨»®ÑŠªCRHKùÅØSp¯ÄÅ·)­I_a5}àBBo“TÅã!+åuÒÏq8öÔªt&plNŞåIŸsåˆc·\iQ[ÅÃÅŞXY!iaÅ_™‘NM°™Ô	½ØW˜ê	Ñk°®Ã…ûÉ 5H·b·†RnçÍKNÙ›3.OMÕ9Ã^6³ÚN£*ŒÊÅR‰Àu°tuÎÉ³µ~ÔIÏ›DªtÏÄ)+	š-X6cÆÔ$ñÀr¡êX¬	†ê¤)÷o7W¦›
-S‡s«É¯¶¡,ßYs(°j]q¥ƒa/ñ'°›gÎ§†a°r™f’ŒÔ ğœ	ä°ÆÉb"–åUhÀ¼’°„uÄÃqºò‚ö¦“§JCœ§@vÎ¬õÚU¯ò wLóDhÈ\Ês£”3%äyxàwæúØLŒ*••10îC%Ò †ö…˜dŠ*^»ZQm640Œ=.¡g®EÓ]Î°RğuÀ¾š»Â×ğk±cp>]@XÎlp–¨¸çûş€56û™
-úœTÁÏ\è˜^Ø9kæ—‚ÑÁ¨,\qË¨Æ" ¶ÔC†Ÿw»Ú;Ú²nëÒ.¬+áør±ZØr¥[¬«4På39z
-¶m«eìñ[Ã¼õÖğõ-]²Á<¦b €Ñ6¯R—¦RT"àqÚpÖ\H»Îk?IØ1˜hXøTš¡C¹‘3ó‹Štœ£,?fCx³ª2…2=•ıqâÍ	Yæs&g1TÌèŠ[a~9åÙyR³¡¼[]Ié»D,möâuÀºÒ/¹1‚™Xsr`Ã¼Já’3ªpŒ•¥â¤ëp©Ä\rÅ¦ e¨À)îXgÈüÛ‡q®Vû¦Ä†hJÕp_úÆ˜²Y`ºÚ‹3ÉüäÊ!m+ì&Ëáib³à#W›&‰¥R°Ìa kªåƒŒöW:êŠ¢0tgñW‚k²Ì©x–“ƒM¹ëp}©Ç•ÊËy ¯Z+”p¤0ÏşÚYÖDl(éş‹-JÙSï(æpŠ:¡k½#(1“C³Sñ8®¬°Ä™Ä!š¨kİ8Ñ„*"ü/`ñÎ‹k+X÷Ädf½ñzÌŠ
-˜ã‹HSJHÑ ëÓÌ¸ØVœª¤¸‹.C~Å¼¸²z­Ê4&óÃP|Aêuùt+\HŠ¬`'CxHù}£ôbúYÅ•¥J/8´©9!XG±.Ö‘Êè+“õ“Cäóê¢‚Æów7ºF‡‚lšêT¸¤D&ç E®’{ìf"˜Ò]RC vVÕë8Ü<k¨”„LÓĞá5´†ÔtïB·RW^$¦’
-ŞDÌp/Å•æ°ƒ7A¹’BÀÆŸñ+ME*‚„c©ø•ƒ
-ÔDrâáXbàÀ«Õæ¢$h®vU|1G†j0ÌEÎNÇG (ô:\­ Ë	ü‘î<yõ%n4¼–á Üìr_.m#íªl}½,a¯ê²Öµ„ı¿\ñÆ,—LÎTïçaõIèTã­2\D•%©,öÌ•¼õĞäbOzK¥¦aw=“R¯Œ…çq-n0	ğ–8²¡oáÆZå)‡í{‚µØ°T&N„ÑÆ¸´š™½™X`ü+JúƒH)€Ÿ E—åÃˆÑÿÊ]•Ş…aVeàÒ!rTbéÈœ5ƒÂ‰]dOõñ´5ã ø(Ä
-‰Ë)äy-.eÏ“Ñç](ulVê! jÊŞ"ûfZ(‘aVŠàvƒÔ=ƒÉ€:÷¦;6~ï›¡ÓşÔjíÒ²ºUÿ	êÆRË{.~ÀR;=#¼Qj‡ˆ&áò$±ËSWç÷?h­]JYM—Ş&‰X…)#<»Y¥Ú„Z»hW™>½›ˆŸ-ìef(åàV#˜PkGYP ^hæ -Îãm}=]sQŸ…mt~şÃÖÚÍ}kYÄ÷[k7³Äúq–ÚÍ½ÿ©]` ·-µ›[8ş	—ÚÁÀ£;ìSÃ6RshàYP€¨M¼şäş)–ÚÍ;Qs–Ú}ğæwëÃ'‡ãîï=îÛ^ÌßïŸßsª°Û¯7›’['q÷aÙxw\7Ş×ïê}ñÙîpl‹E½ş¶xh÷Ån±_ï‡77õ±}·ÛÓ,Ü}Œ±½xe·mÚ‡#½ğâ+¶»bµŞÖ›õñwCÜçnù¸¯ëİöŠÅ»[|İ6Çõ7oš(>=WSo»m½lE}¿(1îÎ&ïiöë‡'„»¿­ñ›º¨üÕO}úšõfw¬?,–»½‡¾|Cã^ß·Ç}ûaÑnñ‹ºXé€Á¯é5¼ëôåúe³ÆSmè_íöĞ>½µ*xñP_¼xn|Ãq½Ç«²¨1“x¸õ¶­‹%¾o·=àU|¦ûïb½§—Ÿ>öæïPºx·¯İ÷íÏ„÷ŠgAo¥?ìèáğz]=½ş!~:Ö›n˜O/éş£ÃšÚããÃ/¶lµ†f–énxùaS×î¿jÛeK{îùŞåî[f¿®7İª‹4ôÌÄï‡s~±tôµè… TÃ"»Ô¼©KetSú•]•¼1jÁ[·bçíEGçÎl_ôÅ»ë$OÙÄŠ]êŠÓ;îÚ3‡f(/UOnrï*rH„§©Ø¥Ù>B…Š|iáÎjR#Î ªÖ¤šaøş‚}I	¬[Ø¯K…ª|ë¬'òŠØ1© PÃå¿˜ùß×Î OÂŒäŒ²@§â%&>G¸€Ä©Ûö¬,0²äI·Q&‰ÆÌ¿'Æ³¦úˆ%µ-£vVBÉ5[ÏuiÒ+9HÚ‡f¥§Û7añÎ·±¬d8êoğ2ûyt>MeÔ‰3S¯ÎÚ*$º
-S© şi/ø‹Ä\}µ6Œ jJkœÃF|$|…Ç¦(ì—.ßyoÔZß	Qh©©[T²Ê“#gàß8ª;ƒŞÈi€FÒöz{ë”'Åí¯L<g’«L—3Ò-ÈÁ¡»:Æ/ùô¡ªÖÖDÆÍù5b2ª¨†IFûN]º >áÉÊÓM=„ãT#ÿïÕ¿ßD;c±Î@¤óÕ8.jÓFpÕ,¨3
-äV©jÍË…[5¥^Ñ‡ãôÌÕÚTVÀ8Xµ!:®kæˆYÊÏ€“:Y›
-â	dÔ¥«—»tƒş\§)”£^]ÚØ³2Üd<^Ñó”oMÙ\]cœ…Ó	ùi¸•S÷gUWJÇ•Óıñ¨àÔÙÇÎº¹¥¢y*Vf*ÂÀ^LÚ:¡á48AV3gWc©x“$;®@é»>jã‚_S×"@î°]§*RW‘Ğ·X6ˆê6.÷L’Ã
-o<ëé•Š—Ğ·—Â4—Ê2˜zFİ¥ãEÁ)
-ª]ĞG&âECiƒTÔÆÊRMõg›Œ×Ñ0ºßcúbıû	OuİœYöš{êyĞ˜&O‰9SAéèy huc`™ĞmçÔı’@ùÛ'¦‚ï±jòy‡ùf4ëB¾_PÛ°K$‡è„,ÃA=KòšĞóê©³3c°Ù'ëíÔCiğ!„¦¼k²µ'êí‹y7ãY7qµ-kÔ—%Ù¥Z, ¶m[ZÕ®œ«kËÄÛ0x¶ÚvÃÄ´Ãº³«ÇÌá¹Ä‹!¥-`zÒmôè6g)3rAœwP§Sñât½±H…Ì¾+Ø ëd*¢ÊAN”
-†R)b‘Q[7H…İyV[“Œ'á@qk(°©¡¸GSEÕ(š¨%à‘¥Ñ'Ã‰ª«Ë´.Äñ1.\:¢Ğ ôó³²´d<ê¤ÉR„íÔ¸/3“TÄ¶{Õ¾wô8xJˆ‚U"9¹®“CB–îj ©¨×+eÆlJÏˆæ]Ğè`„²³°d<wÂ0M(oü<>È`b9‚=Ï¨*ÚMµr‰ûÛSØ#ÎQv-üŒô;ÏÀÚğ¶#Íâ8€cûx0JH9J1<+,N•ùlåµ	¾Úr)aXûr¥Z}³ªK¿¬UI”’Î67Ë«#ŸÄˆDšóíá:ñÑUQ…ç4	~H©³àäU‡Bº˜Z¥Hœ¯QÍ?¤UªÆ±ÕüŠo¥Å	ìúHOİuğ05ßšb7š_ªÃ˜ÏVÔYPÁ›ââ?[ë¥†:SL¶M‰‚§£¡€Ÿ	ôP)ªÖ7Ğë–rğÎ‘’á(?”2éj–õøşÔÄµAµÏCögDòÉ€pí;Æ;ò¢!`/µï‰yÜ+gm§½§ÚÂ¤Ên|‘dÄ0pk@ªúÅ©Ò
-‡§"0£óàQØö‘ Àâ—
-)ç$z4ê¥ğGÆffƒ£´1F8/±oöxTmmñ^k¦*«`»YXzuõş7ÆSÄUJñŒPÁ;ì—yğL¥):ÓêÖŸç¬ÌG—]ïIA¯Q¸™$ZB=ó¬;¡âs>—¢h5q9` “CäÄÓBÑ<Fìf<úµ»R‰WêÉmÍ¥¬ëyñà¶rÒïÉ¥t£Ğ	Ë%êŒÁQš
-ˆJ¦1]ÚƒãxŠrb †µš™ºc$¾‡xSpŞ™§¾Ğ·Æ£0ä‹^£;t&Ç@8œˆ—­Å: ¡Â$",V]?²À†™OãD¼¸¹µyçÂÃF :U)…ªùy ã|=Ç6Ö“mh'«xî+Kµ´¤œ±Pe•i"­!Ñ@÷>Sñ\Å5&¤bÏre°«w£€,ÑßNpSu"’µd¿5ªUÎR¸¶¯—isŠ
-4µíSFQÏŒQ!3`¼ÙØ¬xğ"0:ìRX Ø0£VÌLp¶ÂAÀğ<lêö¨‡ñ^ıûû¼§L2ıËÅÒğZL•ÄQ®XëjÖX¹²ÍÁ•HÕ~aƒ¿B1*I‘3’úäEIƒs¾‹»s*U…AtÖC5NÑ™¢‹*EtTcxfğW¨Y±†§5ÙğJÆ3ÜZøÒœ
-ÖÍä¬àJc0DòÅ/$	ñô.œÅ‘oÈÉ×Ò©Ë¹î€g‰N9l4‰ï¾ã[†ÏÅôıb 4`0zmğÜ£"ÃÂ >Cô½P“—Ï÷¹éÌøË£ñ{ëº<>íéä…öx§»]¨¢èñq¸qñÁJó“’d<M¼€8ïNz ^1<¸½¬ãÇÓzÔ+·²‚Sä¨Ştrfå^tT†‚®Šå¨S@÷‡S‹Ó9OÛìp3%ô¤.ŞLÉ±”9c™ç\Í`0®J—
-mÍY=t†è¤XÌ]®Î¨9B$İÔ<F9xÜ5+IÆS0˜­Ä·@b tLTSôÚÓ7µßfêŒƒè»ß§[ ˆEQ2üPÂù^–5ó‹Ò˜º«r±¼½úªG±Ju¶t¿hlÏA¿h‹c`‰’Öeâ¢¤pİöî
-œUŠz-˜É7šŠ¼˜.õÙãóK”ş½Bƒ´ïú	J7NÍCR’œ¶9E™!ñF’™&4PK_Nõ r4­ÂŞ£aÅE,§âÁi"/[+Äë:†g»b*JöT?=9’®*K)ÜBÉ8PÙ¶‚Ã
-«®crä‰è”ˆõ¦›âtï>®²E×æ§£™õS÷‹öb¥¢–Ì_ÖÍ¤²”1ø:®ôÌhV,¤§±¤+=9OTŒ’£aâ9¢\(Ì¥j¨J™á<a§˜OãœÇDHhìp‚ãDc½qj“³ãŒ~½‰@d’’fßô›]Wuå:‚K»Ä¨7g5¾†ŞÈÆÁ‰ÎUÃ
-=©#§ÌƒQÈà±`Ÿc6É šœÓL›B¢‚ª¥·€4¼ìaAu^©†Dƒdşøˆ³Kì9¾*q¢,ëK*ñ)ukÑÈZÈú-Ão¶E"‰ŞMMº‡äÑltÏ•©,‰^lØ–ş)õ–v·P–"ÍSJÛ§Œ,jâÍ÷y9)Æáô2ÅeŸìò%`Ú}âh&ıL[QCDòé)<Nºã
-t–’­„¶½uœÚÁi(?¬àäñá{¬'ÇKÀ“ãbšhnU×—Ë}Öï,n!53Š|>éÇ7±oPĞÆÃÕd/[A–“Á¬¨§†ÑÉ¦ÓÜúÊqZ´VûF˜’i×–jáÛ²–UK¿äŠiùÕb
-v0ñ\Ñ'õw½ş¡ö7LXÖ]úÂ³˜lç'âX8Ä°ñ¼”Tpk<ÙY$¼uG©§·Æ£ÎCºÓô­ÁfRüÉx”mï9¥“‡ÆK<7 NäEt‹iää .à8¥Sz"c„n•ÀEibCòé{%Õç•”lOÍÀİ÷Nöé5¦ÉP–9±CRâÌT	üƒnÌšfá]CMxêR‰¥*±è¼„E¿XˆzÊ^]á™!á1ªß!~º¢Òªb’²úÈHÆ£Ùã†x` hx`Ô+y2 4WM¡,U/èq…WØ—ÚÕş?#ì;'[ZI6WW6;İ¶ÑTş‡‘¨mçÒŒ:˜Ô‡M§Œ*5€›ˆh¨Ã\"ÓÌ˜`£Ö\m¥)‚G#ŒMÏ·&ì'lgáàÛ)ÒÊºY5‹3V.İŠÈì¢ô¾q¥Y¶ÍrµZ¨š¿%ŠÊ>Ë	Ëıµª…8Wf\O^”êİY«)£\°'´.¯Q·jİ0Ù–rãƒÇÿÄH?^z;SVŒùléÏRy›Ği{V«_–¸°6£ÖÆLwÆ©%{²SPNŠ(Á^˜\’È+M”Á07!ïÆm·™ÜuL“ë„¯¦tg9n!ol*‹£®Óƒ`®¢Tbºd$ĞG½KC)æ°éÒæŠ
-Eñˆ(H1jºÍt#N$Î°ÉÂn¿Ô¹¨·»Ï¤fq&&ß©Râ¸íš¯;áİ,ğÒ´#Yj}ò•8Î0µàS®#¿­k°¢òÄŒ®ˆĞ†’†§âQ·\Êü‡¦XØ8lü.D	ˆ¾Éáüh_êYıc+â%ñÄCù/£x¬‚ #vC‘ãÉwMÔ°ìebùæ´iÆñ„åÔû,‘yLÅ“•ÓºcFóXà¶b–ÛQu%>ÄêÀdÿ­ïˆÃœÊÏ`¿véŒ“Ã‰¦d¶_øüó‹ï¼Än~ÑÎ¼Àl>ÎkŞgğŠ®+uÕ6L¾ıöv¼Ã"SA	şÓoEV>3n_`3ç2ïï^šg.<4lë™!¹ç©o÷Û]ıĞgD£ôå'û•W¬kÆ`ˆ¬’öÒ3¿½°˜û™Ï’OF	Ë“¢(#Á¹Ÿú,Î1JR~šiSŸ–ø£=VÿÒLÛ.aÙFÔrÖg¾@¸¤ıÿ(^z‚0UwÚ¨ÆOêè°‘àÉAÖ+å´‡`ˆ[NšŒî—äÙ‰Î×—N4ğ‘T[šº¡4¬vY.øB•š/ÅÊ.MÃX?öñ?6öyÏOÒØUöéJ›­±¡Ÿ1%Ì¿æ“åÆ—KÓÖÊZ]®Vm‹‘-Ú²†‰[.”X¬ÈÉ”ËqÙb/,v³×’ú1+ÏäÏõãê
-õ¤óåb±â¥buSÖB-ÊóY;³dğGÇuØzºAìª=¡›43Ò¿õñN+Æ)‚°ì5y¦Â®š_.}|Å4~U*·\–Îá'İb¶[V/ÄêlÇEá¬ƒK“@I+”?=¶|Ù¸º¤äºRÑDùšÛ²Uoj/|æìé™S_&Í0r³²\­léøK-=/pRJÁW­PÊÔN/óG>£M–4r·õG9åŸ'ê÷k¯àåì]$æ>w‹¦“sÓú ¦Pt¶N¤û‚×N êœ¿ Ywp
-ew¢—›	œ@İ=¸ó¡ú„LÜ
-ï!l$ñÎN òÂOA2ïLà8¥÷Õ’zgâ&P{ÏÁÒ ¹w&lÅwÉËN úî#dß™À	”ß=p„ô;8…ú{PTAòïLà8x!ÏÄS÷¸2ğLÜ8%x!¼AÄ×ïÑé(Â§êô¢ğAÃ©Â3uzaø áBëLÜâğAÃ+3ãâƒ¢	gä¡&‰÷¨*ñ<ÜBñAÍ)Åsq£Äâƒ–	R‹çá&Œ²>XŠ–‹%d}0! 7p|¹ÁÄ‡\Ü(t¡ÏÃM  ïq#I3¹¸Q"òÁÍ’îæâÆùÁ{à%ùÍ€cÔä·ÚY1Šò<+âbÆZÈYK5"&–O4"hËo"üèËÜ y&nœÆ|0tƒDæ™¸ñÜ¨Aè	J2qã´æƒĞ%ÕeÂÆéÍ™$8ÏÄÓœßDæ&Ğ"7HxiCÄiÏ{É!>ÏÄÓŸ’>H€‰§Aïq#ly™¸qv¡7H”™§a.Ò¢!bôd?5Ÿ}¢ŠI Iïç.B[¹fq²ôÛàÆIÓÜ y¦'O¿nœD}À²òfâFÉÔØ ùp&l©z¡UÏN W€ƒìÜ™v}Éúm€ãdë·ÁM ]¿p”|ı6°qö7H‰'c¿	n)ûmpãäì·Á’´ßDR&µßD1$¶¸AÚöÌËŒòöt+18Nâ~Ü2÷8Hç	'upƒ4ëÙ×d1r÷ÛàÆIŞoâö¤½ß8Nú~Ü8ùûmpHào'ƒpƒtğ™WjqRø!d¤…ÏÎGŠ’ÃÀAöíLà8IümpÈâoœ@à8yüMpã$ò7M “OÇ}ó›&…b¹üôĞT„ó}ˆbIæ3—,6F6Ÿ£€ïq#¤ó7ÃÏgãÆ(è‡» 	ı­‚ÅóŞõ$PÒ÷¸RúlÜ5}‘F4}£¨ïq#$õÙ¸1öñ7BV3Üp‰~6l„º¾G°Üeß0Å8å{Ü0CíÍ`gM1K_ÜY“Æ¨í{Ø¹}¶hQÜ÷¸’ûLÜ8Õ}!»ÿ‘dŠL ¾Ÿh+%àZ-HŸEŒá÷À*üìhmŒP§AJüìètŒ¿Ç5%',pĞ§AŠüìÛ‡Q~aòÉÄM Ì€ƒ”ùÙ×Z1²ºÁ€Qçg_ãE	ôoa@$é÷°*ıLÜ8¡ş`¹Ì–µB¬Ã%`¿‡PìgâÆ‰öÃ%HµŸ‰'Üpç«AˆïöÒŒE…	üƒ½¤ĞÉÄñöRˆŠÿÇ[š@Ì?Ñ^J¡çì‡óûã4ıƒù$êÏ4[èú‡8@°?ûº7FÛû!¾Pã3–c&Ğøj<HäŸE£ópƒ„ş™¸	´şƒ¢•ÎÄM ÷O}üœÅ	tÿ…_ÅõÓÔÅhÿ³}‰DÜıÿÍp#m n†jp3ĞY‘ÜH{€[áFÚdÃÆš}fófq€HÛ€ìlÀhó€d9ÿ£06'4ø>äm¸©@v%ÚZ ?”‘æÙ9ºÑƒ¨6¸Uô&Úl 8¡åÀ dÂM²#8ÑÖ=r¤ù@vÊ{¬Á Ş‚M~$Ø„–%BBc‚ŞŒ´&ÈÌ‚‰7(pg¬¶6*èQ#­
-2ëş¢zØY«+ã†«˜+øÜ$¢‘ĞÈ`ˆ,Ì˜a^´ki]Åilp“€FBƒƒ7Øâ ûÎ=Öè`¤[d_~GÜâ:$¡ñÁ`å†ZdWCÆ V}°Bv5d¬Âpl…14D`ƒ-²¯%"nâ³%4H\Ô`‹„ìÌX£„7Ø*!û–-Ö0á&·?	nrÿ“Ğ@!=ä’aOò_üëÕw_j¨0j)_hªPÚ*ÏÙîA6÷ÁK	ñ¹aRåTcÿB‹…"Ğda¸7
-¶YìØP£…ù†phf´åBo‹‡	~Ç®Ÿn5‚	P£’cQ#Á”[áBœh´C¿
-a‚é~ÂÓ3àMsfŠ¾Õ¾ü$á&9£øÀ0#Ôıı~‹÷ç3»iCÎ\„DÇø\ÌöçBM<›SZ9f7ÛWÊ )Š@k‡"õ~·Tö3rB›‡"Ğè¡e¤B¿šá~3Šã)MÒğìCM•e¹í²¦kBˆ´éš[O'Î–<šB$ÎÄÌvcâLÈTÿe´IÄğ¡çÜ­Ÿ<»{¼÷¸l?èßÕ½ãîoÚö7›ï>ÛÔ/<¢ß?´›ë¼X.ÛUı¸9>ân[ßwğôÑõjİÔÍúı?Ñnõæ£â³}{lïvûzY?)¾xşùóöİã¦Ş?ıåãv½ÛÿÙğ‡c½?~Z»/ŒD\)ën¹®9^6ÅÓ#v¿¦èùá~İôXü£âÓõfó¸=’Ëúãùøİîp,Êâóõñ~W,Ûâ‹=¦`MƒØßŸì¶Ç}]ëß>¶‡—ß¼¬¿ûËÕ_aÒèëŸ¾óåëÇİ±Ş|ú¸¯ëİ¶Ù½üğˆ´òëŞó‹Ó¨èÇk¶¬K~Ö¿o9€¼uÿï¶»Ss»›ãú›ºØc”-²ÁÄŠıû¿}X/ñÃºx¨‡¶XíöGzù€ÿ_/ë*µCË‹‡ıf½?båË¯¾[>=×øóÊ±Çı¬~<Ôİú|µ¦¯9m*<˜gÅ¡}·Û¦<Úi¿îö[y|Zçİ¶”ßuËIšÔŸ×ØóïÿÏµÂv_?õ»=m´GÌg³»NóüàM½ıf=é©û	]íÛöøÕ~÷7‡ÀÃÚ±gıb½?›ÍúOXÔ÷‹b…¼«‹ºy¼Ç9œ¶Ö§	=<`”ÛwıÄ>ısÒŒşeóøpš²}MKSo0w›â¡İ¿ÿ‡ûö¸ïö®*w‹v¼bœÒq½ß•X§‡ö¸¦ÓxbÁÆâğx¿Şø¶¢ıöØîI˜á‹ö·ë‡Ó\Ÿ]½9VñÆ?‡æ«vù¸:Xß¿‘_pùcç€ õÄˆ4!i(HŞ·m	A3ûk’ÕÌrY|Úíé"ğç›„ßîPüô³uóÈğÏw›ÍŸdáéCÂĞ°\aøbóŒ.Å¿>`êûu»=B’¯·ïÿî~İì°Ã±¸»êluGåkê®—c9âğÌ;¾ÿ[<oSŸ¶Ğ·ü¼ÇhömsÜ¯´LĞëã÷¸ıÇì¯±ßÛî¡4¬ŠõÃÿ€€~\/wôÛC÷ÂÃî$hék,ÒöX§Şg¨ÏñÉ“Rh· dìöĞ6øõ#=Àñ¥„û©Õÿ¼¸ÿÛõıé şYhd‰X•ûà¿®7Ğ¥ôˆ<PÛıô€‡ìLŒıû¿ƒ
-¾°=³¶ ôm‡·şÍ„iÅfÀ¶û»Ó¶;M$o³^ĞD®0ç›Ó
-IÉá™3R`P/¯µ²$¡/™ø‚ûäeI(_KÂW²é/ppŞ˜q™ÂGŒ„“UŸ–[*l±®+˜ƒ%°-¾Ù5Pj8tÅ¬şjı>öñüòéùÑ>m°>zkïÃâ¥IµîeÌ³²ÃÙz8V¼øõvÙ‰üâÓıî!´O³¤`î 8{}ÀI<B¶›¦½›ïe'cºç~²mîwËvß™6Óœ%¦JÜ—tŠ˜ıœÄô¾8¬·Åºt_lêCÑ Ø¶ø¦ì=TÅg»äJ'i˜ğb6ù??Ó/aˆÒ¦Ğßè“¼ eÆÅ{°kvp#6;²|k8tZ¦ãçê$ù‚‹ó*%ó²xkÓÈÎ¦Á9?5sl˜6å¯[ş—»¦sìÖÛÇ—²àÙh’!ÛEõÔ¯¤±¿TÈşRÃ³º7æ×S«øõÛ°ÛÛ!£‹¾&ôÜ:×L\(€-mº‡u»ÇZ~X¬6í·§]vXCİc‰ÛAöÍ£X®€ø·/¤ÚIÒÁ¹Á#ma¼’8«õI8À‹ 8L§…·ûL uÙ «èx/êõ·t¶I¼=nõ“<#ƒçÛõ»÷ÿ}Û¬¿Y6Ø§ûN´5ÚßÿÃ“_K§»*>İ‘Ì¡hIñ¸İ\á‹vwÀ«šÃ°™ÁÚõ0°f]Œ‹µ&wt‡%ûz7,m³Í$ãö‹zK!™m}YœÅpô0É8jdø÷ÀÛ®½ifD¦ıåö—‘„:$	5IÂ¯wpo ç_KBr°ûÇæÉ@Ù!¹& é»BÒğ²š4zÎ£7#£7¡Ñ›Ap=â‡w±Ê¯)X÷Énóş×¦%·6“Œª„k&A&ÁL‚M‚¶€}«OÎÁ»cñI}ÿğ­¼ÚÚ…í†•o#0ŸïNN#„ÍÀÉé‡õ‚]p8î®Zø—½	òlØ|ëÍaÉóÇä÷2O„|N?²ö>´öşyÃõ#İğBÍÙÈ¨_İFŸ_Á°{Ş{şšiğo¦áƒşïÓİÙ¡%iÜ.ÿêùí—/ÌßÙMÆîémÏ—VwdŸlÚcgê÷w·ª¿Ùí×ÇöÓÓñJ³«›¯>ÛïVëMû¼wí}½îî5—ëíî]ıİ¿zG¿©ğåOóswlëû“×]½ıE}h7ïÿ¡ø§?ş·S<bS|\üôß|òó×Çyïêo q»Ì¯Ç‡ÃGşç˜òwí¡zÜ0ÎÃWôışğÕî¸ƒr Ö+o¤+k9óÊ»Õªù—ó3®ÙOêÇãîg«İş¾>şdµ>ş¬Ùï~òÛŸ™~×<ï˜Oëíúş3Œ¢iÓ~sº³ıåûÿ}º5ì™”§ÛŸwËsüñqXCGkÈìGÂ}$Udü‡»şğÿ   ÿÿ Ÿg¶µ
+            },
+            {
+              "id": "att_3fbe881b-0334-4ff8-86b6-d431cabf8f51",
+              "label": "5",
+              "x": 88.46791928269514,
+              "y": 73.84671794191644,
+              "type": "attacker"
+            },
+            {
+              "id": "ball_e1971cbf-daa7-47ae-8843-ba42fb3bcbf1",
+              "label": "ğŸ€",
+              "x": 92.47787496722272,
+              "y": 79.25057489696417,
+              "type": "ball",
+              "anchoredTo": "att_bba1d294-79b9-4b6a-8f75-b55a988d4b00"
+            }
+          ],
+          "courtType": "half"
+        }
+      ],
+      "isCustom": true
+    },
+    {
+      "id": "drill-1783444428164",
+      "title": "Tir rÃ pid i torna enrere per tirar",
+      "category": "Atac",
+      "concept": "pase rÃ pid",
+      "duration": 10,
+      "objectives": [
+        "Passada al compnay rapida que tira bones posiciÃ³ de peus, i tornar enrrere per tir de 3 bones posiciÃ³ de peus."
+      ],
+      "description": "Dos files a las cantonades, con en la base de l'ampolla. 1 atca driblan i pasa a 2 que tira de 3. 1 talla a l'ala per rebre de 3 para i tira. 4 comenÃ§a de nou amb 3 a l'altre costat",
+      "setupInstructions": "",
+      "playersNeeded": 6,
+      "materials": [
+        "Pilotes",
+        "Cons"
+      ],
+      "boardState": {
+        "paths": [
+          {
+            "id": "fa88b09c-aa46-4a24-b65e-a87fda1ecf37",
+            "points": [
+              {
+                "x": 91.92477763142581,
+                "y": 77.67098255805018
+              },
+              {
+                "x": 90.40375995798432,
+                "y": 76.56249908009167
+              },
+              {
+                "x": 88.88274228454283,
+                "y": 75.45401560213317
+              },
+              {
+                "x": 87.49999894505055,
+                "y": 74.34553212417465
+              },
+              {
+                "x": 86.39380427345674,
+                "y": 73.23704864621615
+              },
+              {
+                "x": 85.28760960186293,
+                "y": 72.12856516825764
+              },
+              {
+                "x": 84.1814149302691,
+                "y": 71.02008169029912
+              },
+              {
+                "x": 83.0752202586753,
+                "y": 69.91159821234062
+              },
+              {
+                "x": 81.96902558708148,
+                "y": 68.80311473438212
+              },
+              {
+                "x": 80.86283091548766,
+                "y": 67.6946312564236
+              },
+              {
+                "x": 79.34181324204617,
+                "y": 67.00182908269954
+              },
+              {
+                "x": 77.82079556860467,
+                "y": 66.17046647423065
+              }
+            ],
+            "color": "#eab308",
+            "type": "solid"
+          },
+          {
+            "id": "79dee7dc-581b-4d5b-b1a3-d45dba23e180",
+            "points": [
+              {
+                "x": 7.715708256346638,
+                "y": 76.97818038432611
+              },
+              {
+                "x": 8.268805592143547,
+                "y": 75.45401560213317
+              },
+              {
+                "x": 9.236725929788134,
+                "y": 74.20697168942984
+              },
+              {
+                "x": 10.619469269280405,
+                "y": 73.09848821147133
+              },
+              {
+                "x": 12.278761276671126,
+                "y": 72.12856516825764
+              },
+              {
+                "x": 13.799778950112623,
+                "y": 71.15864212504394
+              },
+              {
+                "x": 15.597345291452571,
+                "y": 70.32727951657506
+              },
+              {
+                "x": 16.841814296995615,
+                "y": 69.35735647336136
+              },
+              {
+                "x": 18.36283197043711,
+                "y": 68.24887299540285
+              },
+              {
+                "x": 20.160398311777058,
+                "y": 67.55607082167879
+              },
+              {
+                "x": 22.096238987066236,
+                "y": 66.72470821320991
+              },
+              {
+                "x": 23.755530994456958,
+                "y": 66.03190603948585
+              },
+              {
+                "x": 25.41482300184768,
+                "y": 65.47766430050659
+              },
+              {
+                "x": 27.21238934318763,
+                "y": 64.92342256152733
+              },
+              {
+                "x": 28.871681350578353,
+                "y": 64.64630169203771
+              },
+              {
+                "x": 30.530973357969078,
+                "y": 64.36918082254807
+              },
+              {
+                "x": 32.32853969930902,
+                "y": 63.814939083568824
+              },
+              {
+                "x": 34.12610604064897,
+                "y": 63.399257779334384
+              },
+              {
+                "x": 35.785398048039696,
+                "y": 62.84501604035513
+              },
+              {
+                "x": 37.99778739122733,
+                "y": 62.42933473612069
+              },
+              {
+                "x": 39.51880506466882,
+                "y": 62.15221386663106
+              },
+              {
+                "x": 41.31637140600877,
+                "y": 61.59797212765181
+              },
+              {
+                "x": 42.83738907945027,
+                "y": 60.90516995392774
+              },
+              {
+                "x": 44.35840675289177,
+                "y": 60.35092821494848
+              },
+              {
+                "x": 45.87942442633326,
+                "y": 59.93524691071404
+              },
+              {
+                "x": 48.230088103470116,
+                "y": 59.381005171734785
+              },
+              {
+                "x": 49.889380110860834,
+                "y": 59.242444736989974
+              },
+              {
+                "x": 51.54867211825156,
+                "y": 58.965323867500345
+              },
+              {
+                "x": 53.207964125642285,
+                "y": 58.965323867500345
+              },
+              {
+                "x": 54.59070746513456,
+                "y": 59.79668647596923
+              }
+            ],
+            "color": "#f97316",
+            "type": "zigzag"
+          },
+          {
+            "id": "9a85ec5f-2bcd-4f25-b69a-f904e2a14279",
+            "points": [
+              {
+                "x": 56.11172513857605,
+                "y": 58.826763432755534
+              },
+              {
+                "x": 57.35619414411909,
+                "y": 59.93524691071404
+              },
+              {
+                "x": 59.4303091533575,
+                "y": 60.21236778020367
+              },
+              {
+                "x": 60.95132682679899,
+                "y": 60.76660951918292
+              },
+              {
+                "x": 62.47234450024048,
+                "y": 61.18229082341736
+              },
+              {
+                "x": 64.40818517552967,
+                "y": 62.01365343188625
+              },
+              {
+                "x": 65.92920284897116,
+                "y": 62.706455605610316
+              },
+              {
+                "x": 67.58849485636188,
+                "y": 63.399257779334384
+              },
+              {
+                "x": 69.66260986560029,
+                "y": 64.50774125729289
+              },
+              {
+                "x": 71.18362753904178,
+                "y": 65.47766430050659
+              },
+              {
+                "x": 72.70464521248327,
+                "y": 66.03190603948585
+              },
+              {
+                "x": 74.363937219874,
+                "y": 66.44758734372027
+              },
+              {
+                "x": 75.8849548933155,
+                "y": 66.58614777846509
+              },
+              {
+                "x": 77.54424690070621,
+                "y": 66.86326864795473
+              }
+            ],
+            "color": "#0ea5e9",
+            "type": "dotted"
+          },
+          {
+            "id": "a02b1adc-7cda-4278-a2c1-5fa299259209",
+            "points": [
+              {
+                "x": 51.41039778430233,
+                "y": 63.399257779334384
+              },
+              {
+                "x": 49.889380110860834,
+                "y": 63.399257779334384
+              },
+              {
+                "x": 47.67699076767321,
+                "y": 63.67637864882401
+              },
+              {
+                "x": 45.32632709053635,
+                "y": 64.09205995305845
+              },
+              {
+                "x": 43.25221208129795,
+                "y": 64.09205995305845
+              },
+              {
+                "x": 41.59292007390722,
+                "y": 64.09205995305845
+              },
+              {
+                "x": 39.79535373256728,
+                "y": 64.23062038780327
+              },
+              {
+                "x": 37.721238723328874,
+                "y": 64.36918082254807
+              },
+              {
+                "x": 36.061946715938156,
+                "y": 64.36918082254807
+              },
+              {
+                "x": 34.40265470854743,
+                "y": 64.36918082254807
+              },
+              {
+                "x": 32.46681403325825,
+                "y": 64.64630169203771
+              },
+              {
+                "x": 30.6692476919183,
+                "y": 64.64630169203771
+              },
+              {
+                "x": 28.318584014781443,
+                "y": 64.64630169203771
+              },
+              {
+                "x": 26.106194671593812,
+                "y": 64.36918082254807
+              },
+              {
+                "x": 24.446902664203094,
+                "y": 63.537818214079195
+              },
+              {
+                "x": 23.064159324710822,
+                "y": 62.84501604035513
+              },
+              {
+                "x": 21.4048673173201,
+                "y": 62.15221386663106
+              },
+              {
+                "x": 19.883849643878605,
+                "y": 61.59797212765181
+              },
+              {
+                "x": 18.36283197043711,
+                "y": 61.04373038867255
+              },
+              {
+                "x": 16.841814296995615,
+                "y": 60.21236778020367
+              }
+            ],
+            "color": "#eab308",
+            "type": "solid"
+          },
+          {
+            "id": "589e325d-7d98-4509-95ab-4e3325fbfe2a",
+            "points": [
+              {
+                "x": 4.673672909463647,
+                "y": 83.21339994784273
+              },
+              {
+                "x": 5.088495911311329,
+                "y": 80.85787255718088
+              },
+              {
+                "x": 5.503318913159009,
+                "y": 78.64090560126388
+              },
+              {
+                "x": 5.6415932471082355,
+                "y": 77.11674081907093
+              },
+              {
+                "x": 5.918141915006689,
+                "y": 74.89977386315391
+              },
+              {
+                "x": 6.609513584752824,
+                "y": 73.23704864621615
+              },
+              {
+                "x": 7.853982590295866,
+                "y": 71.15864212504394
+              },
+              {
+                "x": 8.821902927940455,
+                "y": 69.35735647336136
+              },
+              {
+                "x": 10.066371933483497,
+                "y": 67.41751038693397
+              },
+              {
+                "x": 11.17256660507731,
+                "y": 65.6162247352514
+              },
+              {
+                "x": 12.278761276671126,
+                "y": 64.09205995305845
+              },
+              {
+                "x": 13.384955948264942,
+                "y": 62.706455605610316
+              },
+              {
+                "x": 14.35287628590953,
+                "y": 61.18229082341736
+              },
+              {
+                "x": 15.459070957503346,
+                "y": 59.79668647596923
+              }
+            ],
+            "color": "#0ea5e9",
+            "type": "dotted"
+          }
+        ],
+        "pins": [
+          {
+            "id": "att1",
+            "label": "1",
+            "x": 8.130531258194319,
+            "y": 78.50234516651906,
+            "type": "attacker"
+          },
+          {
+            "id": "att2",
+            "label": "2",
+            "x": 92.75442363512117,
+            "y": 79.8879495139672,
+            "type": "attacker"
+          },
+          {
+            "id": "att3",
+            "label": "3",
+            "x": 7.024336586600505,
+            "y": 86.95453168595269,
+            "type": "attacker"
+          },
+          {
+            "id": "att4",
+            "label": "4",
+            "x": 93.03097230301964,
+            "y": 87.37021299018713,
+            "type": "attacker"
+          },
+          {
+            "id": "att5",
+            "label": "5",
+            "x": 7.439159588448185,
+            "y": 94.43679516217261,
+            "type": "attacker"
+          },
+          {
+            "id": "ball",
+            "label": "ğŸ€",
+            "x": 7.024336586600505,
+            "y": 86.95453168595269,
+            "type": "ball",
+            "anchoredTo": "att3"
+          },
+          {
+            "id": "ball2",
+            "label": "ğŸ€",
+            "x": 8.130531258194319,
+            "y": 78.50234516651906,
+            "type": "ball",
+            "anchoredTo": "att1"
+          },
+          {
+            "id": "ball3",
+            "label": "ğŸ€",
+            "x": 7.439159588448185,
+            "y": 94.43679516217261,
+            "type": "ball",
+            "anchoredTo": "att5"
+          },
+          {
+            "id": "cone1",
+            "label": "â–²",
+            "x": 49.61283144296239,
+            "y": 65.75478516999621,
+            "type": "cone"
+          },
+          {
+            "id": "ball_6558442c-6400-44e1-a297-794d72baad42",
+            "label": "ğŸ€",
+            "x": 93.03097230301964,
+            "y": 87.37021299018713,
+            "type": "ball",
+            "anchoredTo": "att4"
+          },
+          {
+            "id": "ball_9e9a6532-d469-43e5-b11d-52a92b24a2ce",
+            "label": "ğŸ€",
+            "x": 93.4457953048673,
+            "y": 92.91263037997967,
+            "type": "ball",
+            "anchoredTo": "att_b2e26ac8-9830-4ebd-a202-291144536fc4"
+          },
+          {
+            "id": "att_b2e26ac8-9830-4ebd-a202-291144536fc4",
+            "label": "6",
+            "x": 93.4457953048673,
+            "y": 92.91263037997967,
+            "type": "attacker"
+          }
+        ],
+        "courtType": "half"
+      },
+      "boardStates": [
+        {
+          "paths": [
+            {
+              "id": "fa88b09c-aa46-4a24-b65e-a87fda1ecf37",
+              "points": [
+                {
+                  "x": 91.92477763142581,
+                  "y": 77.67098255805018
+                },
+                {
+                  "x": 90.40375995798432,
+                  "y": 76.56249908009167
+                },
+                {
+                  "x": 88.88274228454283,
+                  "y": 75.45401560213317
+                },
+                {
+                  "x": 87.49999894505055,
+                  "y": 74.34553212417465
+                },
+                {
+                  "x": 86.39380427345674,
+                  "y": 73.23704864621615
+                },
+                {
+                  "x": 85.28760960186293,
+                  "y": 72.12856516825764
+                },
+                {
+                  "x": 84.1814149302691,
+                  "y": 71.02008169029912
+                },
+                {
+                  "x": 83.0752202586753,
+                  "y": 69.91159821234062
+                },
+                {
+                  "x": 81.96902558708148,
+                  "y": 68.80311473438212
+                },
+                {
+                  "x": 80.86283091548766,
+                  "y": 67.6946312564236
+                },
+                {
+                  "x": 79.34181324204617,
+                  "y": 67.00182908269954
+                },
+                {
+                  "x": 77.82079556860467,
+                  "y": 66.17046647423065
+                }
+              ],
+              "color": "#eab308",
+              "type": "solid"
+            },
+            {
+              "id": "79dee7dc-581b-4d5b-b1a3-d45dba23e180",
+              "points": [
+                {
+                  "x": 7.715708256346638,
+                  "y": 76.97818038432611
+                },
+                {
+                  "x": 8.268805592143547,
+                  "y": 75.45401560213317
+                },
+                {
+                  "x": 9.236725929788134,
+                  "y": 74.20697168942984
+                },
+                {
+                  "x": 10.619469269280405,
+                  "y": 73.09848821147133
+                },
+                {
+                  "x": 12.278761276671126,
+                  "y": 72.12856516825764
+                },
+                {
+                  "x": 13.799778950112623,
+                  "y": 71.15864212504394
+                },
+                {
+                  "x": 15.597345291452571,
+                  "y": 70.32727951657506
+                },
+                {
+                  "x": 16.841814296995615,
+                  "y": 69.35735647336136
+                },
+                {
+                  "x": 18.36283197043711,
+                  "y": 68.24887299540285
+                },
+                {
+                  "x": 20.160398311777058,
+                  "y": 67.55607082167879
+                },
+                {
+                  "x": 22.096238987066236,
+                  "y": 66.72470821320991
+                },
+                {
+                  "x": 23.755530994456958,
+                  "y": 66.03190603948585
+                },
+                {
+                  "x": 25.41482300184768,
+                  "y": 65.47766430050659
+                },
+                {
+                  "x": 27.21238934318763,
+                  "y": 64.92342256152733
+                },
+                {
+                  "x": 28.871681350578353,
+                  "y": 64.64630169203771
+                },
+                {
+                  "x": 30.530973357969078,
+                  "y": 64.36918082254807
+                },
+                {
+                  "x": 32.32853969930902,
+                  "y": 63.814939083568824
+                },
+                {
+                  "x": 34.12610604064897,
+                  "y": 63.399257779334384
+                },
+                {
+                  "x": 35.785398048039696,
+                  "y": 62.84501604035513
+                },
+                {
+                  "x": 37.99778739122733,
+                  "y": 62.42933473612069
+                },
+                {
+                  "x": 39.51880506466882,
+                  "y": 62.15221386663106
+                },
+                {
+                  "x": 41.31637140600877,
+                  "y": 61.59797212765181
+                },
+                {
+                  "x": 42.83738907945027,
+                  "y": 60.90516995392774
+                },
+                {
+                  "x": 44.35840675289177,
+                  "y": 60.35092821494848
+                },
+                {
+                  "x": 45.87942442633326,
+                  "y": 59.93524691071404
+                },
+                {
+                  "x": 48.230088103470116,
+                  "y": 59.381005171734785
+                },
+                {
+                  "x": 49.889380110860834,
+                  "y": 59.242444736989974
+                },
+                {
+                  "x": 51.54867211825156,
+                  "y": 58.965323867500345
+                },
+                {
+                  "x": 53.207964125642285,
+                  "y": 58.965323867500345
+                },
+                {
+                  "x": 54.59070746513456,
+                  "y": 59.79668647596923
+                }
+              ],
+              "color": "#f97316",
+              "type": "zigzag"
+            },
+            {
+              "id": "9a85ec5f-2bcd-4f25-b69a-f904e2a14279",
+              "points": [
+                {
+                  "x": 56.11172513857605,
+                  "y": 58.826763432755534
+                },
+                {
+                  "x": 57.35619414411909,
+                  "y": 59.93524691071404
+                },
+                {
+                  "x": 59.4303091533575,
+                  "y": 60.21236778020367
+                },
+                {
+                  "x": 60.95132682679899,
+                  "y": 60.76660951918292
+                },
+                {
+                  "x": 62.47234450024048,
+                  "y": 61.18229082341736
+                },
+                {
+                  "x": 64.40818517552967,
+                  "y": 62.01365343188625
+                },
+                {
+                  "x": 65.92920284897116,
+                  "y": 62.706455605610316
+                },
+                {
+                  "x": 67.58849485636188,
+                  "y": 63.399257779334384
+                },
+                {
+                  "x": 69.66260986560029,
+                  "y": 64.50774125729289
+                },
+                {
+                  "x": 71.18362753904178,
+                  "y": 65.47766430050659
+                },
+                {
+                  "x": 72.70464521248327,
+                  "y": 66.03190603948585
+                },
+                {
+                  "x": 74.363937219874,
+                  "y": 66.44758734372027
+                },
+                {
+                  "x": 75.8849548933155,
+                  "y": 66.58614777846509
+                },
+                {
+                  "x": 77.54424690070621,
+                  "y": 66.86326864795473
+                }
+              ],
+              "color": "#0ea5e9",
+              "type": "dotted"
+            },
+            {
+              "id": "a02b1adc-7cda-4278-a2c1-5fa299259209",
+              "points": [
+                {
+                  "x": 51.41039778430233,
+                  "y": 63.399257779334384
+                },
+                {
+                  "x": 49.889380110860834,
+                  "y": 63.399257779334384
+                },
+                {
+                  "x": 47.67699076767321,
+                  "y": 63.67637864882401
+                },
+                {
+                  "x": 45.32632709053635,
+                  "y": 64.09205995305845
+                },
+                {
+                  "x": 43.25221208129795,
+                  "y": 64.09205995305845
+                },
+                {
+                  "x": 41.59292007390722,
+                  "y": 64.09205995305845
+                },
+                {
+                  "x": 39.79535373256728,
+                  "y": 64.23062038780327
+                },
+                {
+                  "x": 37.721238723328874,
+                  "y": 64.36918082254807
+                },
+                {
+                  "x": 36.061946715938156,
+                  "y": 64.36918082254807
+                },
+                {
+                  "x": 34.40265470854743,
+                  "y": 64.36918082254807
+                },
+                {
+                  "x": 32.46681403325825,
+                  "y": 64.64630169203771
+                },
+                {
+                  "x": 30.6692476919183,
+                  "y": 64.64630169203771
+                },
+                {
+                  "x": 28.318584014781443,
+                  "y": 64.64630169203771
+                },
+                {
+                  "x": 26.106194671593812,
+                  "y": 64.36918082254807
+                },
+                {
+                  "x": 24.446902664203094,
+                  "y": 63.537818214079195
+                },
+                {
+                  "x": 23.064159324710822,
+                  "y": 62.84501604035513
+                },
+                {
+                  "x": 21.4048673173201,
+                  "y": 62.15221386663106
+                },
+                {
+                  "x": 19.883849643878605,
+                  "y": 61.59797212765181
+                },
+                {
+                  "x": 18.36283197043711,
+                  "y": 61.04373038867255
+                },
+                {
+                  "x": 16.841814296995615,
+                  "y": 60.21236778020367
+                }
+              ],
+              "color": "#eab308",
+              "type": "solid"
+            },
+            {
+              "id": "589e325d-7d98-4509-95ab-4e3325fbfe2a",
+              "points": [
+                {
+                  "x": 4.673672909463647,
+                  "y": 83.21339994784273
+                },
+                {
+                  "x": 5.088495911311329,
+                  "y": 80.85787255718088
+                },
+                {
+                  "x": 5.503318913159009,
+                  "y": 78.64090560126388
+                },
+                {
+                  "x": 5.6415932471082355,
+                  "y": 77.11674081907093
+                },
+                {
+                  "x": 5.918141915006689,
+                  "y": 74.89977386315391
+                },
+                {
+                  "x": 6.609513584752824,
+                  "y": 73.23704864621615
+                },
+                {
+                  "x": 7.853982590295866,
+                  "y": 71.15864212504394
+                },
+                {
+                  "x": 8.821902927940455,
+                  "y": 69.35735647336136
+                },
+                {
+                  "x": 10.066371933483497,
+                  "y": 67.41751038693397
+                },
+                {
+                  "x": 11.17256660507731,
+                  "y": 65.6162247352514
+                },
+                {
+                  "x": 12.278761276671126,
+                  "y": 64.09205995305845
+                },
+                {
+                  "x": 13.384955948264942,
+                  "y": 62.706455605610316
+                },
+                {
+                  "x": 14.35287628590953,
+                  "y": 61.18229082341736
+                },
+                {
+                  "x": 15.459070957503346,
+                  "y": 59.79668647596923
+                }
+              ],
+              "color": "#0ea5e9",
+              "type": "dotted"
+            }
+          ],
+          "pins": [
+            {
+              "id": "att1",
+              "label": "1",
+              "x": 8.130531258194319,
+              "y": 78.50234516651906,
+              "type": "attacker"
+            },
+            {
+              "id": "att2",
+              "label": "2",
+              "x": 92.75442363512117,
+              "y": 79.8879495139672,
+              "type": "attacker"
+            },
+            {
+              "id": "att3",
+              "label": "3",
+              "x": 7.024336586600505,
+              "y": 86.95453168595269,
+              "type": "attacker"
+            },
+            {
+              "id": "att4",
+              "label": "4",
+              "x": 93.03097230301964,
+              "y": 87.37021299018713,
+              "type": "attacker"
+            },
+            {
+              "id": "att5",
+              "label": "5",
+              "x": 7.439159588448185,
+              "y": 94.43679516217261,
+              "type": "attacker"
+            },
+            {
+              "id": "ball",
+              "label": "ğŸ€",
+              "x": 7.024336586600505,
+              "y": 86.95453168595269,
+              "type": "ball",
+              "anchoredTo": "att3"
+            },
+            {
+              "id": "ball2",
+              "label": "ğŸ€",
+              "x": 8.130531258194319,
+              "y": 78.50234516651906,
+              "type": "ball",
+              "anchoredTo": "att1"
+            },
+            {
+              "id": "ball3",
+              "label": "ğŸ€",
+              "x": 7.439159588448185,
+              "y": 94.43679516217261,
+              "type": "ball",
+              "anchoredTo": "att5"
+            },
+            {
+              "id": "cone1",
+              "label": "â–²",
+              "x": 49.61283144296239,
+              "y": 65.75478516999621,
+              "type": "cone"
+            },
+            {
+              "id": "ball_6558442c-6400-44e1-a297-794d72baad42",
+              "label": "ğŸ€",
+              "x": 93.03097230301964,
+              "y": 87.37021299018713,
+              "type": "ball",
+              "anchoredTo": "att4"
+            },
+            {
+              "id": "ball_9e9a6532-d469-43e5-b11d-52a92b24a2ce",
+              "label": "ğŸ€",
+              "x": 93.4457953048673,
+              "y": 92.91263037997967,
+              "type": "ball",
+              "anchoredTo": "att_b2e26ac8-9830-4ebd-a202-291144536fc4"
+            },
+            {
+              "id": "att_b2e26ac8-9830-4ebd-a202-291144536fc4",
+              "label": "6",
+              "x": 93.4457953048673,
+              "y": 92.91263037997967,
+              "type": "attacker"
+            }
+          ],
+          "courtType": "half"
+        },
+        {
+          "paths": [
+            {
+              "id": "d944bf41-0060-49cd-a3ea-6cdf27b5be71",
+              "points": [
+                {
+                  "x": 9.098451595838908,
+                  "y": 79.8879495139672
+                },
+                {
+                  "x": 9.098451595838908,
+                  "y": 78.36378473177425
+                },
+                {
+                  "x": 9.928097599534269,
+                  "y": 76.8396199495813
+                },
+                {
+                  "x": 10.619469269280405,
+                  "y": 75.45401560213317
+                },
+                {
+                  "x": 11.725663940874218,
+                  "y": 73.92985081994021
+                },
+                {
+                  "x": 12.693584278518808,
+                  "y": 72.54424647249208
+                },
+                {
+                  "x": 13.799778950112623,
+                  "y": 71.29720255978876
+                },
+                {
+                  "x": 15.044247955655665,
+                  "y": 69.91159821234062
+                },
+                {
+                  "x": 16.426991295147932,
+                  "y": 68.94167516912692
+                },
+                {
+                  "x": 17.8097346346402,
+                  "y": 68.24887299540285
+                },
+                {
+                  "x": 19.469026642030922,
+                  "y": 67.55607082167879
+                }
+              ],
+              "color": "#eab308",
+              "type": "solid"
+            },
+            {
+              "id": "153acad6-6430-4497-9bc0-8d64e55ab12d",
+              "points": [
+                {
+                  "x": 86.39380427345674,
+                  "y": 75.03833429789873
+                },
+                {
+                  "x": 85.28760960186293,
+                  "y": 73.37560908096096
+                },
+                {
+                  "x": 83.76659192842143,
+                  "y": 72.26712560300246
+                },
+                {
+                  "x": 82.24557425497994,
+                  "y": 71.57432342927838
+                },
+                {
+                  "x": 81.13937958338612,
+                  "y": 70.46583995131988
+                },
+                {
+                  "x": 80.17145924574153,
+                  "y": 69.08023560387174
+                },
+                {
+                  "x": 79.20353890809693,
+                  "y": 67.83319169116842
+                },
+                {
+                  "x": 77.40597256675699,
+                  "y": 66.58614777846509
+                },
+                {
+                  "x": 75.8849548933155,
+                  "y": 65.6162247352514
+                },
+                {
+                  "x": 73.8108398840771,
+                  "y": 64.78486212678251
+                },
+                {
+                  "x": 72.15154787668638,
+                  "y": 64.23062038780327
+                },
+                {
+                  "x": 70.35398153534642,
+                  "y": 63.67637864882401
+                },
+                {
+                  "x": 68.6946895279557,
+                  "y": 63.260697344589566
+                },
+                {
+                  "x": 66.62057451871729,
+                  "y": 62.84501604035513
+                },
+                {
+                  "x": 64.82300817737735,
+                  "y": 62.706455605610316
+                },
+                {
+                  "x": 63.30199050393585,
+                  "y": 62.01365343188625
+                },
+                {
+                  "x": 61.78097283049435,
+                  "y": 61.32085125816218
+                },
+                {
+                  "x": 59.9834064891544,
+                  "y": 60.76660951918292
+                },
+                {
+                  "x": 58.185840147814446,
+                  "y": 60.21236778020367
+                },
+                {
+                  "x": 56.52654814042373,
+                  "y": 59.93524691071404
+                },
+                {
+                  "x": 55.005530466982236,
+                  "y": 59.65812604122442
+                },
+                {
+                  "x": 53.34623845959151,
+                  "y": 59.381005171734785
+                },
+                {
+                  "x": 50.85730044850543,
+                  "y": 59.381005171734785
+                },
+                {
+                  "x": 48.50663677136857,
+                  "y": 59.381005171734785
+                },
+                {
+                  "x": 46.98561909792707,
+                  "y": 59.381005171734785
+                },
+                {
+                  "x": 45.46460142448558,
+                  "y": 59.93524691071404
+                },
+                {
+                  "x": 44.35840675289177,
+                  "y": 61.04373038867255
+                },
+                {
+                  "x": 43.805309417094854,
+                  "y": 62.706455605610316
+                }
+              ],
+              "color": "#f97316",
+              "type": "zigzag"
+            },
+            {
+              "id": "05173aea-7b78-4259-bfb7-f5e01436956d",
+              "points": [
+                {
+                  "x": 42.146017409704136,
+                  "y": 62.42933473612069
+                },
+                {
+                  "x": 38.27433605912578,
+                  "y": 62.706455605610316
+                },
+                {
+                  "x": 36.476769717785835,
+                  "y": 63.260697344589566
+                },
+                {
+                  "x": 34.81747771039511,
+                  "y": 63.399257779334384
+                },
+                {
+                  "x": 32.60508836720748,
+                  "y": 63.67637864882401
+                },
+                {
+                  "x": 30.392699024019848,
+                  "y": 64.36918082254807
+                },
+                {
+                  "x": 28.871681350578353,
+                  "y": 64.78486212678251
+                },
+                {
+                  "x": 27.074115009238405,
+                  "y": 65.33910386576177
+                },
+                {
+                  "x": 25.55309733579691,
+                  "y": 65.47766430050659
+                },
+                {
+                  "x": 23.61725666050773,
+                  "y": 65.89334560474103
+                },
+                {
+                  "x": 21.54314165126933,
+                  "y": 66.58614777846509
+                }
+              ],
+              "color": "#0ea5e9",
+              "type": "dotted"
+            },
+            {
+              "id": "114f9500-386c-4c19-9c66-cb474eb5565b",
+              "points": [
+                {
+                  "x": 43.25221208129795,
+                  "y": 57.579719520052215
+                },
+                {
+                  "x": 45.32632709053635,
+                  "y": 56.05555473785927
+                },
+                {
+                  "x": 47.40044209977475,
+                  "y": 55.08563169464557
+                },
+                {
+                  "x": 49.1980084411147xœÌ}İ®äÈ‘Şı<uëœ†»(f2É$í™éYhıôN÷zİ5„,ë4G<ÅR«Õ=Âzƒ½[ÀWõÍ®/ë{é~=Á_$ÉbU‘É¿bõÌhÔÓç‹‘ñÅOF>ÿÄjüs÷şîSË¶ò€‡wBÎ¼Æsÿ¼ñ«?´½ì½ŒÙ¡ïŠĞcÜqÂ¿ùåš.ctßcÂe¼°kûœË@2.E†ÒL×µC)™8óı@:şut}›‹ÿÉ=ü/øXt¥b¹B&d².ÏJÕwl†NÀ]æ¸¾û±èB¬¤I2_áz‹Ë¾kƒdÀ\Ïñdàz®øX„}or‡B‚ßmC›9´{=ë~¬m$™Í×çÒsCG0Ù±Àsª+éÚXSì"LDıå6¤Şc|y^(®£ëÙA -	Måºx™¬gƒªï2?¾ğ¼ë”¤”¶ñsÆ]á{è˜®g{sÃ  †×Ñ!ÍHOz!fm&ëÛ‡„teà…üºéÌæRú)&İîÍëÛ°®ç‡0Iëº×ÑumGzœ;Ü|H´™¬´]<Â:¿\GVØÒØ»Ü÷üË»èB¨á¸V*æ:º0X3ˆŠz˜83ÓlÁh1@
+¡h®#@Z\'ô9¶¦¢CY‘Zs±åÀn]§¬‚Vãuÿº»èâsÇñ˜„
+Èt“ğÅoşëåËî¢,ÍvxÙİ¿‹ÕÒu‚»ÆùûmLì³4Yİ}z1¯Ë9İáy|Ñ]ÉÈ]ÆëEªÕB`Àå)w-Wkù«•ãª&Ùm–lò=¾ÿ·Ãyõ¹°©~(…ÏÜp[’…Vv}ÈLpÕš…°äjÏ%‡JfYÖÀ¸ ÌûH:¿–®!§ÊÀ¬ #¡w¤#¥a ¯40ÃÉJ p_
+bìH'¼Nó,,P¿ïú¡fÃ(<á0zŠÁ^§éCn	ğ/B«Ì¥YõÁâû€r´î•R\
+T
+#ã2moV}’Û¤ôàë–ş•ËËlÚDígV@Ò±aéÓ…5‡-¿¬cƒ^à}°ÏPFº~ Å'…‹çÀEñ¯\^ÇXàè×¼¸„š…ô¨ZWÂü^MÕÜÑø0­¥ùÂö…™Bö:ëZºÜ4ÄÊÂBw˜SŸÛd˜ù=‡şHd!|œ°0	¼ÏY‹L°iN¬¼84Û´U–çñ¥Q;ùéìİwÛdÓ4H£§òœ5é¦j§ôqËgC4«f¬ü'˜ÁeS/§‡A¨è·ñnŠÕÆwyÇZ>Ó.ì}BxØ'Í±½/¦éòÀ…mg@m·šÛ1ƒ–Ï´;aÃŒ3/ô è)†Ö ?pğáPú<tš+5ÓDÇZ>ÓS  Q’ršª¥PŞ ÖM¨3y»x3hù¬"A8ä@[4ãmÅH˜³ä¡€yÍ§æ˜ÁR¥iÇşßÿ‡?~œ­Ğ>µ‰Şd»xõ:;nÚ‰“ìÚíæYÎ¬±N’Md—BèZÊyåqà,½)³Œ²MÜeyşüÿÚ>IÚ>#QÄàáõºÜWØgÏ–ùš€#!3/%dê2ıÆ÷<¨_-|ø‹!b¶P<”¸.+É—J­Ä4y[9\J1™!¼fßsùb%üp!ÜØ[,[-<®B¾äBñ(¶sğBW9ôÉ9køÊ…Lûğ,(@×Qîõ;÷7Ks_EÁ`+/WXY‡/€ƒ!yë¯£IÌün3¯üÂ(ƒ12¢Î(;ìò×å—ß¨t]±úÒñwÉş‹Ã>Ïğl¾;ÄŸœğïÇg4¿V»$ML®€;>÷kİx—'yªé}sxT;ëe¶Ïck©’wÖ6ŞYÙr—ìê‡#•ÇÙ¸p÷ævòI¶‰âmNœ¼b“Yëd£Ò$ÿ¶ûÜ­;•'Ù3çøÛlùMåÉÛøx—ãŠÔ&Ï6jï-õ´´¶GwÆà™h—lK
+wµQDª,eáê=ªxM’f¹zn­²==C/OiŞÉSœïâçV¼Á/”•€Ò?Ö_Á¯ô*^¾§_F	F•ÒOñf—Ú³¶jOôùÉ¸ñ†<ÙáS×Rà$—lbe­ğ¾l³Ç§øşÓ‘ìè£ãèékoi6[<!<ëq§{ıà.^bLx–)pz”&¼Íhpx‚>åçÏñ·\¥zšåG^õÕzÍöq~Ø~µÙCÔ"â,-Ò]ıñ6UïãİşWq¼ŠIæy—»'ˆÌ.Q©^Õz‘–™Ú­^åø¿¯÷ùİVåo.=¯s5P)˜†TöÂc‘Zß‹áZ®,òÅ’ÅÁÚi( s ±éÌjuÀ(¨Eé$`;XÇoI'U»:v˜ïÂ•ö.ãÂÿÙD0°É!á¡ëÀ,§-![E(€Q˜O‘/ì24” wàQNˆT„ïßœ(JŒÌ~¥X*Lå¥³>˜ ³}“¤È}à5¡SE0´AÏŒdàbò]Ûñ‰œKY_'à-QŸc„”˜Æ3.åed0A”ÛÀ}Ÿ‚>NØ™®"y®‡Ç¸tBœ¿Œ&èÙe/(5Ev«%àRE,g!X>çœ ×Tz½€SLÎEØ$­B³nHÙ7.ñäe,k09Il¢@°”Ì%ÿÊDÎ·}áá9€õğØ§l°RÀü“,„Œ›ö (H8E¨!¨“·DhcØ”‚¼@ÒÛ¢İUhŸršx’ùœÍ‰]ÇÉ‘óáßÛŞ´zÑ}—Äë2ë4˜ ·…OÛŞŸìÜ4Á€Ê3lUéøºf*=*· ‡ruã-qí*´P6Ş“:úÙH#¦'ì^Â’;Ñ– .è¹vH™zl‰€1hİKzg?_D;ûb‘Î³y´ZÓˆ3-CµXCo-„òØb¬£…·¦GÀ"Ø™«­©kCccqxÖ>YT³­ñÁ#GR}œÔÉÖbÇ$¼x8{«-ƒ^Ù‡‹€ASy>öÅTzÌ¦œAú%¯Â°ÃÖø„Ó	ıé3éN•;æØ”Uàp\åŠœ§;G€‰N¤Ú.ö‰“e [‹¶
+jØ§TáøÔØPz˜ä’¢İ0¤µ1+~ÚšŠBX qjH›”¾Ä²A M`;€¤‡Sç'¡¤¨n‘CûS¦Ó.¡…‰—B:€z¾häÀ†ÓÃÚ».Ä÷
+ˆ˜µ0 L;§¯L¤×J«µ" 6vƒ“zîeõÊpz¤RC‡ò{Õ‚šè	;àdŞâE0(x`SH…9s<)Œû! `‚U÷} ÊvN•*¥r±ƒCæÏÂ*›èI;  8ñŒ“÷;à›ï9:äËñ¢³\â2¨Nè2lÔF‘×ìCFå]ğ0C`öÉv{¨ÄPY |U–kO´Û­u7æª›~³í*lÔ%s²b¹„Ù^ÆñBŠxJI‡_†ÁG›í zØñY`­qµ	Ï¥¦°]|2ÚĞ“²ÑF1wl2fä‚a s:•gÃ«…Ê‡ øÛ˜Û5b_éüüäù	¼‡6§ ÎÂ C-:O­! r2=“>6=n#8¶G%Ñ`<ÒFı`rÜö8‡¹¦u‘ÙªùpÌad=A!Dk*=f“{Ï©–ÂìËÌ¤!v'Î¶#Û!¤‚( —‘ë:9$$)WKÅB'…ğM˜2¦Ø˜@(´ÙTzØî¤„M¨n¼¯u068îÀèŠÔWÙSà‘  êZ‡³p2
+ò6B)ezĞ$/ PBÆS‰¡Ó—:Ya—é†£Îÿ6yüV=ôÕV+À:\¬E¥ï¯Õ"\)±àäîÊ(
+ıÕÕ‘Oé‘……±
+àÍÀ¢WEØóHñCK5*€¯
+<²Ålº‹ıe´üsÑƒÖ€¾—˜›bÛ-¿ Â[Wbºaàˆ©RÓ#ğíQìÆcmç0æ¥'má9€ïĞÅ‚Añ›éÁÂ†.çpHéØÑTz•CúTÎàà7\CrÇ]*ıƒG0uù|ª¥ÊEJMY›åÆq	üM1d`˜©áÚ;ôò¢¡`Cãzdm])µõŠ…)(xğNŠÙJ3‹ ÜCX4á	l
+ìŠÎCÂÖÀ[ ~DâÖ][R ˆ	üëc3³‘£²1˜OWöÆ7ÁXĞs¤`ÏJé€ıSé96°›ÒŠ?·àLôD oâ3˜¡€wĞ!/óĞóm¢3¨Ë°Y³27=à>`‚àğ2’›I£	À› Â'»à,
+[@¡…:t¤kL‹Q=— hµ†"Á'Šæ9>Õ®›£O½¸k(ÁÀğÆv—`çÛª®ç¥·•‘ C:n[¹QM0à’¹ÔÒT‚P‚.>Õ.‘šé	ª‰‚·âË©ãâ=®Ğ%ñNè øßš…!áp×'…ÌŒ:“cÀì¹ØXÜ—a‡‰Ÿ‹ O“<ßwsédÅ­éyØ'™[#æ‹^VÀÁR˜úÎ-?AF
+Ï@^|¨3=1æ2$l('›xÚ’ÎÒRDj6L¡ª*ƒypÈ+—”÷™J/° &¸÷ÜÀ7Æ:@PŸw£€,¼¥Æ9’Á}[«4*RàèÖô„-èä,…}¥Y§ÍEÛğ¤±çéT4,…9º2Af“Aò}ßñ€O\S±Æ\ôàE`vR PŒÅÌDNÚØ˜^Ì ÿÓKí¥wöóÇL„S¥AÿÅrå³¬˜XPoŒÅÚ‰åDÒ]Ëh†àJÏ©ı*Â…bT.E:øäEF.uÜÑQU ¢à
+r‚ö%ªÌ¿iKÑ©kø+!ƒÚ‡§5x¦çÛpkáK3:°îO®* =ŸÊà%{T^ĞO×á,&¨ù†;9-=4`9W¾ ô$é8©FÇXD÷Ğ¸•ŒO—J€1ô|ŒÛ¨2$*àó}3“—OÚ€w¾†%ğ—ñ{è:>ñ `ÂÉË'm±”f h9EQÑÛ8Ò˜PZ8”¦çö{à† zÅôàö:~—ÀóŒ^¹tm8Eƒ— :¹²‹j/B
+çqJ»F§@r›3lNN]œ˜3991”ÜL=Co¦âXªœ‘>Ás­¾„+†­¢K¡¥ß8=BuR³®Õ1Â¾4v\ x„§Ò ÌÒÅ[ 1@Ô¤ª)zR‚0pD£Ñ÷–ß§, Ô"_8øËÎ÷j¡œp¹ğ}¥O¹H_êMÇù`Ì¨!L2ûâIlxM®^—‰‹"\;ĞíVÈxÂ§0®J@U£ğ˜fJ¹ëÉÉ‹Ñ¥Ï!ö1kÎ¬´=£J\—ãÁ©uH"€&'1§(34ÌT0áQ£7 ÏÉ×­xÌŞ£ïè±œJNyÙ È®1eF5T ÒùéÉ‘taK*ñ`F&p;L¶´¡Å°ÂBŸÅ˜y¢vJ`TFyw³ÉæÔ jŠLr*¹Ğ¦@¬C
+'0'ëf2Ù>Œ•¤6'Ì`gŒU±Ğ‚¤ˆ]Jé¹“éqÛ¡âh@¼€Z®uP˜¡JÕ§SÊö$…Ô”¹ŒsˆàS5¡´;Ù4¦±¨3€dèĞj“«û;úUšIºÄM8~Ó3»­ëpF]ò‚¶zsÖPã5Ôá06–1&:×q$ 7:è	I‘Œ*ŒÈÇ°€ÏÁM@“kšIè($Êé´±ë™o2ÌéCè6LÃ@@2|$+È[/°£} .èˆÏÂ‹ıˆG®â®Z^‹H\jïí¸!4çe|®Je—Ú«&FÌø§Ò/ %H7’"ÍS•íC– @ÔÔ7Ïìó2j4&§×	¯Hö¹º^Ğ–Ú'+ég²Ø‚Æ†¢ğ8Uèšè,G¶„€Á¦¬\góü<; øR„ñÃ
+NŞ#Cr¼8¼0×|BÌ£6·‚ø·~*=¸…n@MkÉçsC³ÀP÷
+ÚHêp5ÙËĞå˜Ãvğ=ûT·şûrœ–±ôÂˆûÇâ…X†ñB¹ĞU«pÅ #?fW«)à`êsE)Î,ƒÉ2ßù—NúÂ³˜ŒóÒó4°‰ñBSQÁ­é¹‘„ä­Tzzkz“ ÛéSé[›Éğ¦GÕö!£còğ}‰ç¦ Ä¨ye1}wrä•S†ÔŒ¶Í¨†EeÔ†Ë¦ËÊPŸ×¥b{H* |ïdŸŞ›|ª2§îT83UoÀÍ‘~´ƒh±\/ÕBğ•X`ÑÙˆ~¹ä
+vJ^}Âs„F„äĞùğÓ•'lÇ¥ª>Éø‹±zÜ§> <0 ’éÛ
+–_Ÿ¦’N/xf…ÙË0 €GİÍ'‹€“íJ—0—>6;Ûxtü#µ¶ñs}£ƒéÅºÔSÆUÎ§×Ö:Ô'€cO…Ìq¸cD7pµ…G<:0â8Ó«‡á6P°t@\„Âè²ÃĞ0êƒíÌø¶Cú}¡›u´\˜9‹U°¦æGr¹Ã(Xø«8Z­×K¡Øe£¨Ñ{y@ƒå*­*¡Î……æM^”­wg=MÙÛ¶ ¦ëÚº-‚®n˜Œ¥ŠñÁc†â»¡ùèíLg°ú:ŸÕ!ıYNŞÒš„ğ Éµ‚?g>b6“¿U‡/K½°6F´1SÎxè‘=	İ	gl d^˜|$‘ÙµÜ„¾3c·™Üu°)ĞÊ×£rg×n¡ß*‰­îùÜl*%¦D C
+İè]úTbLIh˜+*(Åw V` ¹ºÍ”§&ÎÀÀäAÚÛn.ª"ÃÜ´™Å˜œS¥Âq)Ç›xà0£°ÀKóÒå °0ë“SâØÃ.T´tó;ã¹Éí:£jhCEÃSé965Øt$Ì0ÅÂÌä€ñu»Á¡ú&‡óáÑ94¸Î24w§šËñ¥M}IBêCõ/FzEGØ}ŠOÎ5Òh¼L]¾	™—Ø ,2¶ÍTz®xîŒJx`ÙŠY²ÜÖG|¨« ûo? ætüøU—3N#„’£ıÂãßOŞÙÖİ¼g¶t67÷5¯*x9±öÖwÜËĞo…ã,2(Á?Ş¥ÊêlŸÙ[º™›{™Wù†Ó†f~à·˜C†Oz/à¥\NìêA75Û—ø•Ù¾ŒÁ§fuĞ´mc¾LXÌ=æFñ‰±aù (Š!80÷¨qc“ò‚Ó¾Míü<ÿz!V¿ÓR"ü€°ŒÂ¥]7æ–†»mçßŠm#ènÕ=lVæjœ§&x®n†àùaã®”B† Ä%£šå—ÜÆ5¯ß<‚$â…¯"*ÃŠW‹%[Š…ÇV|-W~ä8jüÜÍŞ4÷y÷Ï ¹‹Ñ»k·LSotJ˜Í'ëß¬üX	)½ÅzÇ˜Ù2^(@ÜÅRğåšœLweÖ-²mf}™½J¹ 8¸5b”nCÿ\?/}PÏÂÅr¹fá¨h¡¸X."ğSşÊohœW#°UfõiOØ&ÏñİğÒÇ+VŒQ1ÑæÀknÃ„]¯4³
+#ĞÇTü(\/D°Z-‚ óbp;vÔ’¯×»gÜ04h…Æ³'ò$[EZPqİB£BÅä"Q©Ğà3fÏœörw¼	3÷×2r×k¹—øC¬B¶XÂIYp¶¹¾
+¼Õø™ÏˆÉÍÜíÇúÆòGFôâ>÷
+N¹×Ú˜»éMoÎmM»pH‹îët6énñúºhÕ];ÍºÇÒ²{ —;’ğ€Öİµ;ßu>a$İ-¼ë°Egï‘„´ò®ÃOÍ¼Gîoé]Gõ:›z¤; µ·u–v4÷Iv@‹ïŠlOÅØHÂZ}W„{š}$< åwE¸§é÷8ÂCZ×†ª³ù÷HÂı-À+º=MÀGÒío^Ñíi>’nKğŠnOSğËàà®A<Ú`Ó'´ŸjÓ4
+¯-\g«ğ‘6}@ÃğÚÂu¬GÒĞ8¼¶p'Gîo ^šÃã¨h$^Qíi%>î€†âµ™él)>–nocñÚÊt¶Gw@ƒñZ×wEK··Ñx­ë;ÆÑĞp¼Ö¹…céö¶‘®èö´Gw@òŠnOÑÌXº½Èk7¿³éîXºııÁ+Â=-ÉoF¸¯5ù­$«¯Eù8ÑZ±fuÔ¬–OÚ–ßDùh_^Óíl`>’nóèv62I·¿6ªVºJFÒíok^+İ®¢º‘dûÛ›×:·³ÁùHºımÎo¢s´;¯UngÃó‘¢¿íy¥ùzŸ¤Ûßş¼ÖôĞGÒíoƒ^Ñíé–7’nw¡šng£Ìq¦µ-ºÕÕ}°Ÿ:¾=úD3 IzÅ»¶å#×¬¿Yúmèö7M¯év¶1‰‚ú›§ß†nõšngWŞ‘t{›©×d;›$; ©zE¸§­úHÂš«×„;»sÄõš¬ß†p³õÛĞĞtı6„{›¯ß†löšngÛğ‘tû›±ß„î€¦ì·¡Ûßœı6t{›´ßDShÖ~Ã0 i{M·³mûÈdÆ€æíÃQâÂıMÜoCw@3÷špg;÷‘„û›º×t;Û¬N“õ5w¿İş&ï7q{†4{¿áş¦ï·¡Ûßüı6t4¿áşfğ5İÎvğ#SjıMáëmg[øÑõH½ÍákÂİ·GîoºšÅß†ğ€¦ñ·!Üß<ş&tû›Èß„ì€fòÃé^üæû)¡˜Ğ\~zhª§ç{Åìl2?rÉ†’ík6?šl_øŠnOÓù›Ñíi>?šn_ú:÷ÑÙ„şVÁâys=ZÒWt{šÒ¦ÛÓšŞÖh`t. ¯E}E·§Iıhº}İÇ+º=ÍêoF·ûˆşh²=­ë+ª=]îFg˜úzÊWt»;ÔŞŒì¬%fÃwÖ¢ñ­í+²=ÍíG«æ¾÷İ&÷#éö·º¯èö4»ÿTŠLh}?+h€_[µÎø££ˆ½ğ+Â=­ğGGkûâ×æ´³%şèèt_cüŠî¬%9šÖö´³EşèìC_£üŠnO'Ÿ‘t4Ì¯	w¶ÌÖêkVWˆ®Öù£Óx½ôo 4Ò¯Èö´ÒI·¿¡~\f«ÚÒXÿÀe@ƒıŠlO‹ı‘tûí×À¥³ÕşHºı÷kºóAèo¼_ã¥hÀ_ã¥Î:#éö7â¯ñRW+şJliBcş‰xiH{ş?ÌXßßß¦¿†úGÂ–íúë8@gÃşÑéŞ¾¶ı7ÁÚ÷×f|Æã˜Úø×f¼³‘ÿè*‚¾vş5İÎ†ş#éhë_ˆ®¶Ò#éhï?<ôñCp'´ûŸ¨ü´¸.Y××ö´/1n_ûÿ›Ñí¹àft»®¸ÑYÁÈº=×ÜŠnÏ5£Éö]P#úÎ6›7‹ô\0º°÷ò€Ázş6'\&ğ1ôm÷¥£ƒ(½WT›²çrÑ5º½WÔª¾ó’[Eoz/IxÀ•µ‘é¾t`t§÷êŠrÏå£KŞû® ¨Í[ç%?6áJ‚‰aÀÅ•Øs5ÁÈ*˜ş
+jº3¶î½¨ ¢ÚsUÁÈs½Tdg=]ÙqAŠ™ñÿ€nÑp‘AY˜±Â`ø¡İ¾+FŸbí¹Øà&Ôt;¯8sï»è ¤t^u0:ùİsáÁ-Ò!.>¨Qn×Õ£OCö]€P£úÎ+FŸ†ì»¡N‡t^…0:bŞs!BM¶óJ„Ñi‰‹nâ³¸ ¡vQ;¯H}³ï¢„šnçU	£³l}&Ü$û3àâ„›ä\ 0<ä2OòO~:{wÛ…
+F¤Ür©‚Õq­‚u¬vïìæ^{)]ıÜ­î¦ÊCÁ~ËVÇ%uŞ¨óš…Çv]´0ßZÍ¯\¨°xwƒ_SúéV3h)€2^À08e¦Üj-q"ãuÕ*t7˜®V¡»ÅôL3hiÓluwŠ¾Õ†nI÷%cfÙµã;¦ÙÓº¿’·æıãç9úÒ†1¼èRf^Ì¿÷òBLÜ›S®r°:.s¸™L\©ƒ¦\ì`u\í`ÍïVŠªãz‡g9áš«ã¢‡j–=·!T«Ù}ÂŒêxÊ¥Ã6ğìSªËÆ^ÿ0Š].Æ®¹íô@ny“91áRˆœ˜7ä„;Ô1^Qéø…»dÿÅaŸgOx6ßâON˜ü‡ã3š©«]’¦&©â›1:şQ{7wy’§š‹˜õËßYÊzÂŸ«xÿ[‘Ú~øg•Æ»Ú¾ÜE*³±êîõNmöI”|øßõç«ÃNåI¶!ã˜†[?ï£]²-¿€ÆÄU¢MROK+Şä»ø±VñçÃÏÔfµÈÖëgøE=Äç–‚Ê²VşãSoÕ&Wùcl%Ö:Ù¨4É¿U4Lk÷á»m²Röİ †Ñ‘€Š[V3+Gv*Õ£²Mlêœ'7åÙ—)+%&¤J)£ï/Ö3y<¬ğëÔŠ>üË¸•YÙ2Şéˆ™›<Û¨ü¡¼<ƒ@½H6¾{J"=,¬Ú|øgŒcƒ‡Åwñ.ÂişùñåGñÚÅÑa‹åÓ¿,‡öVU`mözMwj—cŠ ³)‚b~-Ly©ö{µ{nårµƒt­ŸA¢gâÃ…d~ø_ØVVÍ3Ê–Ø ›ÜÚê¡aHåØˆ9‡Í‰TÅï æI¶³À.kyØGx(Oğ`š&!•äÀ·0ÆÚ„†G¼•4ûİ!N?"*ÕƒMñÿí™ä@@#:ä‰Ö àRœpÌÃßãf¿cğøqà«Rô0Å{ë-v±J[øñó,²¾ÆG±V½9°NôY¹¨†­ôá;Ì"RíòÚ´VéŞÈ¡—j‡i«•òF=á¿zhÊÊ³\YÛd?Õ6MH“`o=¦Å>:Ùx¥Æ.Â VaıVjÁXû”Qø»}œ¶_möXğˆ>¥¸àİ‹äm²‚Àbw‡-,‹åÂ<è!ªİ.ŞÅ4ThÍôÃŸ6‰ªö¿m}	ƒto°¬Xòc.4ë6IiÖ©M•«C§)}	¯Íhö)©0&§ÿ‚Î;è‘~RDl	cÎíâ­“òÅ>ÖL¦™|Î?»z}cfW#ªÖK¢Î—9åß—Ns3"\å¿ø}#ì<ö“ïkç¦76z:wßó{>«ı›¸qıXß-À…´nÏoá<şı„Ö9Ü[Î°ä€ËÛ˜X4“¸üeÃ¥krÏ5Ã§ÓyŞ=ªË…è¸¸ohE_Ó¨ø˜Q—£2ßì;iT'í£:àÏÿø¯m$«[€ä²Œ§j»‹OZ¯„æÎ5¬ª_ŞXÁÑ=›uû&ùäb˜µ=ü:ƒ®\İ3fıÅŸÿ%iÆ/48ÓÈ¿4†*¯Ud¶ü†,ùÛ‹;õî^Äûxó6KÛÂ†AIC'OP¼„ƒ´!Øg0w ÷@½ HÏÈhàïµUãÖÆâtç~‘e;ÿPÆû-ş¢´CCv
+}_˜—ÊÁÚÁ®é¿ÕóĞàâ]ò¤¬·qšEINĞê„Â—…ñİ‘…8÷n0¸ãW0ş\Û•ı¾À˜â¥Å½D)§æ6UïãİşWq¼ŠWçˆê‰Ìê‚©/ÉóZ~øn”[¯ä³sîlô«øIí¢ÂMj6!xèÄz,MszÿåÊ˜Ä¡d ˜6·Öçõ/ÀÏ@­0¨x+œj½àd‰Ÿ¶1ä*9ß—°ÀÛ¦X¥\‚ë˜XCe|øô>NŞ¹déµq×ƒPz±+o*Ş?Óâ›Ãcñ­t°H7ù‡ïÀU-…4Ğ’•xÎí£Zëß §fy	£—<-¾…¤>·“]5$Œ÷I¥‡h¯'Ÿ-wğ)¤»üò	ş æ‚Å
+ÿvx[%Šµè–SÇäğK¼#BiÎàZ–®€¢ÀBˆÚìqò6ı˜O‹ğb	„üÛ>$Û
+û~	Îb¢bªĞîÓ¶œ—µO)¡7¬l¹zàÖvñÑû³Ô&£hıÕ¿ÛëÊE7¶Ù^Ñ´¿É¢çÖş^i³ÑRP¾O[ã^}S:àÛä-–1ÒŒª4À&~w¤è…zİb^¨­^KåG‰D& ¶"Ñlxc£rüÔV¢2ï"ÙôBº¦r,óFLu óü6ÈÛ¾·‡¼ÄÜ§óºåvàÛmÛDm{™oòªk½¯ƒ±—«o.6iÊD`k 0cyÅ ¡^ŠÕi-À?`øŒK}¯Ÿ¼oÃ£Gy%³~'yã{-Äd;/ñó%ÜOŠ­×¯`ÛıÓ›£íç©‘±ûU	ƒa¡^V`’-ÜE>ıâh´şK¼£`ÓIëA3OFXşåÛ„L5Î  M–F:-Ó*:S€Wàr ˆíşYlYk•øÓ*”+à ûs ı.y,àĞ=€,a€7ÙS|OV™b<Õw4rÂ{ß&„µ+Tõ6Ù¡âóHÑhôÎ~ĞõÄ²ÓğjGñ¶ÂëOÙÛ¤„Uéˆ±V‰‚{¡R˜õböŸUš[„İ’w-Ğı?x¨ÈÔîM×•qö´T¹†ÑÃÇ·Å (pµ‹ŸˆõùÄÙ‚/Ø‚=Ó'bpÔ^Eê–@óAƒgÏ¸kcÑì<×îÉ=`T^!í{ ³Î\½*ä"DJÃ\ãÿ•ßàÑ¨'-¦ÙÎ¶ş’b„–ZŒòÊmãÒKÊõ×öñîm±ş„¤péŒ],uµ+>:¡Ğ©¼Œsx	Ë¤°§U;È¯0MxHûvt\»Ãzª ÷:ÙeÖ¯°¡Rë3ø\˜lñû¯6«â–gÏ†lËfÆ`Oã …×r[PƒËøOp)w°Ñ~tü|¸Q?/0ÖEA\¯6N{3z#–_¡íPFÌ3ì«–ÅAµ€÷“‘õ½J1€ä[üdeX²Ú&Óï‹ÉmÏ1}½±’%ö½şDákÀsíe@ÿ‰ õ§ÖKU¸n‹ÿh}®)W?½.Iá¯_“‡¥?m©3£•":ÒluüËÁ¡ºÁxª5æÓ€3E½¶iX¯«#ÕŠº¢hïÚìùYpê6&ºË·.ï=Î³»(¡6Bz7X®Ö—EEåÔöÛÙ¢ËÇú=mÈ¦;mÊ#©Æ‘¿gäÖ(bšx³;4\ÉÙ\ÂÆ]!7gQBÖËåš‹¡¸±=ÛËt”Miƒ¹-ôr¬aeYãU’i»›=×VæødiâıO–G^|-¥XÌïÉFAõ'ùSK púo¢¤QØ5…MÃûş,nôÆR›•µ“eùßİ=£‡J3Úoî]ëóÂò]8ñrÜÔãê¶ód·k:ÍL'æš-¡Ê·'©\„şE?ª£	$®h%4P‹ÒÌqÉo—Î†®aÃª\"ø©h.›"Yqş|ºzl°ù01x¿%ÖÂ Ã¸sÏÊ'ÒbqPÜæ Î?;²¤ÜL·³İ&õ²Ük¸ImõÏGº=á†mí¶ºı“1ªËCWFc;I°Õe9gıš#Ã—Ç§&‡ê´.J?Á…†êïãÖåEuW –ó`F+(ùØ±h1<ø9Ğv¶Ö¤ø¸pjÏ«Ç€işfÑÔUÆ&ı ¹xcC¨êápy^##ÛÇ–ŠŒ`âÀei;Yn¼áh¯²´‚“×§9À§$ÿæXİTeïâıó²À‡Â$”ö+sˆÑ±¶‡'EtE¥QÑaŠ•|s ŠM˜T·ÊJñÓŠ¡ê…{ì(˜NÊ
+ëâ³Å«çÙi°t]Éi¦zF*ü¬Âd§.¬¡üëu|sØ$ÙnQ•e›…û®–'cÏyª2·Qúá»=&fì€Ì¨0÷¤&¬ÌÏ|Ø[?×cĞOB{êà˜méå(ù°/r•:*aa|e-+ŞÖiVâFšÕZÑXÕI»g V¥dìÓ‡ÿ¹§:ÆÃæ½Ê­7j£ƒPTæx™0/ZÏ‰ùo)àYlÅ›zÑÚÖ±È­â×4&Jä·Èäfôß½–	EKç¡Ë<`¬D¨¬Û-fR5Àß1ŠÍ¨§"ÎEùß²Š ƒ¤ÁŸ•\“Ã/âX:>–ÒìhõV	Ø¥q6…v1ß};j
+Lx¶,Ë,ª(ÈªŠò(ÙÓVÕ —
+x!2ºêasx‡(<U>ˆè¬~%oÏÚ¢ÁŠj_mëá¬HøÕv>³2½†uzu¨÷ªZ­ôR´ÌÛ4ÑJË©­.(WTGÏ†ôK……£uÔ³şÇ–ˆªå†tÅøş2Mˆ(öØãFƒ}½@÷?Ëâ…^Suñ?AA=Œû¾%t|-ÓÊ‚­ò¾Æ¢ï3x8©D¥zĞÏÒ¼ğ›Ògı	}]³y¬”Mùã¤’Î/*Kùı£zĞ5Uµòe ^wlôÜœ•¤`V	‹÷¤Ø‘³PÿT?›”zµˆ [”À÷Å¦*z:Ó	zq¼‰ó]±ó”jğö­Ñ´·2Æ®¶î¥`Ù;Ãc,{,:	s-ƒæy³#ï~›D¿½-*2b˜F»¸«hƒ°Úäû=í¾Dn›>Ä…lÄEG{Ú_lª§İe_ãi›sÿO{m³ã>Ö¥m”Dªe0f3®«°Ğşƒ1ÿŞêä7‚}Î÷i8aŒ`]:ÚÓ}is–dR‚şKĞ¤@|t$äxæêáUaXÉ¨}ÇO[J”–Õ_¾#×N#Õ&ÃÁ¾Úä%¾*É®L«®M\ÒØWôV÷ÅI¼FYŸ.Ûk»ªs‡°ºÂúõ!ÇÏ_mÎØKåCA¡®b]‹	"“Yß©âç6|z¨DÇx5†Ö CÓ“ŞÖèlö$7…*ÒóòÜ£5'”É<–&~?åê±˜V³¥.ĞÙ|5 Â¶NÄNË/ëÚZ*	(Ğùóİ}øû®ê{kªSP˜¤”ÒFé÷áE?ÿğo›êØ ¢¨¢ĞØCÒÉ’ŞXŒ#LLètÍ£Ú=+|£ÒA£Rœ.€qÅhzj?§U]ÇTÆñğ{–†gueú•ö‚*ou¯]"´/G zQÂ›Y”ß/+/©&|?õ¥û·Ó¥­ºx|LvgrQ¬éyYÆÃ+øuù{äêDNŸ*×ÕB’O*±Şà_¥aü‘§ÁƒÂ¹#)À@÷”¿¯p¬A˜ªj?üSqŞ«¤ÓB@qr•h[süò–„n°3Ÿ4h]ücB‹{|7^¶c¹w™°>Îµ	ì†Âì–öteçİï‹{|®2ÑÑ•ƒN;]bn‡8[FÅÆ$0ôÊ2Ñë>fjF”“Î¸ZÁ!e¢—÷wÀÔÖ4Áj¦¡¸ÁšÒPƒ¯1
+Qg¹­ñtß‹ÆûŠrÑÜ2º8]ãºÔ™õ4¯sq:ós£=³Rø,}‰ÖØÚËuÄÖ|r‡¬@7Û¬è´õHÛúÅéI™§ì@]
+İ®Ëˆ­.ëÌv°ëSÓT¹?†céøLY™¹>¯õ'6Jğ¿Ø¿‰OxuŸ^“¿À¼Ët4~Å„ØJ„}^CKu³›÷å4*,½?í-°¿¨f>ep-†<§¸"ÈÓÁ±AEÑÙ£â,>|"¦ç¾#\øœN.Ò‹‹âJÊFœÔù‘dZÊf”®LáØàëÃ&ªË‹1” üô T^t9é$¢k~Õ"všuY Å%n_ÇË4~¦Ññ=¶wGÇ@å…ÿXA§Öª9Çª]Ìğœn=LZF¤cÍ¶>,GgØ
+÷wTšä›,:Ù{urd]º2EŠfŸSÿŒ]ü4Æ49äŸ¥É&.œ“uU_{*KÅ©T=ãj?2àSëGQÑ! ëá¤ÜûLN{øYœnŸÁM¢ÿ&rç¨d*UÏZº6sğÊ—ê´“5ÙÁ?Ç0ï‹lÄîŸ[÷¿‚SH_ø‘ÎMhâ?º¿ôÌ£Cq$ M8’…ØEìTÏ¤ı~İÀZşhá‡2¬àa	8°ÂH-¼§8¾[¹°ÇÙI±#!R=­RMX¯H“Xâ°Šõ(Ûr|Vä
+†_0Ú9Ò¨Şç?¯‰¼Ğ5ÔX£—p­­[_giúÌú¢<7øb—mOÔY¶‰âm®µwı´¹ôÛŸAÎ+ùn	-ôjåífGšy >nµR¯3¢Lp•wÏ3ö¶õ²Ü÷›³ı "”Q ›–Mk:ûq¶õ H	î·1…PŠÍFÙèãBëı†´í²½³
+£Iyõ>(lA‘>³>+%ç/°DeäIŸbVTÔX·ÇªÎoÇ–ûÎÕòU¯÷É¤ŠÄãS­âjÉâBŸçÉäïIŒ°ÏÓ{:Shé¤ŒúUå!ßÚÊçc‹ôïö<¦,*)™:höÌ¬Ëƒ izHÊh]‘D+õïJSuL§êp^Ù¤%;6mÒyq	î‹Õ˜;åæè:êw–iÖLÍV =©
+xdf„Ç?Ö}ê;MÚÇÜSÕP~::˜b
+}L.k-;+.éèfm;ğè‹PÌšKší I÷ÉË–®íQ“ĞÉXG«5ØbLuM¢QÆ{EŞmD-kŸ»j\û³’ÿA£j,ÆWùòÚæ¾úV6R®z3yíñ‹ËpGk´á$x1‡ßí7Šu;7¨~Ë@Şä)üJ(RhÇ^ª´½ÇÎ…Ï½ÉiVÕ&û’Å Vêó·y,ÎàÅW§­È¬‹:­6o NÑ]úƒs<Âš[÷ìÕş¡’İ?3¥MË^G¨îAŞòE{Çbpu‹NëAÃiûâHÂ'¥b¾û}ÿ6}ÿè«fìEM0õ†,•:¤'‡Èã×0Ÿ&ëŠ¿Ä¬áázŞÈ¯BıŸ«Ól,¡ÑüE_î¸C×ê÷´ó]¢Ø9´)…™~Â±j(¯ªÃÛŸÂ§ ZÇ½å²¢zë‘Îİ.Ê33tœ´®í´Ş×-–èDõé›Wêı¯×i¸^¼óôó}ûHãÕëäéb¯™ûé™í¿£‚é‹Úe8ÕĞ…»Ğcõ3_u5¬lóK*f‘»C¯ø¬p[‹bÕâğ©¿™”Iilíu–Í¢ì¡Zäd°åÁ×Å›÷«r\æñº¦á¾Tò±˜ozÍQàCçØ¤jüĞ†aêç—–êQ‡`”Ø=¯r,ƒ×0t½‹ãüÍ.û}ããÉ`/)Çú:Ùí>U@®ñ•Gx$ÑúM[ëAc8úk¨·²>A•å¦ºb"Ş}ø‹Ö²+EÆô÷œFk¸Ñğ8bªR8<%EïØ³²eı·îÊ«·Js{¨„ÖãmÈ»´!'møG´Êœ˜õ*Î©¥V}X)æ÷e4†¶Fa:tañÆÊ0\8ü5?u;•áiG–Û)Cãš}¹§#O	 Dvl áÒì{ÖyyÙå¶ÊëŞ³TNQ³]g×‡ó(şæû
+ò^ˆêÓ‘„h’¢¦{¯?¨BŞq‡Ë«n¯	…iÈ_0Uöı HBí)0[D òSMù ½o=Qè©ØĞÏ¦³½­óÛ(^û`PÔ*>öi9é1Iz‡ï(£ì;ò²b§äbF‡“—ÅÁ£MuPWŸİÀ€ÇhB× 	İ.Mè’&ü&Ãq/ô`oÛé¦ş£÷Ó~n¿öó>
+¼tOÄ(Re÷Lj{²SËDÙàCY6ÖÛ,‚ù-NÛ¨³“äß“‚|A¥w›ıñĞÒ)4L*]yÄ[Eî :må¨OÇ“É»¹ú1îbæœkoÖGŒtHã^Õ…ƒ%H{Ê(z~F»V÷|Mv‚šKnÊ&™t”¾ìN@…†ğõğÛz™íã}¡ê#øÓô¼¡|s¼fXöó¼}ÊE7t×zˆX}/7«>`ü¹ÚŸŸ¨:6Ø£¥„AK‰.-%4^STS\¨©ÓÈ«ªéA—Ãª_3LK?-eÆÕ0ºÑé6‰wX£çÖ:ß’µO¨Ö6Rq­Æ¾7¥ô³%TÅ„t´‰Ê™ÉÕªÚqåõ]0ÛÍîûƒ?Ú¬U‹¾ıB%ïÊjñí!İWî ½K‹Š[«óV¦6}EİÀt•E\m\Ûz‘UWšX‡MV¸àaüTtlºîc¦ï«®^KõMV39Ö¥Ú×(É{ì2J[Nm¢ª_xó°¨:o—<FzMèuiBïˆ×`!Ï5!ùØ”%¯NŒtIŸ³1§_¶;¬­³÷³÷»fï×v€y¿]Ç6‹,ıu-Jgs¸I`Ş¬L&È.&ÈZä¥1,üHåëŒ¡?mgYy9ë¤Ã¤ƒ®IõÊóËˆMU¤=B(üş¢(‡š>Í²ğ|@¼†ËV&|,åËºÓ}u†}[qãûƒÄå"èmùáßÒœz¼¡úE:Ã_w™­ªòÆ(ĞĞ Ha— …ÇİÃÅGÙ=\Ìº{˜c˜õÙ¢Íüs²Âïc…W³á“êÏ"M·IµÇ«¿>¦ë¾jÏÍŸÔÌÈÊÇ3|¬ıZŸëËO²©Ç¤_ß]u¶ŞÿY^ÏXê|—ü”±O=n¡ü›“$^S7œnÃzóœí¸æŞl¿Ş±xöx?8Ùù#	ö ê3L=¹®ÛgœŸÁè™x/9“G4‚Ïµ·ÕO­m——46ÙfÚ›-ók¹oqàĞHK+Áæ†“¡îy)ÿf<ö[+$Óm‰…qÉ·é"ÒŸkÑ‚l…ŒC£Õßod®êröÊÑÕ›ÿáäfÇeN>dW¾[ür­ŞÒôøE1ß“O¢LEo^î2êÕu´‡wñ“Jt•Îj›l²Gõş??Òol¼¼ë]«§"ò¥ËÁ©öÑ!ığ'ëÏüu1îé¨}wê-\(]¼ø&Ï·ûOò˜½Çxo6tÒ|ÿ†Şÿ“í›,Ïà@PXè»ÁÂbæ„"Öëè?ış§Ìs~¬yöS}>#ÿñ:Éí²í÷S¿ÒmGf½P›ÜKÌ¢ú(ßHU%ûgzÌ4Râ¥­»Ãvui‡²¼üT8Ÿ²ÀBüÍİ'ÿÿ  ÿÿ ³¢½

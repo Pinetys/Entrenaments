@@ -132,6 +132,25 @@ const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
 };
 
+// Author drills that the user does not need in the library
+export const EXCLUDED_DRILL_IDS = new Set([
+  'drill-dejan-cikic-decisions',
+  'drill-dejan-cikic-spacing',
+  'drill-bojan-cikic-motion',
+  'drill-bojan-cikic-trap'
+]);
+
+export function filterUserOnlyDrills(drillsList: Drill[]): Drill[] {
+  const filtered = (drillsList || []).filter(d => !EXCLUDED_DRILL_IDS.has(d.id));
+  const merged = [...filtered];
+  PRE_POPULATED_DRILLS.forEach(pd => {
+    if (!merged.some(d => d.id === pd.id)) {
+      merged.push(pd);
+    }
+  });
+  return merged;
+}
+
 export default function App() {
   const [drills, setDrills] = useState<Drill[]>(() => {
     try {
@@ -139,13 +158,7 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.drills && Array.isArray(parsed.drills) && parsed.drills.length > 0) {
-          const merged = [...parsed.drills];
-          PRE_POPULATED_DRILLS.forEach(pd => {
-            if (!merged.some(d => d.id === pd.id)) {
-              merged.push(pd);
-            }
-          });
-          return merged;
+          return filterUserOnlyDrills(parsed.drills);
         }
       }
     } catch (e) {
@@ -1246,12 +1259,7 @@ export default function App() {
       if (cloudData) {
         const cloudDrills = cloudData.drills || [];
         const localDrills = latestStateRef.current.drills;
-        const mergedDrills = [...cloudDrills];
-        localDrills.forEach(localDrill => {
-          if (localDrill.isCustom && !mergedDrills.some(cd => cd.id === localDrill.id)) {
-            mergedDrills.push(localDrill);
-          }
-        });
+        const mergedDrills = filterUserOnlyDrills([...cloudDrills, ...localDrills]);
 
         const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
         const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
@@ -1325,12 +1333,7 @@ export default function App() {
   // Restore backup state in one-click
   const handleRestoreDefaultSessions = () => {
     const recoveredPlans = RECOVERED_WEEKLY_PLANS.map(sanitizeWeeklyPlan);
-    const mergedDrills = [...drills];
-    PRE_POPULATED_DRILLS.forEach(pd => {
-      if (!mergedDrills.some(d => d.id === pd.id)) {
-        mergedDrills.push(pd);
-      }
-    });
+    const mergedDrills = filterUserOnlyDrills(drills);
 
     setWeeklyPlans(recoveredPlans);
     setDrills(mergedDrills);

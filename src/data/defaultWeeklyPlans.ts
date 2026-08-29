@@ -100,10 +100,13 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
     name: 'Sessió 3: Dijous 3 de Setembre - Transició i Joc Continu',
     dayOfWeek: 'Dijous',
     scheduledTime: '2026-09-03T19:30',
-    totalDuration: 27,
+    totalDuration: 49,
     drills: [
-      { drillId: 'drill-spacing-junior-spacing', duration: 12, notes: 'Espaiat de joc i passada extra ràpida.' },
-      { drillId: 'drill-defensa-shell', duration: 15, notes: 'Defensa shell 4x4 i ajudes defensives.' }
+      { drillId: 'drill-rueda-11', duration: 12, notes: 'Saca el balón con rabia. Comunicación vocal intensa de Nivel A.' },
+      { drillId: 'virtual-hydration', duration: 3, notes: 'Descans ràpid, hidratació i explicació de conceptes de Pick and Roll Drop.' },
+      { drillId: 'virtual-freethrows', duration: 4, notes: '10 tirs lliures per parella en condicions de fatiga moderada.' },
+      { drillId: 'drill-press-break', duration: 15, notes: 'Romper sin botar las esquinas traseras. Posesiones cortas.' },
+      { drillId: 'drill-rueda-11', duration: 15, notes: 'Juego real 5v5 libre pero anotando solo canastas en transición rápida.' }
     ]
   },
   dia4: {
