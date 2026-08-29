@@ -108,6 +108,19 @@ Siusplau, respon en CATALÀ amb un estil professional, directe i motivador per a
 // In-memory and file-backed cache for cross-device state synchronization
 const syncStateCache = new Map<string, any>();
 const SYNC_CACHE_FILE = path.join(process.cwd(), ".sync_cache.json");
+const RECOVERED_STATE_FILE = path.join(process.cwd(), "src", "data", "recoveredState.json");
+
+// Helper to get base recovered state
+const getBaseRecoveredState = () => {
+  try {
+    if (fs.existsSync(RECOVERED_STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(RECOVERED_STATE_FILE, "utf-8"));
+    }
+  } catch (e) {
+    console.warn("[SyncState] Could not load recovered state template:", e);
+  }
+  return null;
+};
 
 // Load initial sync cache from disk if available
 try {
@@ -119,6 +132,21 @@ try {
   }
 } catch (e) {
   console.warn("[SyncState] Could not load sync cache file:", e);
+}
+
+// If cache is empty or missing standard keys, populate from recovered state
+const baseState = getBaseRecoveredState();
+if (baseState) {
+  const standardCodes = ["PINETY-KCSA", "PINETY-JUNIORA", "PINETY-DEFAULT", "DEFAULT"];
+  standardCodes.forEach(code => {
+    if (!syncStateCache.has(code)) {
+      syncStateCache.set(code, {
+        ...baseState,
+        syncCode: code,
+        updatedAt: baseState.updatedAt || new Date().toISOString()
+      });
+    }
+  });
 }
 
 const persistSyncCache = () => {
@@ -149,14 +177,18 @@ app.post("/api/sync-state", (req, res) => {
   }
 });
 
-// GET endpoint to fetch sync state
+// GET endpoint to fetch sync state with robust fallback
 app.get("/api/sync-state", (req, res) => {
   try {
     const code = (req.query.code as string || "").trim().toUpperCase();
     if (!code) {
       return res.status(400).json({ error: "Falta el paràmetre 'code'" });
     }
-    const data = syncStateCache.get(code);
+    let data = syncStateCache.get(code);
+    if (!data) {
+      // Fallback to standard room state if code is unrecognized
+      data = syncStateCache.get("PINETY-KCSA") || syncStateCache.get("PINETY-JUNIORA") || getBaseRecoveredState();
+    }
     if (!data) {
       return res.status(404).json({ error: "No hi ha dades sincronitzades per aquest codi" });
     }

@@ -1,0 +1,1724 @@
+{
+  "drills": [
+    {
+      "boardState": {
+        "pins": [
+          {
+            "id": "att1",
+            "y": 90,
+            "label": "1",
+            "x": 50,
+            "type": "attacker"
+          },
+          {
+            "y": 92,
+            "label": "2",
+            "x": 20,
+            "type": "attacker",
+            "id": "att2"
+          },
+          {
+            "label": "3",
+            "type": "attacker",
+            "y": 92,
+            "id": "att3",
+            "x": 80
+          },
+          {
+            "type": "cone",
+            "label": "▲",
+            "id": "cone1",
+            "x": 20,
+            "y": 50
+          },
+          {
+            "x": 80,
+            "y": 50,
+            "type": "cone",
+            "label": "▲",
+            "id": "cone2"
+          }
+        ],
+        "paths": [
+          {
+            "points": [
+              {
+                "y": 88,
+                "x": 50
+              },
+              {
+                "x": 50,
+                "y": 55
+              },
+              {
+                "y": 75,
+                "x": 20
+              }
+            ],
+            "type": "dotted",
+            "id": "p1",
+            "color": "#2563eb"
+          }
+        ]
+      },
+      "description": "Ejercicio tradicional catalán de calentamiento en toda la pista. 3 filas de jugadores debajo del aro (centro y esquinas). El jugador con balón tira deliberadamente a tablero, salta por el rebote, abre pase a la esquina y corre por el centro. Se realiza una trenza de 3 jugadores a toda velocidad con pase final y entrada.",
+      "playersNeeded": 10,
+      "duration": 12,
+      "setupInstructions": "Dividir el grupo en 3 filas bajo un aro. Esquinas listas para salir. Conos en medio campo para guiar las posiciones si es necesario.",
+      "category": "Transición",
+      "title": "Rueda de 11 Explosiva - Calentamiento",
+      "id": "drill-rueda-11",
+      "materials": [
+        "Balones",
+        "Conos"
+      ],
+      "objectives": [
+        "Iniciar el entreno con máxima intensidad física y de comunicación",
+        "Entrenar pase de salida rápido tras rebote y trenzas en velocidad",
+        "Finalizaciones en bandeja con oposición imaginaria"
+      ]
+    },
+    {
+      "boardState": {
+        "paths": [
+          {
+            "type": "dotted",
+            "points": [
+              {
+                "y": 97,
+                "x": 50
+              },
+              {
+                "x": 25,
+                "y": 85
+              }
+            ],
+            "id": "pass-in",
+            "color": "#38bdf8"
+          },
+          {
+            "color": "#38bdf8",
+            "points": [
+              {
+                "y": 85,
+                "x": 25
+              },
+              {
+                "y": 60,
+                "x": 50
+              }
+            ],
+            "id": "pass-mid",
+            "type": "dotted"
+          }
+        ],
+        "pins": [
+          {
+            "label": "4",
+            "y": 97,
+            "id": "att1",
+            "type": "attacker",
+            "x": 50
+          },
+          {
+            "label": "1",
+            "type": "attacker",
+            "x": 25,
+            "y": 85,
+            "id": "att2"
+          },
+          {
+            "id": "att3",
+            "x": 50,
+            "y": 60,
+            "type": "attacker",
+            "label": "5"
+          },
+          {
+            "type": "defender",
+            "id": "def1",
+            "x": 25,
+            "label": "1",
+            "y": 80
+          },
+          {
+            "label": "2",
+            "id": "def2",
+            "type": "defender",
+            "y": 70,
+            "x": 45
+          },
+          {
+            "type": "ball",
+            "label": "🏀",
+            "x": 50,
+            "y": 97,
+            "id": "ball"
+          }
+        ]
+      },
+      "description": "Situación de salida de fondo tras canasta encajada. El pivot saca rápido. El base recibe la ayuda del escolta desmarcándose, y el pivot corre al centro de la pista para ser el eslabón de conexión rápida. Prohibido botar en las esquinas de pista trasera para evitar dobles defensivos (traps).",
+      "materials": [
+        "Balones",
+        "Petos para los atacantes"
+      ],
+      "setupInstructions": "Colocar un 4 contra 4 a campo completo. Se simula un tiro libre anotado. El equipo atacante saca rápido de fondo y debe superar la presión organizada de los defensores.",
+      "objectives": [
+        "Batir presiones agresivas e intensas (clásicas de Junior Nivel A)",
+        "Buscar el tercer hombre en el centro y pases en diagonal",
+        "Finalizar con ventaja numérica en menos de 5 segundos tras cruzar"
+      ],
+      "title": "Salida de Presión 1-2-1-1 y Ataque de Ventajas",
+      "duration": 15,
+      "id": "drill-press-break",
+      "category": "Sistemas",
+      "playersNeeded": 8
+    },
+    {
+      "title": "Rueda de Tiro Nivel A (Salida de Indirecto)",
+      "playersNeeded": 8,
+      "description": "Consiste en una rueda dinámica con dos balones. Jugador pasa e indirectamente va al poste a poner un bloqueo virtual, para que el tirador salga rizado o abierto al perimetro a recibir y tirar. Rotación rápida: Pasador -> Bloqueador -> Tirador -> Reboteador.",
+      "boardState": {
+        "pins": [
+          {
+            "x": 50,
+            "id": "att1",
+            "y": 55,
+            "type": "attacker",
+            "label": "P1"
+          },
+          {
+            "type": "attacker",
+            "id": "att2",
+            "y": 85,
+            "x": 65,
+            "label": "T1"
+          },
+          {
+            "id": "cone1",
+            "y": 80,
+            "label": "▲",
+            "x": 70,
+            "type": "cone"
+          },
+          {
+            "x": 50,
+            "id": "ball",
+            "type": "ball",
+            "y": 55,
+            "label": "🏀"
+          }
+        ],
+        "paths": [
+          {
+            "type": "dotted",
+            "color": "#38bdf8",
+            "id": "sp-pass",
+            "points": [
+              {
+                "y": 55,
+                "x": 50
+              },
+              {
+                "x": 80,
+                "y": 72
+              }
+            ]
+          },
+          {
+            "type": "solid",
+            "id": "sp-run",
+            "points": [
+              {
+                "y": 85,
+                "x": 65
+              },
+              {
+                "x": 80,
+                "y": 72
+              }
+            ],
+            "color": "#fbbf24"
+          }
+        ]
+      },
+      "duration": 10,
+      "setupInstructions": "Dos filas de pasadores en el medio campo, dos filas de tiradores/bloqueadores en la esquina. Ritmo y exigencia de pies listos (\"catch and shoot\") de Nivel A.",
+      "materials": [
+        "3 Balones",
+        "Conos marcadores"
+      ],
+      "category": "Tiro",
+      "id": "drill-rueda-tiro-competitiva",
+      "objectives": [
+        "Llegar y tirar en situaciones reales de partido",
+        "Calidad de pases a las manos del tirador",
+        "Competir por equipos (meter 25 triples en 4 minutos)"
+      ]
+    },
+    {
+      "boardState": {
+        "pins": [
+          {
+            "label": "1",
+            "id": "att1",
+            "type": "attacker",
+            "y": 45,
+            "x": 50
+          },
+          {
+            "id": "att2",
+            "y": 45,
+            "x": 25,
+            "type": "attacker",
+            "label": "2"
+          },
+          {
+            "y": 45,
+            "id": "att3",
+            "label": "3",
+            "x": 75,
+            "type": "attacker"
+          },
+          {
+            "type": "defender",
+            "label": "D1",
+            "x": 35,
+            "y": 15,
+            "id": "def1"
+          },
+          {
+            "label": "D2",
+            "id": "def2",
+            "y": 15,
+            "type": "defender",
+            "x": 65
+          },
+          {
+            "label": "🏀",
+            "x": 48,
+            "type": "ball",
+            "id": "ball",
+            "y": 45
+          }
+        ],
+        "paths": [
+          {
+            "points": [
+              {
+                "x": 50,
+                "y": 40
+              },
+              {
+                "x": 35,
+                "y": 20
+              }
+            ],
+            "id": "path-t1",
+            "color": "#f97316",
+            "type": "solid"
+          },
+          {
+            "id": "path-t2",
+            "color": "#22c55e",
+            "points": [
+              {
+                "y": 20,
+                "x": 35
+              },
+              {
+                "y": 15,
+                "x": 15
+              }
+            ],
+            "type": "dotted"
+          }
+        ]
+      },
+      "category": "Transición",
+      "description": "Exercici clàssic de ritme i transició per a equips Junior de rendiment. Tres atacants inicien un 3x2 a un camp. El jugador que llença (o perd la pilota) i l'atacant més allunyat han de fer balanç defensiu ràpid, convertint-se en defensors. Els dos defensors inicials que agafen el rebot o reben la pilota ataquen ràpidament l'altre cèrcol en un contraatac 2x1 dinamitzat de màxima intensitat.",
+      "duration": 15,
+      "id": "drill-junior-transicion-3x2",
+      "objectives": [
+        "Treballar la presa de decisions en superioritat numèrica ràpida (3x2 en transició).",
+        "Exigir un balanç defensiu ràpid (recuperació Sprint) on el llançador i un atacant addicional repliquen en 2x1 cap a l'altre costat.",
+        "Maximitzar la comunicació dels dos defensors establint assignacions de 'Home-Pilota' i 'Home-Cistella'."
+      ],
+      "playersNeeded": 10,
+      "materials": [
+        "Pilotes de bàsquet (S7)",
+        "Petos de colors per diferenciar parelles"
+      ],
+      "setupInstructions": "Tres files a mitja pista amb pilotes, dos defensors col·locats a la zona de l'altre camp. Es juega el 3 contra 2. Els dos defensors surten atacant en 2 contra 1 contra el tirador que recula a defensar.",
+      "title": "3x2 Continu amb Retorn en 2x1 (Transició d’Alt Nivell)"
+    },
+    {
+      "materials": [
+        "Pilotes de bàsquet",
+        "Cons baixos de referència espacial"
+      ],
+      "id": "drill-spacing-junior-spacing",
+      "objectives": [
+        "Interioritzar la rotació de l'espaiat (spacing) d'atac de 4 oberts i 1 a dins (4 Out 1 In).",
+        "Puntuar la velocitat del passe en l'extrapasse o inversió ràpida de pilota per desplaçar la defensa zonal.",
+        "Exercitar les línies de penetració recta de fons i el reemplaçament dinàmic de línia de passada."
+      ],
+      "setupInstructions": "Col·locar 4 atacants a l'exterior de la línia de tres punts (posicions clares) i 1 defensor fictici que realitza ajudes intencionals sobre les penetracions.",
+      "description": "Treball fonamental en categoria Júnior per polir el 'drive and kick' (penetrar i descarregar). Els jugadors se situen en posicions de base, ràfegues (wings) i cantonades. Quan un jugador d'un costat penetra per línia de fons o eix central, els altres tres han de rotar per oferir línies de passada de seguretat (Safety) i d'extrapasse, assegurant que mai hi ha dos jugadors col·locats en un mateix sector de la pista.",
+      "category": "Táctica",
+      "playersNeeded": 8,
+      "duration": 12,
+      "boardState": {
+        "pins": [
+          {
+            "id": "att1",
+            "y": 55,
+            "label": "1",
+            "x": 50,
+            "type": "attacker"
+          },
+          {
+            "x": 15,
+            "y": 65,
+            "type": "attacker",
+            "id": "att2",
+            "label": "2"
+          },
+          {
+            "x": 85,
+            "y": 65,
+            "type": "attacker",
+            "id": "att3",
+            "label": "3"
+          },
+          {
+            "type": "attacker",
+            "x": 50,
+            "y": 80,
+            "id": "att4",
+            "label": "4"
+          },
+          {
+            "x": 30,
+            "id": "def1",
+            "label": "D1",
+            "type": "defender",
+            "y": 75
+          },
+          {
+            "id": "ball",
+            "y": 65,
+            "type": "ball",
+            "label": "🏀",
+            "x": 18
+          }
+        ],
+        "paths": [
+          {
+            "color": "#f97316",
+            "type": "solid",
+            "points": [
+              {
+                "x": 15,
+                "y": 65
+              },
+              {
+                "y": 85,
+                "x": 15
+              }
+            ],
+            "id": "p-drive"
+          },
+          {
+            "color": "#3b82f6",
+            "id": "p-kick",
+            "points": [
+              {
+                "y": 85,
+                "x": 15
+              },
+              {
+                "x": 50,
+                "y": 80
+              }
+            ],
+            "type": "dotted"
+          }
+        ]
+      },
+      "title": "Espaiat de Joc Dinàmic (Spacing) i Reemplaçaments Extra Passe"
+    },
+    {
+      "description": "L'exercici per excel·lència de l'FCBQ per ensenyar els fonaments col·lectius de la defensa individual. Quatre atacants es passen la pilota des de fora de la línia de tres de forma estàtica, mentre que els quatre defensors es mouen dinàmicament en funció de la pilota. Quan la pilota està a la cantonada, el defensor de l'atacant més distant (costat feble) ha d'estar posicionat dins de la zona (línia d'ajuda), mentre que el defensor de la pilota exerceix pressió de mans actives.",
+      "materials": [
+        "Pilotes de joc",
+        "Petos de fons de contrast extrem"
+      ],
+      "title": "Roda de Defensa Shell 4x4 (Alineació i Ajudes de la Línia de Passe)",
+      "setupInstructions": "Posicionar 4 atacants a l'exterior i 4 defensors en posició individual. La pilota es mou en rotació perifèrica per forçar els canvis defensius d'eix de fons.",
+      "id": "drill-defensa-shell",
+      "objectives": [
+        "Alinear perfectament la defensa segons la posició de la pilota: Línia de Passe (Deny), Ajuda (Help) o Helpin' (pistola).",
+        "Coordinar la comunicació verbal col·lectiva cridant 'Pilota!', 'Negació!' i 'Ajuda!'.",
+        "Executar relliscades defensives ràpides davant de talls de fons (backdoor cuts) en Júnior de màxim rendiment."
+      ],
+      "playersNeeded": 8,
+      "boardState": {
+        "paths": [
+          {
+            "points": [
+              {
+                "x": 50,
+                "y": 65
+              },
+              {
+                "y": 75,
+                "x": 42
+              }
+            ],
+            "id": "p-slide-1",
+            "color": "#ef4444",
+            "type": "solid"
+          },
+          {
+            "type": "solid",
+            "id": "p-slide-2",
+            "points": [
+              {
+                "y": 70,
+                "x": 80
+              },
+              {
+                "x": 60,
+                "y": 82
+              }
+            ],
+            "color": "#ef4444"
+          }
+        ],
+        "pins": [
+          {
+            "label": "1",
+            "y": 55,
+            "x": 50,
+            "id": "att1",
+            "type": "attacker"
+          },
+          {
+            "label": "2",
+            "x": 15,
+            "type": "attacker",
+            "y": 65,
+            "id": "att2"
+          },
+          {
+            "type": "attacker",
+            "id": "att3",
+            "x": 85,
+            "label": "3",
+            "y": 65
+          },
+          {
+            "x": 50,
+            "id": "att4",
+            "y": 90,
+            "type": "attacker",
+            "label": "4"
+          },
+          {
+            "x": 50,
+            "id": "def1",
+            "y": 62,
+            "label": "D1",
+            "type": "defender"
+          },
+          {
+            "label": "D2",
+            "y": 68,
+            "id": "def2",
+            "type": "defender",
+            "x": 25
+          },
+          {
+            "id": "def3",
+            "type": "defender",
+            "y": 72,
+            "label": "D3",
+            "x": 70
+          },
+          {
+            "id": "def4",
+            "y": 82,
+            "label": "D4",
+            "x": 50,
+            "type": "defender"
+          },
+          {
+            "id": "ball",
+            "label": "🏀",
+            "y": 65,
+            "x": 18,
+            "type": "ball"
+          }
+        ]
+      },
+      "category": "Defensa",
+      "duration": 15
+    },
+    {
+      "materials": [
+        "Pilotes de bàsquet (S7)",
+        "Cons de color d’alt contrast"
+      ],
+      "objectives": [
+        "Perfeccionar el passe de beisbol i la recepció en carrera amb pressió de llançament ràpid.",
+        "Forçar la presa de decisions instantània davant el moviment defensiu de contenció.",
+        "Entrenar la reubicació espacial directa ocupant cantonades i prolongació de lliures."
+      ],
+      "setupInstructions": "Dividir els jugadors en quatre cantonades de la mitja pista i un pivot de recolzament dinàmic a la línia de tirs lliures per forçar l'extrapasse ràpid.",
+      "id": "drill-dejan-cikic-decisions",
+      "description": "Exercici extret directament dels populars manuals de Dejan Cikic, reconegut coordinador de formació en el bàsquet eslovè. Circuit dinàmic a 2 pilotes de passada contínua on el jugador de l'eix central ha de reaccionar i decidir ràpidament si realitza una penetració explosiva, un passe lateral addicional o un tir en suspensió immediat, tot en funció de l'estímul defensiu fictici o senyal acústic.",
+      "boardState": {
+        "pins": [
+          {
+            "label": "1",
+            "id": "att1",
+            "type": "attacker",
+            "x": 15,
+            "y": 65
+          },
+          {
+            "type": "attacker",
+            "x": 50,
+            "y": 65,
+            "label": "2",
+            "id": "att2"
+          },
+          {
+            "id": "att3",
+            "y": 80,
+            "label": "3",
+            "x": 85,
+            "type": "attacker"
+          },
+          {
+            "y": 72,
+            "x": 45,
+            "type": "defender",
+            "id": "def1",
+            "label": "D1"
+          },
+          {
+            "id": "ball",
+            "y": 65,
+            "x": 18,
+            "label": "🏀",
+            "type": "ball"
+          }
+        ],
+        "paths": [
+          {
+            "type": "dotted",
+            "id": "p-cikic-1",
+            "points": [
+              {
+                "x": 15,
+                "y": 65
+              },
+              {
+                "x": 50,
+                "y": 65
+              }
+            ],
+            "color": "#22c55e"
+          },
+          {
+            "points": [
+              {
+                "x": 50,
+                "y": 65
+              },
+              {
+                "y": 80,
+                "x": 80
+              }
+            ],
+            "color": "#f97316",
+            "id": "p-cikic-2",
+            "type": "solid"
+          }
+        ]
+      },
+      "duration": 15,
+      "category": "Técnica",
+      "title": "Roda de Decisions i Passades de Dejan Cikic",
+      "playersNeeded": 10
+    },
+    {
+      "materials": [
+        "Pilotes de joc",
+        "Cons de marcatge espacial"
+      ],
+      "id": "drill-dejan-cikic-spacing",
+      "playersNeeded": 9,
+      "title": "Spacing Actiu 3x0 i Reemplaçaments de Fons d’en Dejan Cikic",
+      "boardState": {
+        "paths": [
+          {
+            "type": "solid",
+            "id": "p-cikic-sp1",
+            "points": [
+              {
+                "y": 60,
+                "x": 85
+              },
+              {
+                "y": 85,
+                "x": 85
+              }
+            ],
+            "color": "#ef4444"
+          },
+          {
+            "type": "dotted",
+            "id": "p-cikic-sp2",
+            "points": [
+              {
+                "x": 50,
+                "y": 55
+              },
+              {
+                "y": 75,
+                "x": 15
+              }
+            ],
+            "color": "#22c55e"
+          }
+        ],
+        "pins": [
+          {
+            "y": 55,
+            "x": 50,
+            "label": "1",
+            "type": "attacker",
+            "id": "att1"
+          },
+          {
+            "x": 85,
+            "id": "att2",
+            "type": "attacker",
+            "y": 60,
+            "label": "2"
+          },
+          {
+            "id": "att3",
+            "label": "3",
+            "type": "attacker",
+            "y": 75,
+            "x": 15
+          },
+          {
+            "type": "ball",
+            "x": 82,
+            "y": 60,
+            "id": "ball",
+            "label": "🏀"
+          }
+        ]
+      },
+      "description": "Syllabus de formació d'elit dissenyat per Dejan Cikic per a categories Júnior i Cadet. L'exercici educa la sincronia de moviments sense pilota de tres atacants exteriors. Quan un company inicia una penetració forçada fins a línia de fons, la resta reacciona a velocitat de partit per reajustar l'espaiat, oferint línies de passada curtes (safety passes) i extrapasses a l'extrem contrari.",
+      "objectives": [
+        "Aprendre a desplaçar-se segons el principi fonamental de 'Penetrar i Reemplaçar' de fons.",
+        "Dominar els talls d'esquena (backdoor cuts) davant de situacions negatives de pressió agressiva.",
+        "Optimitzar el sincronisme de passada generant angles d'anotació molt més nets."
+      ],
+      "setupInstructions": "Tres línies situades a fons oposat, ala dreta de 45 graus, i un organitzador al cap de l'àrea. Moviments ràpids i constants de rotació circular consecutiva.",
+      "duration": 12,
+      "category": "Táctica"
+    },
+    {
+      "objectives": [
+        "Coordinar els talls de fons i vora de zona en situacions de 'Motion'.",
+        "Perfeccionar el passe de rebot després de bloqueig cec o 'Backscreen'.",
+        "Llegir la posició de l'ajuda defensiva per descarregar ràpidament a la banda contrària."
+      ],
+      "boardStates": [
+        {
+          "courtType": "half",
+          "paths": [
+            {
+              "type": "dotted",
+              "id": "bc-m1",
+              "points": [
+                {
+                  "x": 20,
+                  "y": 75
+                },
+                {
+                  "x": 50,
+                  "y": 70
+                }
+              ],
+              "color": "#f97316"
+            },
+            {
+              "color": "#22c55e",
+              "points": [
+                {
+                  "x": 80,
+                  "y": 75
+                },
+                {
+                  "x": 50,
+                  "y": 85
+                }
+              ],
+              "id": "bc-m2",
+              "type": "solid"
+            }
+          ],
+          "pins": [
+            {
+              "x": 20,
+              "id": "att1",
+              "y": 75,
+              "type": "attacker",
+              "label": "1"
+            },
+            {
+              "type": "attacker",
+              "id": "att2",
+              "label": "2",
+              "y": 75,
+              "x": 80
+            },
+            {
+              "x": 50,
+              "type": "attacker",
+              "id": "att3",
+              "y": 60,
+              "label": "3"
+            },
+            {
+              "y": 70,
+              "label": "D1",
+              "x": 45,
+              "id": "def1",
+              "type": "defender"
+            },
+            {
+              "id": "ball",
+              "label": "🏀",
+              "x": 23,
+              "y": 75,
+              "type": "ball"
+            }
+          ]
+        },
+        {
+          "pins": [
+            {
+              "id": "att1",
+              "y": 70,
+              "label": "1",
+              "x": 50,
+              "type": "attacker"
+            },
+            {
+              "x": 50,
+              "id": "att2",
+              "type": "attacker",
+              "y": 85,
+              "label": "2"
+            },
+            {
+              "x": 85,
+              "type": "attacker",
+              "y": 65,
+              "label": "3",
+              "id": "att3"
+            },
+            {
+              "type": "defender",
+              "id": "def1",
+              "x": 40,
+              "y": 75,
+              "label": "D1"
+            },
+            {
+              "id": "ball",
+              "type": "ball",
+              "x": 50,
+              "y": 85,
+              "label": "🏀"
+            }
+          ],
+          "paths": [
+            {
+              "type": "dotted",
+              "points": [
+                {
+                  "x": 50,
+                  "y": 85
+                },
+                {
+                  "y": 65,
+                  "x": 85
+                }
+              ],
+              "color": "#ef4444",
+              "id": "bc-m3"
+            }
+          ],
+          "courtType": "half"
+        }
+      ],
+      "materials": [
+        "Pilotes de bàsquet",
+        "Cons de marcatge",
+        "Petos de contrast"
+      ],
+      "id": "drill-bojan-cikic-motion",
+      "description": "Un exercici de referència dels llibres de Bojan Cikic que perfecciona el llançament i els lliuraments després de passades ràpides. Tres atacants passen la pilota contínuament des de l'exterior de la línia de tres. Al senyal de fons, l'home de la cantonada realitza un tall cec fins a l'eix defensiu. Ha de llegir el desplaçament d'ajuda d'un con o defensor i realitzar un rebot ràpid o extrapasse curtet a l'interior.",
+      "duration": 15,
+      "playersNeeded": 6,
+      "setupInstructions": "Col·locar 3 atacants i 2 defensors semi-actius. Iniciar el moviment des de l'eix oposat. Passar, tallar a l'espai buit i reemplaçar la línia.",
+      "category": "Táctica",
+      "boardState": {
+        "pins": [
+          {
+            "label": "1",
+            "type": "attacker",
+            "x": 20,
+            "y": 75,
+            "id": "att1"
+          },
+          {
+            "label": "2",
+            "type": "attacker",
+            "x": 80,
+            "id": "att2",
+            "y": 75
+          },
+          {
+            "y": 60,
+            "x": 50,
+            "type": "attacker",
+            "id": "att3",
+            "label": "3"
+          },
+          {
+            "label": "D1",
+            "type": "defender",
+            "x": 45,
+            "id": "def1",
+            "y": 70
+          },
+          {
+            "x": 23,
+            "y": 75,
+            "type": "ball",
+            "label": "🏀",
+            "id": "ball"
+          }
+        ],
+        "paths": [
+          {
+            "type": "dotted",
+            "id": "bc-m1",
+            "points": [
+              {
+                "y": 75,
+                "x": 20
+              },
+              {
+                "y": 70,
+                "x": 50
+              }
+            ],
+            "color": "#f97316"
+          },
+          {
+            "color": "#22c55e",
+            "type": "solid",
+            "id": "bc-m2",
+            "points": [
+              {
+                "y": 75,
+                "x": 80
+              },
+              {
+                "y": 85,
+                "x": 50
+              }
+            ]
+          }
+        ]
+      },
+      "title": "Tallades i Reaccions de Tall d'en Bojan Cikic (Motion)"
+    },
+    {
+      "category": "Defensa",
+      "duration": 15,
+      "objectives": [
+        "Establir el parany (Trap) o dos contra un al lateral de la transició.",
+        "Optimitzar la posició d'anticipació de l'home de tancament exterior.",
+        "Forçar passades bombades molt lentes per assegurar la intercepció defensiva."
+      ],
+      "materials": [
+        "Pilotes oficials",
+        "Petos de contrast"
+      ],
+      "boardStates": [
+        {
+          "pins": [
+            {
+              "id": "att1",
+              "x": 20,
+              "y": 85,
+              "label": "1",
+              "type": "attacker"
+            },
+            {
+              "id": "att2",
+              "y": 95,
+              "label": "4",
+              "type": "attacker",
+              "x": 50
+            },
+            {
+              "x": 18,
+              "label": "D1",
+              "y": 80,
+              "id": "def1",
+              "type": "defender"
+            },
+            {
+              "y": 82,
+              "x": 30,
+              "id": "def2",
+              "label": "D2",
+              "type": "defender"
+            },
+            {
+              "y": 95,
+              "label": "🏀",
+              "x": 50,
+              "type": "ball",
+              "id": "ball"
+            }
+          ],
+          "courtType": "full",
+          "paths": [
+            {
+              "color": "#3b82f6",
+              "points": [
+                {
+                  "y": 95,
+                  "x": 50
+                },
+                {
+                  "y": 85,
+                  "x": 20
+                }
+              ],
+              "id": "bc-trap-1",
+              "type": "dotted"
+            },
+            {
+              "type": "solid",
+              "points": [
+                {
+                  "x": 20,
+                  "y": 85
+                },
+                {
+                  "x": 28,
+                  "y": 65
+                }
+              ],
+              "color": "#ef4444",
+              "id": "bc-trap-2"
+            }
+          ]
+        },
+        {
+          "paths": [
+            {
+              "color": "#ef4444",
+              "points": [
+                {
+                  "x": 28,
+                  "y": 65
+                },
+                {
+                  "y": 40,
+                  "x": 60
+                }
+              ],
+              "type": "dotted",
+              "id": "bc-trap-3"
+            }
+          ],
+          "courtType": "full",
+          "pins": [
+            {
+              "type": "attacker",
+              "id": "att1",
+              "x": 28,
+              "label": "1",
+              "y": 65
+            },
+            {
+              "id": "att2",
+              "type": "attacker",
+              "y": 70,
+              "label": "4",
+              "x": 22
+            },
+            {
+              "type": "defender",
+              "x": 26,
+              "y": 60,
+              "id": "def1",
+              "label": "D1"
+            },
+            {
+              "id": "def2",
+              "type": "defender",
+              "y": 62,
+              "label": "D2",
+              "x": 34
+            },
+            {
+              "x": 28,
+              "id": "ball",
+              "type": "ball",
+              "y": 65,
+              "label": "🏀"
+            }
+          ]
+        }
+      ],
+      "playersNeeded": 8,
+      "id": "drill-bojan-cikic-trap",
+      "boardState": {
+        "paths": [
+          {
+            "color": "#3b82f6",
+            "points": [
+              {
+                "x": 50,
+                "y": 95
+              },
+              {
+                "y": 85,
+                "x": 20
+              }
+            ],
+            "id": "bc-trap-1",
+            "type": "dotted"
+          },
+          {
+            "color": "#ef4444",
+            "id": "bc-trap-2",
+            "type": "solid",
+            "points": [
+              {
+                "x": 20,
+                "y": 85
+              },
+              {
+                "x": 28,
+                "y": 65
+              }
+            ]
+          }
+        ],
+        "pins": [
+          {
+            "id": "att1",
+            "label": "1",
+            "x": 20,
+            "y": 85,
+            "type": "attacker"
+          },
+          {
+            "label": "4",
+            "y": 95,
+            "type": "attacker",
+            "x": 50,
+            "id": "att2"
+          },
+          {
+            "id": "def1",
+            "y": 80,
+            "x": 18,
+            "label": "D1",
+            "type": "defender"
+          },
+          {
+            "label": "D2",
+            "type": "defender",
+            "x": 30,
+            "y": 82,
+            "id": "def2"
+          },
+          {
+            "label": "🏀",
+            "id": "ball",
+            "type": "ball",
+            "x": 50,
+            "y": 95
+          }
+        ]
+      },
+      "description": "Exercici intensiu en línia de tota la pista extret dels apunts tàctics de Bojan Cikic. S'entrena la resistència de la pressió i el tancament de línies de sortida. Amb un 4 contra 4 a tota la pista, l'equip defensor ha de forçar que el base rebi en una banda lateral i tancar-lo agressivament realitzant un Trap frontal coordinat per forçar un error de passada.",
+      "title": "Pressió de Mans Actives i Trap Frontal d'en Bojan Cikic",
+      "setupInstructions": "Col·locar els equips a camp sencer. L'atacant treu de fons i rep als 2/3 de l'amplada. El defensor de pilota i l'ajuda salten a fer pressió doble."
+    }
+  ],
+  "updatedAt": "2026-08-28T15:58:06.734Z",
+  "selectedSessionId": "dia1",
+  "coachProfile": {
+    "team": "Junior Masculí • Nivell A (FCBQ)",
+    "name": "Dani Pino",
+    "level": "Júnior A • FCBQ",
+    "avatar": "/src/assets/images/coach_avatar_profile_1782414908020.jpg",
+    "email": "dpinogay@gmail.com"
+  },
+  "sessionTemplates": [
+    {
+      "description": "Sessió d’alta intensitat orientada a un ritme de joc elevat, sortida ràpida de contraatac i balanç defensiu d’emergència.",
+      "totalDuration": 75,
+      "id": "tpl-transicio-balanc",
+      "drills": [
+        {
+          "duration": 12,
+          "drillId": "drill-rueda-11",
+          "notes": "Sortida explosiva de primer passador."
+        },
+        {
+          "duration": 3,
+          "notes": "Pausa d’hidratació de 90 segons.",
+          "drillId": "virtual-hydration"
+        },
+        {
+          "notes": "Comunicació intensa de la línia de fons.",
+          "duration": 15,
+          "drillId": "drill-pnr-def"
+        },
+        {
+          "notes": "Tirs lliures amb fatiga acumulada.",
+          "duration": 4,
+          "drillId": "virtual-freethrows"
+        },
+        {
+          "duration": 16,
+          "drillId": "drill-press-break",
+          "notes": "Ruptura de pressió sense botar."
+        },
+        {
+          "notes": "Series de tir competitives per equips.",
+          "duration": 10,
+          "drillId": "drill-rueda-tiro-competitiva"
+        },
+        {
+          "duration": 15,
+          "drillId": "drill-5v5-real",
+          "notes": "Joc real 5v5 amb normatives de transició."
+        }
+      ],
+      "category": "Transició",
+      "name": "Sessió Tàctica: Transició Ràpida i Balanç Defensiu"
+    },
+    {
+      "drills": [
+        {
+          "duration": 12,
+          "drillId": "drill-rueda-tiro-competitiva",
+          "notes": "Escalfament de tir des de 5 posicions."
+        },
+        {
+          "drillId": "drill-rueda-11",
+          "notes": "Circulació ràpida per la banda.",
+          "duration": 10
+        },
+        {
+          "drillId": "virtual-hydration",
+          "notes": "Hidratació i ajustos d’espaiament.",
+          "duration": 3
+        },
+        {
+          "drillId": "drill-pnr-def",
+          "notes": "Lectura de bloquejos i talls des de la feble.",
+          "duration": 20
+        },
+        {
+          "notes": "10 tirs lliures per parella.",
+          "drillId": "virtual-freethrows",
+          "duration": 5
+        },
+        {
+          "drillId": "drill-press-break",
+          "notes": "Superació de primera línia de pressió.",
+          "duration": 10
+        },
+        {
+          "drillId": "drill-5v5-real",
+          "notes": "5v5 aplicant espaiament i extra-pass.",
+          "duration": 15
+        }
+      ],
+      "category": "Atac",
+      "totalDuration": 75,
+      "id": "tpl-atac-spacing",
+      "name": "Sessió d’Atac: Spacing, Extra-Pass i Continuïtat",
+      "description": "Enfocada en l’espaiament ofensiu, lectura del Pick & Roll i circulació ràpida de pilota per trobar el millor tirador."
+    },
+    {
+      "description": "Sessió d’alta exigència física per treballar la línia de pressió a tot camp, tancament de rebot i ajudes de segon esforç.",
+      "totalDuration": 75,
+      "id": "tpl-defensa-pressio",
+      "category": "Defensa",
+      "name": "Sessió Defensiva: Pressió a Tot Camp i 2es Ajudes",
+      "drills": [
+        {
+          "notes": "Defensa agressiva a 3/4 de pista.",
+          "duration": 18,
+          "drillId": "drill-press-break"
+        },
+        {
+          "drillId": "virtual-hydration",
+          "notes": "Recuperació cardíaca i hidratació.",
+          "duration": 3
+        },
+        {
+          "duration": 18,
+          "notes": "Defensa de Pick & Roll amb ajudes del pivot.",
+          "drillId": "drill-pnr-def"
+        },
+        {
+          "duration": 4,
+          "drillId": "virtual-freethrows",
+          "notes": "Tirs de fatiga sota pulsacions altes."
+        },
+        {
+          "duration": 12,
+          "drillId": "drill-rueda-tiro-competitiva",
+          "notes": "Tir baix fatiga."
+        },
+        {
+          "drillId": "drill-5v5-real",
+          "notes": "5v5 real puntuant dobles les accions de recuperació.",
+          "duration": 20
+        }
+      ]
+    }
+  ],
+  "completions": [],
+  "favoriteDrillIds": [],
+  "players": [
+    {
+      "role": "Quintet Inicial",
+      "position": "Base",
+      "averageMinutes": 28,
+      "name": "Marc Soler",
+      "notes": "Capità de l’equip. Excel·lent comunicació en defensa de bloquejos.",
+      "strengths": [
+        "Lectura de Pick & Roll",
+        "Direcció en transició",
+        "Lideratge verbal"
+      ],
+      "areasToImprove": [
+        "Contacte en penetració",
+        "Control de pèrdues sota pressió alta"
+      ],
+      "id": "player-1",
+      "ratings": {
+        "tacticalIQ": 9,
+        "shooting": 8,
+        "leadership": 9,
+        "defense": 7,
+        "physical": 7
+      },
+      "statsSummary": {
+        "apg": 5.8,
+        "ppg": 11.5,
+        "rpg": 3.2,
+        "threePointPct": 38.5
+      },
+      "height": "1.84 m",
+      "number": 4
+    },
+    {
+      "statsSummary": {
+        "ppg": 14.8,
+        "apg": 2.1,
+        "rpg": 2.8,
+        "threePointPct": 41.2
+      },
+      "position": "Escorta",
+      "averageMinutes": 26,
+      "height": "1.89 m",
+      "number": 7,
+      "id": "player-2",
+      "ratings": {
+        "shooting": 9,
+        "defense": 6,
+        "leadership": 7,
+        "tacticalIQ": 8,
+        "physical": 7
+      },
+      "name": "Adrià Font",
+      "areasToImprove": [
+        "Balanç defensiu",
+        "Orientació de cames en l’1v1 defensiu"
+      ],
+      "strengths": [
+        "Tir de 3p de sortida de bloqueig",
+        "Primer pas explosiu"
+      ],
+      "notes": "Anotador principal perimetral. Treballar agressivitat en l’ajuda defensiva.",
+      "role": "Quintet Inicial"
+    },
+    {
+      "averageMinutes": 24,
+      "name": "Pol Torres",
+      "notes": "Jugador molt intens. Aporta energia i segones opcions en atac.",
+      "strengths": [
+        "Rebot d’atac",
+        "Defensa de múltiples posicions (2-4)",
+        "Joc sense pilota"
+      ],
+      "statsSummary": {
+        "ppg": 9.2,
+        "apg": 1.8,
+        "threePointPct": 32,
+        "rpg": 6.4
+      },
+      "id": "player-3",
+      "role": "Quintet Inicial",
+      "areasToImprove": [
+        "Consistència en tiro lliure",
+        "Maneig amb mà no dominant"
+      ],
+      "position": "Ala",
+      "height": "1.93 m",
+      "number": 11,
+      "ratings": {
+        "physical": 8,
+        "defense": 8,
+        "shooting": 7,
+        "leadership": 7,
+        "tacticalIQ": 8
+      }
+    },
+    {
+      "areasToImprove": [
+        "Velocitat de transició defensiva",
+        "Evitar faltes ràpides"
+      ],
+      "name": "Pau Vila",
+      "notes": "Peça clau en l’esquema defensiu interior. Molt bo en la protecció de l’anella.",
+      "statsSummary": {
+        "threePointPct": 33.3,
+        "rpg": 7.8,
+        "ppg": 10.4,
+        "apg": 1.2
+      },
+      "role": "Quintet Inicial",
+      "ratings": {
+        "leadership": 8,
+        "tacticalIQ": 8,
+        "physical": 9,
+        "defense": 8,
+        "shooting": 7
+      },
+      "id": "player-4",
+      "averageMinutes": 25,
+      "strengths": [
+        "Intimidació i taps",
+        "Tir de 4-5 metres",
+        "Pantalles eficaces"
+      ],
+      "number": 15,
+      "height": "1.98 m",
+      "position": "Ala-Pivot"
+    },
+    {
+      "number": 23,
+      "id": "player-5",
+      "areasToImprove": [
+        "Passada des del post alt",
+        "Resistència aeròbica en ritme alt"
+      ],
+      "height": "2.02 m",
+      "notes": "Dominant a la zona. Cal dosificar els seus minuts en partits de ritme molt ràpid.",
+      "name": "Martí Serra",
+      "statsSummary": {
+        "threePointPct": 0,
+        "rpg": 8.5,
+        "apg": 0.9,
+        "ppg": 8.6
+      },
+      "role": "Quintet Inicial",
+      "position": "Pivot",
+      "averageMinutes": 22,
+      "ratings": {
+        "tacticalIQ": 7,
+        "shooting": 6,
+        "leadership": 7,
+        "defense": 9,
+        "physical": 9
+      },
+      "strengths": [
+        "Presència a la pintura",
+        "Cierre de rebot defensiu",
+        "Continuacions potents"
+      ]
+    },
+    {
+      "role": "Rotació Principal",
+      "strengths": [
+        "Presió a tota pista a la pilota",
+        "Incisiu en penetració"
+      ],
+      "averageMinutes": 16,
+      "name": "Guillem Rovira",
+      "statsSummary": {
+        "threePointPct": 29.5,
+        "rpg": 1.8,
+        "apg": 3.1,
+        "ppg": 5.4
+      },
+      "notes": "Revulsiu defensiu. Molt bo canviant el ritme del partit des de la banqueta.",
+      "id": "player-6",
+      "areasToImprove": [
+        "Lectura en mitja pista",
+        "Paciència en situacions de 5v5"
+      ],
+      "ratings": {
+        "defense": 8,
+        "shooting": 7,
+        "tacticalIQ": 7,
+        "leadership": 6,
+        "physical": 8
+      },
+      "position": "Base",
+      "height": "1.81 m",
+      "number": 9
+    },
+    {
+      "ratings": {
+        "shooting": 8,
+        "defense": 6,
+        "physical": 6,
+        "leadership": 6,
+        "tacticalIQ": 7
+      },
+      "statsSummary": {
+        "rpg": 1.5,
+        "ppg": 6.1,
+        "threePointPct": 39,
+        "apg": 1
+      },
+      "number": 12,
+      "height": "1.86 m",
+      "position": "Escorta",
+      "averageMinutes": 14,
+      "strengths": [
+        "Tirador de cantonada",
+        "Molt bon % en tir lliure"
+      ],
+      "name": "Arnau Pujol",
+      "id": "player-7",
+      "role": "Rotació Principal",
+      "areasToImprove": [
+        "Agressivitat en rebot",
+        "Desplaçament lateral defensiu"
+      ],
+      "notes": "Especialista en obrir el camp contra defenses zonals."
+    }
+  ],
+  "selectedWeeklyPlanId": "plan-default",
+  "baremosConfig": [
+    {
+      "label": "🎯 Tir i Anotació",
+      "id": "shooting"
+    },
+    {
+      "id": "defense",
+      "label": "🛡️ Defensa i Consciència"
+    },
+    {
+      "label": "🧠 IQ Tàctic i Lectura",
+      "id": "tacticalIQ"
+    },
+    {
+      "id": "physical",
+      "label": "⚡ Físic i Intensitat"
+    },
+    {
+      "label": "🔥 Lideratge i Actitud",
+      "id": "leadership"
+    },
+    {
+      "id": "technique",
+      "label": "🏀 Tècnica Individual"
+    },
+    {
+      "label": "🤝 Joc Col·lectiu",
+      "id": "teamwork"
+    }
+  ],
+  "weeklyPlans": [
+    {
+      "dia3": {
+        "totalDuration": 27,
+        "dayOfWeek": "Martes",
+        "drills": [
+          {
+            "notes": "",
+            "duration": 12,
+            "drillId": "drill-spacing-junior-spacing"
+          },
+          {
+            "notes": "",
+            "duration": 15,
+            "drillId": "drill-defensa-shell"
+          }
+        ],
+        "id": "dia3",
+        "name": "Sessió 3: Dimarts Setmana 2 - Transició i Joc Continu"
+      },
+      "dia6": {
+        "totalDuration": 0,
+        "name": "Sessió 6: Dijous Setmana 3 - Defensa d’Ajudes Col·lectives",
+        "id": "dia6",
+        "dayOfWeek": "Jueves",
+        "drills": []
+      },
+      "dia7": {
+        "totalDuration": 0,
+        "id": "dia7",
+        "dayOfWeek": "Martes",
+        "drills": [],
+        "name": "Sessió 7: Dimarts Setmana 4 - Presió a Tot Camp"
+      },
+      "dia2": {
+        "id": "dia2",
+        "dayOfWeek": "Jueves",
+        "totalDuration": 60,
+        "drills": [
+          {
+            "duration": 10,
+            "notes": "Estiramiento dinámico activo.",
+            "drillId": "drill-rueda-11"
+          },
+          {
+            "duration": 3,
+            "drillId": "virtual-hydration",
+            "notes": "Pausa tàctica per explicar directrius de partit."
+          },
+          {
+            "drillId": "drill-rueda-tiro-competitiva",
+            "duration": 15,
+            "notes": "Series de 5 triples seguidos desde 5 posiciones distintas."
+          },
+          {
+            "notes": "Rutina d’encert consecutiu de tirs lliures (75% mínim equip).",
+            "drillId": "virtual-freethrows",
+            "duration": 4
+          },
+          {
+            "notes": "Salida de línea de presión rápido.",
+            "duration": 15,
+            "drillId": "drill-press-break"
+          },
+          {
+            "notes": "Rueda táctica de tiros libres finales de tensión.",
+            "drillId": "drill-rueda-11",
+            "duration": 13
+          }
+        ],
+        "name": "Día 2: Jueves - Defensa y Bloqueos (Pick & Roll)"
+      },
+      "startDate": "2026-06-12",
+      "id": "plan-default",
+      "name": "Setmana 1: Transició i Defensa Base",
+      "dia5": {
+        "dayOfWeek": "Martes",
+        "name": "Sessió 5: Dimarts Setmana 3 - Construcció del Contraatac",
+        "totalDuration": 0,
+        "id": "dia5",
+        "drills": []
+      },
+      "dia8": {
+        "dayOfWeek": "Jueves",
+        "id": "dia8",
+        "name": "Sessió 8: Dijous Setmana 4 - Roda de Tir Prepartit i Ajustos",
+        "drills": [
+          {
+            "notes": "",
+            "duration": 12,
+            "drillId": "drill-rueda-11"
+          },
+          {
+            "duration": 15,
+            "drillId": "drill-press-break",
+            "notes": ""
+          }
+        ],
+        "totalDuration": 27
+      },
+      "dia1": {
+        "scheduledTime": "2026-08-31T19:31",
+        "id": "dia1",
+        "dayOfWeek": "Martes",
+        "name": "Día 1: Martes - Ritmo de Transición y Contraataques",
+        "drills": [],
+        "totalDuration": 0
+      },
+      "dia4": {
+        "id": "dia4",
+        "totalDuration": 55,
+        "drills": [
+          {
+            "notes": "Calentar piernas, flexiones si se cae el balón.",
+            "drillId": "drill-rueda-11",
+            "duration": 10
+          },
+          {
+            "notes": "Hidratació ràpida a banquetes abans de treball de pnr.",
+            "duration": 3,
+            "drillId": "virtual-hydration"
+          },
+          {
+            "notes": "Tirs de fatiga per baixar les pulsacions d’exigència.",
+            "duration": 4,
+            "drillId": "virtual-freethrows"
+          },
+          {
+            "notes": "Presionar después de canasta. Dos contra uno agresivo.",
+            "duration": 20,
+            "drillId": "drill-press-break"
+          },
+          {
+            "drillId": "drill-rueda-tiro-competitiva",
+            "duration": 10,
+            "notes": "Tiro de perimetro bajo pulsaciones altas."
+          },
+          {
+            "notes": "Tancament de balanç defensiu a pista sencera.",
+            "duration": 8,
+            "drillId": "drill-rueda-11"
+          }
+        ],
+        "name": "Sessió 4: Dijous Setmana 2 - Pick & Roll Situacions",
+        "dayOfWeek": "Jueves"
+      }
+    }
+  ],
+  "syncCode": "PINETY-KCSA"
+}

@@ -40,6 +40,7 @@ import CoachProfileModal from './components/CoachProfileModal';
 import MatchAnnotationsModal from './components/MatchAnnotationsModal';
 import PlayerRosterModal, { DEFAULT_BAREMOS, BaremoItem } from './components/PlayerRosterModal';
 import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile, DEFAULT_SYNC_CODE } from './lib/firebase';
+import { RECOVERED_SESSIONS, RECOVERED_WEEKLY_PLANS, countTotalDrillsInWeeklyPlans } from './data/defaultWeeklyPlans';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
 
@@ -64,44 +65,7 @@ export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr:
   dia10: { label: 'S10', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
 };
 
-export const DEFAULT_SESSIONS: Record<string, TrainingSession> = {
-  dia1: { 
-    id: 'dia1', 
-    name: 'Sessió 1: Dilluns 31 d’Agost - Pretemporada & Ritme', 
-    dayOfWeek: 'Dilluns', 
-    totalDuration: 75, 
-    drills: [
-      { drillId: 'drill-rueda-11', duration: 15, notes: "Activa ritme de cames ràpides i passe fort de sortida." },
-      { drillId: 'virtual-hydration', duration: 3 },
-      { drillId: 'drill-junior-transicion-3x2', duration: 15, notes: "Balanç defensiu agressiu i comunicació de canvis." },
-      { drillId: 'virtual-freethrows', duration: 7 },
-      { drillId: 'drill-spacing-junior-spacing', duration: 15, notes: "Ocupació racional del perímetre de 4-oberts." },
-      { drillId: 'drill-rueda-tiro-competitiva', duration: 20, notes: "Consumir tir exterior per equips amb ritme alt." }
-    ] 
-  },
-  dia2: { 
-    id: 'dia2', 
-    name: 'Sessió 2: Dimecres 2 de Setembre - Fonaments i Intensitat Defensiva', 
-    dayOfWeek: 'Dimecres', 
-    totalDuration: 75, 
-    drills: [
-      { drillId: 'drill-defensa-shell', duration: 20, notes: "Control d'ajuda i recuperació de línies de passe." },
-      { drillId: 'virtual-hydration', duration: 2 },
-      { drillId: 'drill-bojan-cikic-trap', duration: 18, notes: "Presionar la cantonada per forçar passe bombat." },
-      { drillId: 'virtual-freethrows', duration: 6 },
-      { drillId: 'drill-bojan-cikic-motion', duration: 19, notes: "Sincronització de bloquejos indirectes de l'anvers." },
-      { drillId: 'drill-dejan-cikic-decisions', duration: 10, notes: "Lectura ràpida de l'avantatge espacial en la trena." }
-    ] 
-  },
-  dia3: { id: 'dia3', name: 'Sessió 3: Dijous 3 de Setembre - Ritme de Transició i Tir', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
-  dia4: { id: 'dia4', name: 'Sessió 4: Dimarts 8 de Setembre - Defensa de l’1v1 i Ajudes', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
-  dia5: { id: 'dia5', name: 'Sessió 5: Dijous 10 de Setembre - Transició i Joc Continu', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
-  dia6: { id: 'dia6', name: 'Sessió 6: Dimarts 15 de Setembre - Pick & Roll Situacions', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
-  dia7: { id: 'dia7', name: 'Sessió 7: Dijous 17 de Setembre - Construcció del Contraatac', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
-  dia8: { id: 'dia8', name: 'Sessió 8: Dimarts 22 de Setembre - Defensa d’Ajudes Col·lectives', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
-  dia9: { id: 'dia9', name: 'Sessió 9: Dijous 24 de Setembre - Presió a Tot Camp', dayOfWeek: 'Dijous', totalDuration: 0, drills: [] },
-  dia10: { id: 'dia10', name: 'Sessió 10: Dimarts 29 de Setembre - Roda de Tir Prepartit i Ajustos', dayOfWeek: 'Dimarts', totalDuration: 0, drills: [] },
-};
+export const DEFAULT_SESSIONS: Record<string, TrainingSession> = RECOVERED_SESSIONS;
 
 export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSession>): TrainingSession {
   const fallback = DEFAULT_SESSIONS[sessId] || {
@@ -136,9 +100,11 @@ export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSessi
     id: sessId,
     name: rawName,
     dayOfWeek: dayOfWeek,
-    totalDuration: (sess?.drills || []).reduce((acc, d) => acc + (d.duration || 10), 0),
-    drills: sess?.drills || fallback.drills || [],
-    scheduledTime: sess?.scheduledTime
+    totalDuration: (sess?.drills && sess.drills.length > 0) 
+      ? sess.drills.reduce((acc, d) => acc + (d.duration || 10), 0)
+      : fallback.totalDuration,
+    drills: (sess?.drills && sess.drills.length > 0) ? sess.drills : fallback.drills,
+    scheduledTime: sess?.scheduledTime || fallback.scheduledTime
   };
 }
 
@@ -172,8 +138,14 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.drills) {
-          return parsed.drills as Drill[];
+        if (parsed.drills && Array.isArray(parsed.drills) && parsed.drills.length > 0) {
+          const merged = [...parsed.drills];
+          PRE_POPULATED_DRILLS.forEach(pd => {
+            if (!merged.some(d => d.id === pd.id)) {
+              merged.push(pd);
+            }
+          });
+          return merged;
         }
       }
     } catch (e) {
@@ -232,48 +204,29 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.weeklyPlans && parsed.weeklyPlans.length > 0) {
-          return parsed.weeklyPlans.map(sanitizeWeeklyPlan);
+        if (parsed.weeklyPlans && Array.isArray(parsed.weeklyPlans)) {
+          const plans = parsed.weeklyPlans.map(sanitizeWeeklyPlan);
+          if (countTotalDrillsInWeeklyPlans(plans) > 0) {
+            return plans;
+          }
         }
-        // Migration from old single "sessions"
-        if (parsed.sessions) {
-          return [sanitizeWeeklyPlan({
-            id: 'plan-default',
-            name: 'Planificació Mensual: Pretemporada & Temporada Regular',
-            startDate: '2026-08-31',
-            dia1: parsed.sessions.dia1 || DEFAULT_SESSIONS.dia1,
-            dia2: parsed.sessions.dia2 || DEFAULT_SESSIONS.dia2,
-            dia3: parsed.sessions.dia3 || DEFAULT_SESSIONS.dia3,
-            dia4: parsed.sessions.dia4 || DEFAULT_SESSIONS.dia4,
-            dia5: parsed.sessions.dia5 || DEFAULT_SESSIONS.dia5,
-            dia6: parsed.sessions.dia6 || DEFAULT_SESSIONS.dia6,
-            dia7: parsed.sessions.dia7 || DEFAULT_SESSIONS.dia7,
-            dia8: parsed.sessions.dia8 || DEFAULT_SESSIONS.dia8,
-            dia9: parsed.sessions.dia9 || DEFAULT_SESSIONS.dia9,
-            dia10: parsed.sessions.dia10 || DEFAULT_SESSIONS.dia10,
-          })];
+      }
+
+      // Check permanent local backup
+      const backup = localStorage.getItem('basket_planner_permanent_backup');
+      if (backup) {
+        const parsedBackup = JSON.parse(backup);
+        if (parsedBackup.weeklyPlans && Array.isArray(parsedBackup.weeklyPlans)) {
+          const plans = parsedBackup.weeklyPlans.map(sanitizeWeeklyPlan);
+          if (countTotalDrillsInWeeklyPlans(plans) > 0) {
+            return plans;
+          }
         }
       }
     } catch (e) {
       console.error('Error loading weeklyPlans from localstorage', e);
     }
-    return [
-      sanitizeWeeklyPlan({
-        id: 'plan-default',
-        name: 'Planificació Mensual: Pretemporada & Temporada Regular',
-        startDate: '2026-08-31',
-        dia1: DEFAULT_SESSIONS.dia1,
-        dia2: DEFAULT_SESSIONS.dia2,
-        dia3: DEFAULT_SESSIONS.dia3,
-        dia4: DEFAULT_SESSIONS.dia4,
-        dia5: DEFAULT_SESSIONS.dia5,
-        dia6: DEFAULT_SESSIONS.dia6,
-        dia7: DEFAULT_SESSIONS.dia7,
-        dia8: DEFAULT_SESSIONS.dia8,
-        dia9: DEFAULT_SESSIONS.dia9,
-        dia10: DEFAULT_SESSIONS.dia10,
-      })
-    ];
+    return RECOVERED_WEEKLY_PLANS.map(sanitizeWeeklyPlan);
   });
 
   const [selectedWeeklyPlanId, setSelectedWeeklyPlanId] = useState<string>(() => {
@@ -794,10 +747,19 @@ export default function App() {
           }
         });
 
+        const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
+        const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
+
         if (mergedDrills.length > 0) setDrills(mergedDrills);
-        if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
+        
+        // Critical sync protection: If cloud has 0 drills but local has drills, push local data to cloud
+        if (cloudDrillCount === 0 && localDrillCount > 0) {
+          console.log('[Sync] Cloud document had 0 drills while local has drills. Pushing local state to cloud.');
+          saveToCloud(codeToQuery, buildNormalizedState()).catch(console.warn);
+        } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
           setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
         }
+
         if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
         if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
         if (cloudData.completions) setCompletions(cloudData.completions);
@@ -817,9 +779,13 @@ export default function App() {
           lastSavedTimeStrRef.current = null;
         }
 
+        const effectivePlans = (cloudDrillCount === 0 && localDrillCount > 0)
+          ? latestStateRef.current.weeklyPlans
+          : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined);
+
         const normState = buildNormalizedState({
           drills: mergedDrills,
-          weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
+          weeklyPlans: effectivePlans,
           selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
           selectedSessionId: cloudData.selectedSessionId,
           completions: cloudData.completions,
@@ -834,6 +800,9 @@ export default function App() {
         const stateStr = JSON.stringify({ ...normState, updatedAt: cloudData.updatedAt || new Date().toISOString() });
         try {
           localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
+          if (countTotalDrillsInWeeklyPlans(effectivePlans) > 0) {
+            localStorage.setItem('basket_planner_permanent_backup', stateStr);
+          }
         } catch (e) {}
       }
     } catch (e) {
@@ -882,7 +851,7 @@ export default function App() {
       loadFromCloud(codeToUse)
         .then(cloudData => {
           if (cloudData) {
-            // Cloud data is always the primary source of truth across mobile and desktop
+            // Cloud data hydration with safe merge
             const cloudDrills = cloudData.drills || [];
             const localDrills = latestStateRef.current.drills;
             const mergedDrills = [...cloudDrills];
@@ -892,10 +861,18 @@ export default function App() {
               }
             });
 
+            const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
+            const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
+
             if (mergedDrills.length > 0) setDrills(mergedDrills);
-            if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
+
+            if (cloudDrillCount === 0 && localDrillCount > 0) {
+              console.log('[Startup] Shielding local sessions: uploading populated local state to cloud.');
+              saveToCloud(codeToUse, buildNormalizedState()).catch(console.warn);
+            } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
               setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
             }
+
             if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
             if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
             if (cloudData.completions) setCompletions(cloudData.completions);
@@ -917,9 +894,13 @@ export default function App() {
               lastSavedTimeStrRef.current = null;
             }
 
+            const effectivePlans = (cloudDrillCount === 0 && localDrillCount > 0)
+              ? latestStateRef.current.weeklyPlans
+              : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined);
+
             const normState = buildNormalizedState({
               drills: mergedDrills,
-              weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
+              weeklyPlans: effectivePlans,
               selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
               selectedSessionId: cloudData.selectedSessionId,
               completions: cloudData.completions,
@@ -935,6 +916,9 @@ export default function App() {
 
             try {
               localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
+              if (countTotalDrillsInWeeklyPlans(effectivePlans) > 0) {
+                localStorage.setItem('basket_planner_permanent_backup', stateStr);
+              }
             } catch (e) {}
 
             triggerToast('🔄 Sessions sincronitzades automàticament des del núvol!');
@@ -1109,9 +1093,17 @@ export default function App() {
         setDrills(merged);
       }
 
-      if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
+      const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
+      const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
+
+      // If incoming cloud data has sessions, update local; if incoming has 0 sessions but local has sessions, keep local and re-upload!
+      if (cloudDrillCount === 0 && localDrillCount > 0) {
+        console.log('[Realtime] Preserving local populated sessions from being wiped by empty cloud snapshot.');
+        saveToCloud(syncCode, buildNormalizedState()).catch(console.warn);
+      } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
         setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
       }
+
       if (cloudData.selectedWeeklyPlanId) {
         setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
       }
@@ -1146,9 +1138,13 @@ export default function App() {
         lastSavedTimeStrRef.current = fallbackNow.toISOString();
       }
 
+      const effectivePlans = (cloudDrillCount === 0 && localDrillCount > 0)
+        ? latestStateRef.current.weeklyPlans
+        : (cloudData.weeklyPlans ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined);
+
       const appliedState = buildNormalizedState({
         drills: mergedDrills,
-        weeklyPlans: cloudData.weeklyPlans ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined,
+        weeklyPlans: effectivePlans,
         selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
         selectedSessionId: cloudData.selectedSessionId,
         completions: cloudData.completions,
@@ -1164,6 +1160,9 @@ export default function App() {
 
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, appliedString);
+        if (countTotalDrillsInWeeklyPlans(effectivePlans) > 0) {
+          localStorage.setItem('basket_planner_permanent_backup', appliedString);
+        }
       } catch (e) {}
       
       console.log('🔄 Sincronització en segon pla completada correctament des del núvol.');
@@ -1254,14 +1253,28 @@ export default function App() {
           }
         });
 
-        setDrills(mergedDrills);
+        const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
+        const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
 
-        if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) setWeeklyPlans(cloudData.weeklyPlans);
+        if (mergedDrills.length > 0) setDrills(mergedDrills);
+
+        let finalWeeklyPlans = latestStateRef.current.weeklyPlans;
+        if (cloudDrillCount === 0 && localDrillCount > 0) {
+          console.log('[Pairing] Uploading populated local sessions to cloud document.');
+          saveToCloud(sanitizedCode, buildNormalizedState()).catch(console.warn);
+        } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
+          finalWeeklyPlans = cloudData.weeklyPlans.map(sanitizeWeeklyPlan);
+          setWeeklyPlans(finalWeeklyPlans);
+        }
+
         if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
         if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
         if (cloudData.completions) setCompletions(cloudData.completions);
         if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
         if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
+        if (cloudData.players && Array.isArray(cloudData.players)) setPlayers(cloudData.players);
+        if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) setSessionTemplates(cloudData.sessionTemplates);
+        if (cloudData.baremosConfig && Array.isArray(cloudData.baremosConfig)) setBaremosConfig(cloudData.baremosConfig);
         
         setSyncCode(sanitizedCode);
         setIsLinked(true);
@@ -1276,9 +1289,9 @@ export default function App() {
           lastSavedTimeStrRef.current = null;
         }
 
-        lastSavedDataJsonRef.current = JSON.stringify(buildNormalizedState({
+        const normState = buildNormalizedState({
           drills: mergedDrills,
-          weeklyPlans: cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : latestStateRef.current.weeklyPlans,
+          weeklyPlans: finalWeeklyPlans,
           selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId || latestStateRef.current.selectedWeeklyPlanId,
           selectedSessionId: cloudData.selectedSessionId || latestStateRef.current.selectedSessionId,
           completions: cloudData.completions || latestStateRef.current.completions,
@@ -1287,7 +1300,14 @@ export default function App() {
           players: cloudData.players || latestStateRef.current.players,
           sessionTemplates: cloudData.sessionTemplates || latestStateRef.current.sessionTemplates,
           baremosConfig: cloudData.baremosConfig || latestStateRef.current.baremosConfig
-        }));
+        });
+
+        lastSavedDataJsonRef.current = JSON.stringify(normState);
+        const stateStr = JSON.stringify({ ...normState, updatedAt: cloudData.updatedAt || new Date().toISOString() });
+        localStorage.setItem(LOCAL_STORAGE_KEY, stateStr);
+        if (countTotalDrillsInWeeklyPlans(finalWeeklyPlans) > 0) {
+          localStorage.setItem('basket_planner_permanent_backup', stateStr);
+        }
 
         setShowSyncModal(false);
         triggerToast('🔄 Sincronització completada amb èxit! Dades recuperades.');
@@ -1300,6 +1320,36 @@ export default function App() {
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  // Restore backup state in one-click
+  const handleRestoreDefaultSessions = () => {
+    const recoveredPlans = RECOVERED_WEEKLY_PLANS.map(sanitizeWeeklyPlan);
+    const mergedDrills = [...drills];
+    PRE_POPULATED_DRILLS.forEach(pd => {
+      if (!mergedDrills.some(d => d.id === pd.id)) {
+        mergedDrills.push(pd);
+      }
+    });
+
+    setWeeklyPlans(recoveredPlans);
+    setDrills(mergedDrills);
+
+    const norm = buildNormalizedState({
+      drills: mergedDrills,
+      weeklyPlans: recoveredPlans
+    });
+    const normStr = JSON.stringify({ ...norm, updatedAt: new Date().toISOString() });
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, normStr);
+      localStorage.setItem('basket_planner_permanent_backup', normStr);
+    } catch (e) {}
+
+    if (syncCode) {
+      saveToCloud(syncCode, norm).catch(console.warn);
+    }
+
+    triggerToast('✅ S’han restaurat totes les sessions i exercicis anteriors!');
   };
 
   // Immediate save on opening sync modal to completely avoid race conditions
@@ -2584,7 +2634,16 @@ export default function App() {
                   disabled={isSyncing}
                   className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 font-bold text-[11px] rounded-xl transition border border-emerald-200/80 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs mt-2"
                 >
-                  💚 Vincular al Codi Predeterminat de l'Equip ({DEFAULT_SYNC_CODE})
+                  💚 Sincronitzar amb el Codi Central ({DEFAULT_SYNC_CODE})
+                </button>
+
+                <button
+                  id="btn-restore-sessions"
+                  type="button"
+                  onClick={handleRestoreDefaultSessions}
+                  className="w-full py-2 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 font-bold text-[11px] rounded-xl transition border border-amber-200/80 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  🔄 Restaurar Totes les Sessions i Exercicis Anteriors
                 </button>
               </div>
 
