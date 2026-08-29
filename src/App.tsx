@@ -132,12 +132,20 @@ const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
 };
 
-// Author drills that the user does not need in the library
+// Federation and author drills excluded from user's custom drills database
 export const EXCLUDED_DRILL_IDS = new Set([
+  'drill-rueda-11',
+  'drill-pnr-def',
+  'drill-press-break',
+  'drill-rueda-tiro-competitiva',
+  'drill-junior-transicion-3x2',
+  'drill-spacing-junior-spacing',
+  'drill-defensa-shell',
   'drill-dejan-cikic-decisions',
   'drill-dejan-cikic-spacing',
   'drill-bojan-cikic-motion',
-  'drill-bojan-cikic-trap'
+  'drill-bojan-cikic-trap',
+  'drill-5v5-real'
 ]);
 
 export function filterUserOnlyDrills(drillsList: Drill[]): Drill[] {

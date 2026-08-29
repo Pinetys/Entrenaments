@@ -37,6 +37,51 @@ import PerformanceSummaryModal from './PerformanceSummaryModal';
 const EMPTY_BOARD = { paths: [], pins: [] };
 const NOOP_CHANGE = () => {};
 
+const FALLBACK_DRILL_METADATA: Record<string, { title: string; category: DrillCategory; description?: string; setupInstructions?: string }> = {
+  'drill-rueda-11': {
+    title: "Roda d'11 de Contraatac Continuat",
+    category: 'Transició',
+    description: "Roda clàssica d'11 jugadors per treballar la velocitat de transició, passada ràpida de sortida i finalització en safata.",
+    setupInstructions: "Tres files a camp defensiu, sortida amb primer passe ràpid i transició veloç."
+  },
+  'drill-press-break': {
+    title: "Sortida de Pressió 1-3-1",
+    category: 'Atac',
+    description: "Estructura tàctica per trencar línies de pressió a tota pista amb recepcions al centre i obertura.",
+    setupInstructions: "Disposició 1-3-1 a tota pista contra defensa pressionant."
+  },
+  'drill-rueda-tiro-competitiva': {
+    title: "Roda de Tir Competitiva",
+    category: 'Atac',
+    description: "Sèries de tir exterior sota pressió de temps i objectius d'encert."
+  },
+  'drill-junior-transicion-3x2': {
+    title: "3x2 Continu amb Retorn en 2x1",
+    category: 'Transició',
+    description: "Treball de superioritat i inferioritat numèrica amb balanç defensiu ràpid."
+  },
+  'drill-spacing-junior-spacing': {
+    title: "Espaiat de Joc Dinàmic (4 Oberts)",
+    category: 'Atac',
+    description: "Ocupació racional del perímetre i línies de passe."
+  },
+  'drill-defensa-shell': {
+    title: "Roda de Defensa Shell 4x4",
+    category: 'Defensa',
+    description: "Posicionament defensiu en ajuda, costat fort i costat feble."
+  },
+  'drill-pnr-def': {
+    title: "Defensa de Pick & Roll Central Drop",
+    category: 'Defensa',
+    description: "Normes defensives per al bloqueig directe central."
+  },
+  'drill-5v5-real': {
+    title: "Joc Real 5v5 - Transició i Joc Continu",
+    category: 'Atac',
+    description: "Partit d'entrenament 5v5 amb focus en transició i balanç."
+  }
+};
+
 export function getEnhancedSessionDrills(
   sessionDrills: { drillId: string; duration: number; notes?: string }[],
   allDrills: Drill[]
@@ -85,15 +130,16 @@ export function getEnhancedSessionDrills(
 
     // Regular drill
     const originalDrill = allDrills.find(d => d.id === sd.drillId);
+    const fallbackMeta = FALLBACK_DRILL_METADATA[sd.drillId];
     const drillDuration = sd.duration || originalDrill?.duration || 10;
     return {
       ...sd,
       id: `${sd.drillId}-${index}`,
-      title: originalDrill?.title || 'Ejercicio No Encontrado',
-      category: originalDrill?.category || 'Atac',
+      title: originalDrill?.title || fallbackMeta?.title || 'Exercici d’Entrenament',
+      category: originalDrill?.category || fallbackMeta?.category || 'Atac',
       concept: originalDrill?.concept,
-      setupInstructions: originalDrill?.setupInstructions || '',
-      description: originalDrill?.description || '',
+      setupInstructions: originalDrill?.setupInstructions || fallbackMeta?.setupInstructions || '',
+      description: originalDrill?.description || fallbackMeta?.description || '',
       objectives: originalDrill?.objectives || [],
       playersNeeded: originalDrill?.playersNeeded || 0,
       boardState: originalDrill?.boardState || { paths: [], pins: [] },
