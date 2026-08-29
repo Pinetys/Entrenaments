@@ -33,6 +33,7 @@ import { DEFAULT_SESSION_TEMPLATES } from './data/defaultTemplates';
 import { DEFAULT_JUNIOR_PLAYERS } from './data/defaultPlayers';
 import SessionPlanner from './components/SessionPlanner';
 import DrillDatabase, { PRE_POPULATED_DRILLS } from './components/DrillDatabase';
+import { USER_CUSTOM_DRILLS } from './data/userCustomDrills';
 import DrillCreator from './components/DrillCreator';
 import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
@@ -149,14 +150,28 @@ export const EXCLUDED_DRILL_IDS = new Set([
 ]);
 
 export function filterUserOnlyDrills(drillsList: Drill[]): Drill[] {
-  const filtered = (drillsList || []).filter(d => !EXCLUDED_DRILL_IDS.has(d.id));
-  const merged = [...filtered];
-  PRE_POPULATED_DRILLS.forEach(pd => {
-    if (!merged.some(d => d.id === pd.id)) {
-      merged.push(pd);
+  const map = new Map<string, Drill>();
+
+  // 1. Permanent user custom drills
+  USER_CUSTOM_DRILLS.forEach(d => {
+    if (!EXCLUDED_DRILL_IDS.has(d.id)) {
+      map.set(d.id, d);
     }
   });
-  return merged;
+
+  // 2. Incoming drills (custom drills created or imported)
+  (drillsList || []).forEach(d => {
+    if (d && d.id && !EXCLUDED_DRILL_IDS.has(d.id)) {
+      const existing = map.get(d.id);
+      if (!existing) {
+        map.set(d.id, d);
+      } else {
+        map.set(d.id, { ...existing, ...d });
+      }
+    }
+  });
+
+  return Array.from(map.values());
 }
 
 export default function App() {
@@ -397,16 +412,24 @@ export default function App() {
   const [showPlayerRosterModal, setShowPlayerRosterModal] = useState<boolean>(false);
 
   const syncStateToCloudImmediately = (overrideState?: any) => {
-    if (!syncCode || !hasLoadedFromCloud) return;
     const newState = buildNormalizedState(overrideState);
-    const newStateStr = JSON.stringify(newState);
+    const nowIso = new Date().toISOString();
+    const newStateWithTime = { ...newState, updatedAt: nowIso };
+    const newStateStr = JSON.stringify(newStateWithTime);
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, newStateStr);
+      if (countTotalDrillsInWeeklyPlans(newState.weeklyPlans) > 0) {
+        localStorage.setItem('basket_planner_permanent_backup', newStateStr);
+      }
     } catch (e) {}
+
+    if (!syncCode || !hasLoadedFromCloud) return;
+
     saveToCloud(syncCode, newState).then(savedTime => {
       setLastSynced(new Date(savedTime));
       lastSavedTimeStrRef.current = savedTime;
       lastSavedDataJsonRef.current = JSON.stringify(newState);
+      setSyncError(null);
     }).catch(err => {
       console.warn('Instant cloud sync failed:', err);
     });
@@ -759,14 +782,10 @@ export default function App() {
           return;
         }
 
-        const cloudDrills = cloudData.drills || [];
-        const localDrills = latestStateRef.current.drills;
-        const mergedDrills = [...cloudDrills];
-        localDrills.forEach(localDrill => {
-          if (localDrill.isCustom && !mergedDrills.some(cd => cd.id === localDrill.id)) {
-            mergedDrills.push(localDrill);
-          }
-        });
+        const mergedDrills = filterUserOnlyDrills([
+          ...(cloudData.drills || []),
+          ...latestStateRef.current.drills
+        ]);
 
         const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
         const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
@@ -776,7 +795,7 @@ export default function App() {
         // Critical sync protection: If cloud has 0 drills but local has drills, push local data to cloud
         if (cloudDrillCount === 0 && localDrillCount > 0) {
           console.log('[Sync] Cloud document had 0 drills while local has drills. Pushing local state to cloud.');
-          saveToCloud(codeToQuery, buildNormalizedState()).catch(console.warn);
+          saveToCloud(codeToQuery, buildNormalizedState({ drills: mergedDrills })).catch(console.warn);
         } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
           setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
         }
@@ -786,8 +805,8 @@ export default function App() {
         if (cloudData.completions) setCompletions(cloudData.completions);
         if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
         if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
-        if (cloudData.players && Array.isArray(cloudData.players)) setPlayers(cloudData.players);
-        if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) setSessionTemplates(cloudData.sessionTemplates);
+        if (cloudData.players && Array.isArray(cloudData.players) && cloudData.players.length > 0) setPlayers(cloudData.players);
+        if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates) && cloudData.sessionTemplates.length > 0) setSessionTemplates(cloudData.sessionTemplates);
         if (cloudData.baremosConfig && Array.isArray(cloudData.baremosConfig) && cloudData.baremosConfig.length > 0) {
           setBaremosConfig(cloudData.baremosConfig);
         }
@@ -802,7 +821,7 @@ export default function App() {
 
         const effectivePlans = (cloudDrillCount === 0 && localDrillCount > 0)
           ? latestStateRef.current.weeklyPlans
-          : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined);
+          : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : latestStateRef.current.weeklyPlans);
 
         const normState = buildNormalizedState({
           drills: mergedDrills,
@@ -873,14 +892,10 @@ export default function App() {
         .then(cloudData => {
           if (cloudData) {
             // Cloud data hydration with safe merge
-            const cloudDrills = cloudData.drills || [];
-            const localDrills = latestStateRef.current.drills;
-            const mergedDrills = [...cloudDrills];
-            localDrills.forEach(localDrill => {
-              if (localDrill.isCustom && !mergedDrills.some(cd => cd.id === localDrill.id)) {
-                mergedDrills.push(localDrill);
-              }
-            });
+            const mergedDrills = filterUserOnlyDrills([
+              ...(cloudData.drills || []),
+              ...latestStateRef.current.drills
+            ]);
 
             const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
             const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
@@ -889,7 +904,7 @@ export default function App() {
 
             if (cloudDrillCount === 0 && localDrillCount > 0) {
               console.log('[Startup] Shielding local sessions: uploading populated local state to cloud.');
-              saveToCloud(codeToUse, buildNormalizedState()).catch(console.warn);
+              saveToCloud(codeToUse, buildNormalizedState({ drills: mergedDrills })).catch(console.warn);
             } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
               setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
             }
@@ -899,8 +914,8 @@ export default function App() {
             if (cloudData.completions) setCompletions(cloudData.completions);
             if (cloudData.favoriteDrillIds) setFavoriteDrillIds(cloudData.favoriteDrillIds);
             if (cloudData.coachProfile) setCoachProfile(cloudData.coachProfile);
-            if (cloudData.players && Array.isArray(cloudData.players)) setPlayers(cloudData.players);
-            if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) setSessionTemplates(cloudData.sessionTemplates);
+            if (cloudData.players && Array.isArray(cloudData.players) && cloudData.players.length > 0) setPlayers(cloudData.players);
+            if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates) && cloudData.sessionTemplates.length > 0) setSessionTemplates(cloudData.sessionTemplates);
             if (cloudData.baremosConfig && Array.isArray(cloudData.baremosConfig) && cloudData.baremosConfig.length > 0) {
               setBaremosConfig(cloudData.baremosConfig);
             }
@@ -917,7 +932,7 @@ export default function App() {
 
             const effectivePlans = (cloudDrillCount === 0 && localDrillCount > 0)
               ? latestStateRef.current.weeklyPlans
-              : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined);
+              : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : latestStateRef.current.weeklyPlans);
 
             const normState = buildNormalizedState({
               drills: mergedDrills,
@@ -1099,19 +1114,13 @@ export default function App() {
         return;
       }
 
-      const currentLocalDrills = latestStateRef.current.drills;
-      let mergedDrills = currentLocalDrills;
+      const mergedDrills = filterUserOnlyDrills([
+        ...(cloudData.drills || []),
+        ...latestStateRef.current.drills
+      ]);
 
-      if (cloudData.drills && cloudData.drills.length > 0) {
-        const cloudDrills = cloudData.drills || [];
-        const merged = [...cloudDrills];
-        currentLocalDrills.forEach(localDrill => {
-          if (localDrill.isCustom && !merged.some(cd => cd.id === localDrill.id)) {
-            merged.push(localDrill);
-          }
-        });
-        mergedDrills = merged;
-        setDrills(merged);
+      if (mergedDrills.length > 0) {
+        setDrills(mergedDrills);
       }
 
       const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
@@ -1120,7 +1129,7 @@ export default function App() {
       // If incoming cloud data has sessions, update local; if incoming has 0 sessions but local has sessions, keep local and re-upload!
       if (cloudDrillCount === 0 && localDrillCount > 0) {
         console.log('[Realtime] Preserving local populated sessions from being wiped by empty cloud snapshot.');
-        saveToCloud(syncCode, buildNormalizedState()).catch(console.warn);
+        saveToCloud(syncCode, buildNormalizedState({ drills: mergedDrills })).catch(console.warn);
       } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
         setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
       }
@@ -1140,10 +1149,10 @@ export default function App() {
       if (cloudData.coachProfile) {
         setCoachProfile(cloudData.coachProfile);
       }
-      if (cloudData.players && Array.isArray(cloudData.players)) {
+      if (cloudData.players && Array.isArray(cloudData.players) && cloudData.players.length > 0) {
         setPlayers(cloudData.players);
       }
-      if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates)) {
+      if (cloudData.sessionTemplates && Array.isArray(cloudData.sessionTemplates) && cloudData.sessionTemplates.length > 0) {
         setSessionTemplates(cloudData.sessionTemplates);
       }
       if (cloudData.baremosConfig && Array.isArray(cloudData.baremosConfig) && cloudData.baremosConfig.length > 0) {
@@ -1161,7 +1170,7 @@ export default function App() {
 
       const effectivePlans = (cloudDrillCount === 0 && localDrillCount > 0)
         ? latestStateRef.current.weeklyPlans
-        : (cloudData.weeklyPlans ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : undefined);
+        : (cloudData.weeklyPlans ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : latestStateRef.current.weeklyPlans);
 
       const appliedState = buildNormalizedState({
         drills: mergedDrills,
@@ -1614,12 +1623,16 @@ export default function App() {
 
   // Manual Drill list manipulation operations
   const handleAddDrillToDatabase = (newDrill: Drill) => {
-    setDrills(prev => [newDrill, ...prev]);
+    const updated = [newDrill, ...drills.filter(d => d.id !== newDrill.id)];
+    setDrills(updated);
+    syncStateToCloudImmediately({ drills: updated });
+    triggerToast(`✅ S'ha desat "${newDrill.title}" a la biblioteca i sincronitzat amb el mòbil!`);
   };
 
   const handleEditDrillInDatabase = (updatedDrill: Drill) => {
     // 1. Update drill in drills library directly without duplicating
-    setDrills(prev => prev.map(d => d.id === updatedDrill.id ? updatedDrill : d));
+    const updatedDrills = drills.map(d => d.id === updatedDrill.id ? updatedDrill : d);
+    setDrills(updatedDrills);
 
     // 2. Also update in any sessions containing this drill
     setSessions(prev => {
@@ -1652,11 +1665,15 @@ export default function App() {
       });
       return changed ? updated : prev;
     });
+
+    syncStateToCloudImmediately({ drills: updatedDrills });
+    triggerToast(`✅ S'ha actualitzat "${updatedDrill.title}" a la biblioteca i sincronitzat amb el mòbil!`);
   };
 
   const handleDeleteDrillFromDatabase = (drillId: string) => {
     // Delete from list
-    setDrills(prev => prev.filter(d => d.id !== drillId));
+    const updatedDrills = drills.filter(d => d.id !== drillId);
+    setDrills(updatedDrills);
     // Remove references to this deleted drill from weekly schedules
     const sanitizeSession = (sess: TrainingSession): TrainingSession => {
       const filtered = sess.drills.filter(sd => sd.drillId !== drillId);
@@ -1673,6 +1690,8 @@ export default function App() {
       });
       return updated;
     });
+    syncStateToCloudImmediately({ drills: updatedDrills });
+    triggerToast(`🗑️ Exercici eliminat de la biblioteca.`);
   };
 
   // Weekly cycle multi-plan controllers
@@ -1698,8 +1717,10 @@ export default function App() {
       dia8: { id: 'dia8', name: `Sessió 8: Dijous Setmana 4 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
     };
     
-    setWeeklyPlans(prev => [...prev, newPlan]);
+    const updatedPlans = [...weeklyPlans, newPlan];
+    setWeeklyPlans(updatedPlans);
     setSelectedWeeklyPlanId(newPlan.id);
+    syncStateToCloudImmediately({ weeklyPlans: updatedPlans, selectedWeeklyPlanId: newPlan.id });
     triggerToast(`S'ha creat la planificació de la temporada "${name}" amb èxit!`);
   };
 
@@ -1718,14 +1739,14 @@ export default function App() {
     if (!planIdToDelete) return;
     const planToDelete = weeklyPlans.find(p => p.id === planIdToDelete);
     if (planToDelete) {
-      setWeeklyPlans(prev => {
-        const remainingPlans = prev.filter(p => p.id !== planIdToDelete);
-        if (selectedWeeklyPlanId === planIdToDelete) {
-          const fallbackPlan = remainingPlans[0];
-          setSelectedWeeklyPlanId(fallbackPlan.id);
-        }
-        return remainingPlans;
-      });
+      const remainingPlans = weeklyPlans.filter(p => p.id !== planIdToDelete);
+      let newSelectedId = selectedWeeklyPlanId;
+      if (selectedWeeklyPlanId === planIdToDelete) {
+        newSelectedId = remainingPlans[0].id;
+        setSelectedWeeklyPlanId(newSelectedId);
+      }
+      setWeeklyPlans(remainingPlans);
+      syncStateToCloudImmediately({ weeklyPlans: remainingPlans, selectedWeeklyPlanId: newSelectedId });
       triggerToast(`Planificació "${planToDelete.name}" eliminada correctament.`);
     }
     setPlanIdToDelete(null);
