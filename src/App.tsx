@@ -1912,35 +1912,25 @@ export default function App() {
           {/* Row 2 on Mobile (Action rows) / Inline controls on Desktop */}
           <div className="w-full md:w-auto pt-2 md:pt-0 border-t border-slate-150 md:border-none space-y-1.5 md:space-y-0">
             {/* Mobile action grid */}
-            <div className="grid grid-cols-3 gap-1.5 md:hidden w-full">
-              <button
-                id="btn-header-players-mobile"
-                onClick={() => setShowPlayerRosterModal(true)}
-                title="Plantilla de Jugadors"
-                className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs cursor-pointer"
-              >
-                <Users size={13} className="text-orange-400 shrink-0" />
-                <span className="truncate">Jugadors</span>
-              </button>
-
-              <button
-                id="btn-header-share-mobile"
-                onClick={handleGenerateShareCode}
-                title="Compartir QR Pista"
-                className="py-1.5 px-2 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs cursor-pointer"
-              >
-                <Share2 size={12} className="shrink-0" />
-                <span className="truncate">Pista QR</span>
-              </button>
-
+            <div className="grid grid-cols-2 gap-1.5 md:hidden w-full">
               <button
                 id="btn-header-sync-mobile"
                 onClick={handleOpenSyncModal}
                 title="Sincronització Núvol"
                 className="py-1.5 px-2 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-[11px] font-extrabold rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs cursor-pointer"
               >
-                <Cloud size={12} className={`shrink-0 ${isSyncing ? "animate-pulse" : ""}`} />
-                <span className="truncate">Sync</span>
+                <Cloud size={13} className={`shrink-0 ${isSyncing ? "animate-pulse" : ""}`} />
+                <span className="truncate">Núvol Sync</span>
+              </button>
+
+              <button
+                id="btn-header-force-save-mobile"
+                onClick={handleForceSaveSession}
+                title="Grabar i desar immediatament en memòria i núvol"
+                className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition text-[11px] font-black rounded-md text-white flex items-center justify-center gap-1 uppercase tracking-wider shadow-xs cursor-pointer"
+              >
+                <Save size={13} className="shrink-0" />
+                <span className="truncate">Desar Sessió</span>
               </button>
             </div>
 
@@ -1980,25 +1970,6 @@ export default function App() {
               <span className="bg-slate-100 px-3 py-1 rounded-full text-xs text-slate-600 font-medium">
                 Sessió de Pista
               </span>
-
-              <button
-                id="btn-header-players"
-                onClick={() => setShowPlayerRosterModal(true)}
-                title="Plantilla de Jugadors i Valoracions Junior A"
-                className="py-1.5 md:py-2 px-3.5 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
-              >
-                <Users size={14} className="text-orange-400" />
-                <span>Jugadors ({players.length})</span>
-              </button>
-
-              <button
-                id="btn-header-share"
-                onClick={handleGenerateShareCode}
-                className="py-1.5 md:py-2 px-3.5 bg-orange-500 hover:bg-orange-600 active:scale-95 transition text-xs font-bold rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider"
-              >
-                <Share2 size={13} />
-                <span>Pista QR</span>
-              </button>
 
               <button
                 id="btn-header-sync"
@@ -2492,66 +2463,6 @@ export default function App() {
         )}
       </main>
 
-      {/* FLOATING SYSTEM QR SHARING POPUP */}
-      {showShareModal && (
-        <div id="modal-backdrop" className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50 backdrop-blur-xs select-none">
-          <div className="bg-white border border-slate-100 rounded-3xl shadow-2xl p-6 max-w-md w-full relative space-y-4 animate-in fade-in zoom-in duration-200">
-            
-            <button
-              id="btn-close-share-modal"
-              onClick={() => setShowShareModal(false)}
-              className="absolute right-4 top-4 p-2 rounded-full hover:bg-slate-105 transition text-slate-400 hover:text-slate-700 cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="text-center space-y-1.5">
-              <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                <QrCode size={24} />
-              </div>
-              <h3 className="text-base font-bold text-slate-800">Escanea para Consultar en Pista</h3>
-              <p className="text-xs text-slate-450 leading-relaxed font-sans">
-                Transfiere este plan de 75′ a tu teléfono al instante. Escanea el código QR o copia el enlace de abajo.
-              </p>
-            </div>
-
-            {/* Rendered Google Chart dynamic QR engine */}
-            <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex items-center justify-center aspect-square max-w-56 mx-auto shadow-inner">
-              <img
-                id="img-shared-qr"
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`}
-                alt="QR Compartir Celular"
-                className="w-full h-full object-contain mix-blend-multiply"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-
-            {/* Copier link button */}
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <input
-                  id="input-share-link-preview"
-                  type="text"
-                  value={shareUrl}
-                  readOnly
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[10px] text-slate-500 font-mono flex-1 focus:outline-none"
-                />
-                <button
-                  id="btn-copy-share-link"
-                  onClick={copyToClipboard}
-                  className="px-3.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-slate-800 transition active:scale-95 flex items-center justify-center cursor-pointer py-1.5 shrink-0 min-w-24"
-                >
-                  {copied ? <Check size={14} className="text-emerald-400" /> : 'Copiar'}
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-400 italic text-center text-rose-500">
-                ⚠️ Abre el enlace en tu móvil. Se abrirá directamente en "Modo Pista" con el cronómetro de 75'.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* FLOATING CLOUD SYNC POPUP (FIRESTORE) */}
       {showSyncModal && (() => {
         const syncUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}?sync=${syncCode}` : '';
@@ -2830,27 +2741,6 @@ export default function App() {
           initialDateIndex={selectedMatchDateIndex}
           onSaveAnnotation={handleSaveMatchAnnotation}
           onDeleteAnnotation={handleDeleteMatchAnnotation}
-          triggerToast={triggerToast}
-        />
-      )}
-
-      {/* PLAYER ROSTER & EVALUATIONS MODAL */}
-      {showPlayerRosterModal && (
-        <PlayerRosterModal
-          isOpen={showPlayerRosterModal}
-          onClose={() => setShowPlayerRosterModal(false)}
-          players={players}
-          onAddPlayer={handleAddPlayer}
-          onUpdatePlayer={handleUpdatePlayer}
-          onDeletePlayer={handleDeletePlayer}
-          baremosConfig={baremosConfig}
-          onUpdateBaremosConfig={(newBaremos) => {
-            setBaremosConfig(newBaremos);
-            try {
-              localStorage.setItem('coachboard_baremos_config', JSON.stringify(newBaremos));
-            } catch (e) {}
-            syncStateToCloudImmediately({ baremosConfig: newBaremos });
-          }}
           triggerToast={triggerToast}
         />
       )}
