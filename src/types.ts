@@ -39,11 +39,14 @@ export interface Drill {
   isOver15?: boolean; // For drills recommended for > 15 years old
 }
 
+export type TeamType = 'junior_a' | 'senior';
+
 export interface TrainingSession {
   id: string;
   name: string; // e.g. "Día 1: Martes - Ritmo y Transición"
   dayOfWeek: string; // e.g. "Martes"
   totalDuration: number; // should aim for 75
+  team?: TeamType;
   drills: {
     drillId: string;
     duration: number; // can override drill default duration
@@ -96,6 +99,7 @@ export interface WeeklyPlan {
   id: string;
   name: string;
   startDate: string; // "YYYY-MM-DD" e.g. "2026-08-31"
+  team?: TeamType; // 'junior_a' | 'senior'
   dia1: TrainingSession;
   dia2: TrainingSession;
   dia3?: TrainingSession;
@@ -137,6 +141,7 @@ export interface AppState {
   weeklyPlans: WeeklyPlan[];
   selectedWeeklyPlanId: string;
   selectedSessionId: string;
+  selectedTeam?: TeamType;
   activeView: string;
   players?: Player[];
 }

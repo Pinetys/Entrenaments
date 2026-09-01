@@ -26,6 +26,7 @@ export const DEFAULT_SYNC_CODE = 'PINETY-JUNIORA';
 export interface SyncData {
   drills: any[];
   weeklyPlans: any[];
+  selectedTeam?: 'junior_a' | 'senior';
   selectedWeeklyPlanId: string;
   selectedSessionId: string;
   completions: any[];

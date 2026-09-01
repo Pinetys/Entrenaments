@@ -28,7 +28,7 @@ import {
   Save
 } from 'lucide-react';
 import coachPinetyLogo from './assets/images/coach_pinety_logo_1785329115241.jpg';
-import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player } from './types';
+import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player, TeamType } from './types';
 import { DEFAULT_SESSION_TEMPLATES } from './data/defaultTemplates';
 import { DEFAULT_JUNIOR_PLAYERS } from './data/defaultPlayers';
 import SessionPlanner from './components/SessionPlanner';
@@ -41,7 +41,14 @@ import CoachProfileModal from './components/CoachProfileModal';
 import MatchAnnotationsModal from './components/MatchAnnotationsModal';
 import PlayerRosterModal, { DEFAULT_BAREMOS, BaremoItem } from './components/PlayerRosterModal';
 import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile, DEFAULT_SYNC_CODE } from './lib/firebase';
-import { RECOVERED_SESSIONS, RECOVERED_WEEKLY_PLANS, countTotalDrillsInWeeklyPlans } from './data/defaultWeeklyPlans';
+import { 
+  RECOVERED_SESSIONS, 
+  RECOVERED_SENIOR_SESSIONS, 
+  RECOVERED_WEEKLY_PLAN, 
+  RECOVERED_SENIOR_WEEKLY_PLAN, 
+  RECOVERED_WEEKLY_PLANS, 
+  countTotalDrillsInWeeklyPlans 
+} from './data/defaultWeeklyPlans';
 
 const LOCAL_STORAGE_KEY = 'basket_planner_junior_a_state';
 
@@ -68,39 +75,26 @@ export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr:
 
 export const DEFAULT_SESSIONS: Record<string, TrainingSession> = RECOVERED_SESSIONS;
 
-export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSession>): TrainingSession {
-  const fallback = DEFAULT_SESSIONS[sessId] || {
+export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSession>, team: TeamType = 'junior_a'): TrainingSession {
+  const fallbackDict = team === 'senior' ? RECOVERED_SENIOR_SESSIONS : RECOVERED_SESSIONS;
+  const fallback = fallbackDict[sessId] || {
     id: sessId,
     name: `Sessió ${sessId.replace('dia', '')}`,
     dayOfWeek: 'Dimarts',
     totalDuration: 0,
-    drills: []
+    drills: [],
+    team
   };
 
   const meta = CALENDAR_SESSION_METADATA[sessId];
   let rawName = (sess && sess.name) ? sess.name : fallback.name;
   let dayOfWeek = meta ? meta.dayOfWeek : (sess?.dayOfWeek || fallback.dayOfWeek);
 
-  if (meta) {
-    let customSubtitle = meta.defaultTitle;
-    if (rawName.includes(' - ')) {
-      const parts = rawName.split(' - ');
-      const candidate = parts.slice(1).join(' - ').trim();
-      if (candidate) customSubtitle = candidate;
-    } else if (rawName.includes(': ')) {
-      const parts = rawName.split(': ');
-      const candidate = parts.slice(1).join(': ').trim();
-      if (candidate && !candidate.toLowerCase().includes('dimarts') && !candidate.toLowerCase().includes('dilluns') && !candidate.toLowerCase().includes('dimecres') && !candidate.toLowerCase().includes('dijous') && !candidate.toLowerCase().includes('lunes') && !candidate.toLowerCase().includes('martes') && !candidate.toLowerCase().includes('miércoles') && !candidate.toLowerCase().includes('jueves')) {
-        customSubtitle = candidate;
-      }
-    }
-    rawName = `Sessió ${sessId.replace('dia', '')}: ${meta.dateStr} - ${customSubtitle}`;
-  }
-
   return {
     id: sessId,
     name: rawName,
     dayOfWeek: dayOfWeek,
+    team: team,
     totalDuration: (sess?.drills && sess.drills.length > 0) 
       ? sess.drills.reduce((acc, d) => acc + (d.duration || 10), 0)
       : fallback.totalDuration,
@@ -110,20 +104,36 @@ export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSessi
 }
 
 export function sanitizeWeeklyPlan(plan: any): WeeklyPlan {
+  const team: TeamType = plan.team || (plan.id?.includes('senior') || plan.name?.toLowerCase().includes('senior') || plan.name?.toLowerCase().includes('sènior') ? 'senior' : 'junior_a');
   return {
     ...plan,
+    team,
     startDate: plan.startDate === '2026-09-03' ? '2026-08-31' : (plan.startDate || '2026-08-31'),
-    dia1: sanitizePlanSession('dia1', plan.dia1),
-    dia2: sanitizePlanSession('dia2', plan.dia2),
-    dia3: sanitizePlanSession('dia3', plan.dia3),
-    dia4: sanitizePlanSession('dia4', plan.dia4),
-    dia5: sanitizePlanSession('dia5', plan.dia5),
-    dia6: sanitizePlanSession('dia6', plan.dia6),
-    dia7: sanitizePlanSession('dia7', plan.dia7),
-    dia8: sanitizePlanSession('dia8', plan.dia8),
-    dia9: sanitizePlanSession('dia9', plan.dia9),
-    dia10: sanitizePlanSession('dia10', plan.dia10),
+    dia1: sanitizePlanSession('dia1', plan.dia1, team),
+    dia2: sanitizePlanSession('dia2', plan.dia2, team),
+    dia3: sanitizePlanSession('dia3', plan.dia3, team),
+    dia4: sanitizePlanSession('dia4', plan.dia4, team),
+    dia5: sanitizePlanSession('dia5', plan.dia5, team),
+    dia6: sanitizePlanSession('dia6', plan.dia6, team),
+    dia7: sanitizePlanSession('dia7', plan.dia7, team),
+    dia8: sanitizePlanSession('dia8', plan.dia8, team),
+    dia9: sanitizePlanSession('dia9', plan.dia9, team),
+    dia10: sanitizePlanSession('dia10', plan.dia10, team),
   };
+}
+
+export function ensureAllTeamsPresent(plans: WeeklyPlan[]): WeeklyPlan[] {
+  let result = [...plans];
+  const hasJunior = result.some(p => p.team === 'junior_a' || (!p.team && !p.id?.includes('senior')));
+  const hasSenior = result.some(p => p.team === 'senior' || p.id?.includes('senior'));
+
+  if (!hasJunior) {
+    result.push(sanitizeWeeklyPlan(RECOVERED_WEEKLY_PLAN));
+  }
+  if (!hasSenior) {
+    result.push(sanitizeWeeklyPlan(RECOVERED_SENIOR_WEEKLY_PLAN));
+  }
+  return result;
 }
 
 const isMobileDevice = () => {
@@ -235,13 +245,26 @@ export default function App() {
   const [inputSyncCode, setInputSyncCode] = useState<string>('');
   const [syncError, setSyncError] = useState<string | null>(null);
 
+  const [selectedTeam, setSelectedTeam] = useState<TeamType>(() => {
+    try {
+      const savedTeam = localStorage.getItem('basket_planner_selected_team');
+      if (savedTeam === 'senior' || savedTeam === 'junior_a') return savedTeam;
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.selectedTeam === 'senior' || parsed.selectedTeam === 'junior_a') return parsed.selectedTeam;
+      }
+    } catch (e) {}
+    return 'junior_a';
+  });
+
   const [weeklyPlans, setWeeklyPlans] = useState<WeeklyPlan[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.weeklyPlans && Array.isArray(parsed.weeklyPlans)) {
-          const plans = parsed.weeklyPlans.map(sanitizeWeeklyPlan);
+          const plans = ensureAllTeamsPresent(parsed.weeklyPlans.map(sanitizeWeeklyPlan));
           if (countTotalDrillsInWeeklyPlans(plans) > 0) {
             return plans;
           }
@@ -253,7 +276,7 @@ export default function App() {
       if (backup) {
         const parsedBackup = JSON.parse(backup);
         if (parsedBackup.weeklyPlans && Array.isArray(parsedBackup.weeklyPlans)) {
-          const plans = parsedBackup.weeklyPlans.map(sanitizeWeeklyPlan);
+          const plans = ensureAllTeamsPresent(parsedBackup.weeklyPlans.map(sanitizeWeeklyPlan));
           if (countTotalDrillsInWeeklyPlans(plans) > 0) {
             return plans;
           }
@@ -262,7 +285,7 @@ export default function App() {
     } catch (e) {
       console.error('Error loading weeklyPlans from localstorage', e);
     }
-    return RECOVERED_WEEKLY_PLANS.map(sanitizeWeeklyPlan);
+    return ensureAllTeamsPresent(RECOVERED_WEEKLY_PLANS.map(sanitizeWeeklyPlan));
   });
 
   const [selectedWeeklyPlanId, setSelectedWeeklyPlanId] = useState<string>(() => {
@@ -276,46 +299,82 @@ export default function App() {
     return 'plan-default';
   });
 
+  // Filter plans available for current team
+  const teamPlans = React.useMemo(() => {
+    const filtered = weeklyPlans.filter(p => selectedTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
+    if (filtered.length > 0) return filtered;
+    return [selectedTeam === 'senior' ? sanitizeWeeklyPlan(RECOVERED_SENIOR_WEEKLY_PLAN) : sanitizeWeeklyPlan(RECOVERED_WEEKLY_PLAN)];
+  }, [weeklyPlans, selectedTeam]);
+
   // Calculate active weekly plan
-  const activePlan = weeklyPlans.find(p => p.id === selectedWeeklyPlanId) || weeklyPlans[0];
+  const activePlan = React.useMemo(() => {
+    const match = teamPlans.find(p => p.id === selectedWeeklyPlanId);
+    return match || teamPlans[0] || (selectedTeam === 'senior' ? sanitizeWeeklyPlan(RECOVERED_SENIOR_WEEKLY_PLAN) : sanitizeWeeklyPlan(RECOVERED_WEEKLY_PLAN));
+  }, [teamPlans, selectedWeeklyPlanId, selectedTeam]);
+
+  // Switch team cleanly
+  const handleSelectTeam = (newTeam: TeamType) => {
+    setSelectedTeam(newTeam);
+    try {
+      localStorage.setItem('basket_planner_selected_team', newTeam);
+    } catch (e) {}
+
+    setCoachProfile(prev => ({
+      ...prev,
+      team: newTeam === 'senior' ? 'Sènior Masculí • FCBQ' : 'Junior Masculí • Nivell A (FCBQ)',
+      level: newTeam === 'senior' ? 'Sènior • FCBQ' : 'Júnior A • FCBQ'
+    }));
+
+    const plansForTeam = weeklyPlans.filter(p => newTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
+    if (plansForTeam.length > 0) {
+      setSelectedWeeklyPlanId(plansForTeam[0].id);
+    } else {
+      const fallbackNewPlan = newTeam === 'senior' ? sanitizeWeeklyPlan(RECOVERED_SENIOR_WEEKLY_PLAN) : sanitizeWeeklyPlan(RECOVERED_WEEKLY_PLAN);
+      setWeeklyPlans(prev => [...prev, fallbackNewPlan]);
+      setSelectedWeeklyPlanId(fallbackNewPlan.id);
+    }
+    setSelectedSessionId('dia1');
+    triggerToast(newTeam === 'senior' ? '🏀 Equip canviat a SÈNIOR' : '🏀 Equip canviat a JÚNIOR A');
+  };
 
   // Wrap sessions derivation in React.useMemo to stabilize its reference completely.
-  // This completely stops writing to localStorage on every timer clock-second-tick in App.tsx!
   const sessions = React.useMemo<Record<string, TrainingSession>>(() => {
-    const fallbackPlan = activePlan || (weeklyPlans && weeklyPlans[0]) || {
-      dia1: DEFAULT_SESSIONS.dia1,
-      dia2: DEFAULT_SESSIONS.dia2
+    const fallbackDict = selectedTeam === 'senior' ? RECOVERED_SENIOR_SESSIONS : DEFAULT_SESSIONS;
+    const fallbackPlan = activePlan || teamPlans[0] || {
+      dia1: fallbackDict.dia1,
+      dia2: fallbackDict.dia2
     };
     return {
-      dia1: fallbackPlan.dia1 || DEFAULT_SESSIONS.dia1,
-      dia2: fallbackPlan.dia2 || DEFAULT_SESSIONS.dia2,
-      dia3: fallbackPlan.dia3 || DEFAULT_SESSIONS.dia3,
-      dia4: fallbackPlan.dia4 || DEFAULT_SESSIONS.dia4,
-      dia5: fallbackPlan.dia5 || DEFAULT_SESSIONS.dia5,
-      dia6: fallbackPlan.dia6 || DEFAULT_SESSIONS.dia6,
-      dia7: fallbackPlan.dia7 || DEFAULT_SESSIONS.dia7,
-      dia8: fallbackPlan.dia8 || DEFAULT_SESSIONS.dia8,
-      dia9: fallbackPlan.dia9 || DEFAULT_SESSIONS.dia9,
-      dia10: fallbackPlan.dia10 || DEFAULT_SESSIONS.dia10,
+      dia1: fallbackPlan.dia1 || fallbackDict.dia1,
+      dia2: fallbackPlan.dia2 || fallbackDict.dia2,
+      dia3: fallbackPlan.dia3 || fallbackDict.dia3,
+      dia4: fallbackPlan.dia4 || fallbackDict.dia4,
+      dia5: fallbackPlan.dia5 || fallbackDict.dia5,
+      dia6: fallbackPlan.dia6 || fallbackDict.dia6,
+      dia7: fallbackPlan.dia7 || fallbackDict.dia7,
+      dia8: fallbackPlan.dia8 || fallbackDict.dia8,
+      dia9: fallbackPlan.dia9 || fallbackDict.dia9,
+      dia10: fallbackPlan.dia10 || fallbackDict.dia10,
     };
-  }, [activePlan, weeklyPlans]);
+  }, [activePlan, teamPlans, selectedTeam]);
 
   // Custom setSessions wrapper that writes modifications directly into the active slice of weeklyPlans
   const setSessions = (newSessionsValOrFn: any) => {
     setWeeklyPlans(prevPlans => {
       const updated = prevPlans.map(plan => {
-        if (plan.id === selectedWeeklyPlanId) {
+        if (plan.id === activePlan.id || plan.id === selectedWeeklyPlanId) {
+          const fallbackDict = plan.team === 'senior' ? RECOVERED_SENIOR_SESSIONS : DEFAULT_SESSIONS;
           const currentFullSessions = {
-            dia1: plan.dia1 || DEFAULT_SESSIONS.dia1,
-            dia2: plan.dia2 || DEFAULT_SESSIONS.dia2,
-            dia3: plan.dia3 || DEFAULT_SESSIONS.dia3,
-            dia4: plan.dia4 || DEFAULT_SESSIONS.dia4,
-            dia5: plan.dia5 || DEFAULT_SESSIONS.dia5,
-            dia6: plan.dia6 || DEFAULT_SESSIONS.dia6,
-            dia7: plan.dia7 || DEFAULT_SESSIONS.dia7,
-            dia8: plan.dia8 || DEFAULT_SESSIONS.dia8,
-            dia9: plan.dia9 || DEFAULT_SESSIONS.dia9,
-            dia10: plan.dia10 || DEFAULT_SESSIONS.dia10,
+            dia1: plan.dia1 || fallbackDict.dia1,
+            dia2: plan.dia2 || fallbackDict.dia2,
+            dia3: plan.dia3 || fallbackDict.dia3,
+            dia4: plan.dia4 || fallbackDict.dia4,
+            dia5: plan.dia5 || fallbackDict.dia5,
+            dia6: plan.dia6 || fallbackDict.dia6,
+            dia7: plan.dia7 || fallbackDict.dia7,
+            dia8: plan.dia8 || fallbackDict.dia8,
+            dia9: plan.dia9 || fallbackDict.dia9,
+            dia10: plan.dia10 || fallbackDict.dia10,
           };
           const resolved = typeof newSessionsValOrFn === 'function' 
             ? newSessionsValOrFn(currentFullSessions) 
@@ -344,6 +403,7 @@ export default function App() {
         const normalized = {
           drills: cur.drills || drills,
           weeklyPlans: updated,
+          selectedTeam: selectedTeam,
           selectedWeeklyPlanId: cur.selectedWeeklyPlanId || selectedWeeklyPlanId || 'plan-default',
           selectedSessionId: cur.selectedSessionId || selectedSessionId || 'dia1',
           completions: cur.completions || completions || [],
@@ -700,6 +760,7 @@ export default function App() {
   const latestStateRef = useRef<{
     drills: Drill[];
     weeklyPlans: WeeklyPlan[];
+    selectedTeam: TeamType;
     selectedWeeklyPlanId: string;
     selectedSessionId: string;
     completions: any[];
@@ -711,6 +772,7 @@ export default function App() {
   }>({
     drills: [],
     weeklyPlans: [],
+    selectedTeam: 'junior_a',
     selectedWeeklyPlanId: '',
     selectedSessionId: '',
     completions: [],
@@ -725,6 +787,7 @@ export default function App() {
   latestStateRef.current = {
     drills,
     weeklyPlans,
+    selectedTeam,
     selectedWeeklyPlanId,
     selectedSessionId,
     completions,
@@ -739,6 +802,7 @@ export default function App() {
   const buildNormalizedState = (customData?: Partial<{
     drills: Drill[];
     weeklyPlans: WeeklyPlan[];
+    selectedTeam: TeamType;
     selectedWeeklyPlanId: string;
     selectedSessionId: string;
     completions: any[];
@@ -752,6 +816,7 @@ export default function App() {
     return {
       drills: customData?.drills || cur.drills || drills,
       weeklyPlans: (customData?.weeklyPlans && customData.weeklyPlans.length > 0) ? customData.weeklyPlans : (cur.weeklyPlans && cur.weeklyPlans.length > 0 ? cur.weeklyPlans : weeklyPlans),
+      selectedTeam: customData?.selectedTeam || cur.selectedTeam || selectedTeam || 'junior_a',
       selectedWeeklyPlanId: customData?.selectedWeeklyPlanId || cur.selectedWeeklyPlanId || selectedWeeklyPlanId || 'plan-default',
       selectedSessionId: customData?.selectedSessionId || cur.selectedSessionId || selectedSessionId || 'dia1',
       completions: customData?.completions || cur.completions || completions || [],
@@ -792,14 +857,15 @@ export default function App() {
 
         if (mergedDrills.length > 0) setDrills(mergedDrills);
         
-        // Critical sync protection: If cloud has 0 drills but local has drills, push local data to cloud
+        // Critical sync protection: If cloud has 0 drills but local has drills, push local state to cloud
         if (cloudDrillCount === 0 && localDrillCount > 0) {
           console.log('[Sync] Cloud document had 0 drills while local has drills. Pushing local state to cloud.');
           saveToCloud(codeToQuery, buildNormalizedState({ drills: mergedDrills })).catch(console.warn);
         } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
-          setWeeklyPlans(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
+          setWeeklyPlans(ensureAllTeamsPresent(cloudData.weeklyPlans.map(sanitizeWeeklyPlan)));
         }
 
+        if (cloudData.selectedTeam) setSelectedTeam(cloudData.selectedTeam);
         if (cloudData.selectedWeeklyPlanId) setSelectedWeeklyPlanId(cloudData.selectedWeeklyPlanId);
         if (cloudData.selectedSessionId) setSelectedSessionId(cloudData.selectedSessionId);
         if (cloudData.completions) setCompletions(cloudData.completions);
@@ -821,11 +887,12 @@ export default function App() {
 
         const effectivePlans = (cloudDrillCount === 0 && localDrillCount > 0)
           ? latestStateRef.current.weeklyPlans
-          : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? cloudData.weeklyPlans.map(sanitizeWeeklyPlan) : latestStateRef.current.weeklyPlans);
+          : (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0 ? ensureAllTeamsPresent(cloudData.weeklyPlans.map(sanitizeWeeklyPlan)) : latestStateRef.current.weeklyPlans);
 
         const normState = buildNormalizedState({
           drills: mergedDrills,
           weeklyPlans: effectivePlans,
+          selectedTeam: cloudData.selectedTeam || latestStateRef.current.selectedTeam,
           selectedWeeklyPlanId: cloudData.selectedWeeklyPlanId,
           selectedSessionId: cloudData.selectedSessionId,
           completions: cloudData.completions,
@@ -1700,33 +1767,37 @@ export default function App() {
   };
 
   const handleCreateWeeklyPlan = () => {
-    const name = prompt('Introdueix el nom de la nova planificació de la temporada:', `Mes ${weeklyPlans.length + 1}: Nova Planificació`);
+    const teamLabel = selectedTeam === 'senior' ? 'Sènior' : 'Júnior A';
+    const name = prompt(`Introdueix el nom de la nova planificació per a l'equip ${teamLabel}:`, `Planificació ${teamLabel} ${teamPlans.length + 1}`);
     if (!name) return;
     
     const newPlan: WeeklyPlan = {
-      id: `plan-${Date.now()}`,
+      id: `plan-${selectedTeam}-${Date.now()}`,
       name,
       startDate: new Date().toISOString().substring(0, 10),
-      dia1: { id: 'dia1', name: `Sessió 1: Dimarts Setmana 1 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-      dia2: { id: 'dia2', name: `Sessió 2: Dijous Setmana 1 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-      dia3: { id: 'dia3', name: `Sessió 3: Dimarts Setmana 2 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-      dia4: { id: 'dia4', name: `Sessió 4: Dijous Setmana 2 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-      dia5: { id: 'dia5', name: `Sessió 5: Dimarts Setmana 3 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-      dia6: { id: 'dia6', name: `Sessió 6: Dijous Setmana 3 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
-      dia7: { id: 'dia7', name: `Sessió 7: Dimarts Setmana 4 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [] },
-      dia8: { id: 'dia8', name: `Sessió 8: Dijous Setmana 4 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [] },
+      team: selectedTeam,
+      dia1: { id: 'dia1', name: `Sessió 1: Dimarts Setmana 1 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [], team: selectedTeam },
+      dia2: { id: 'dia2', name: `Sessió 2: Dijous Setmana 1 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [], team: selectedTeam },
+      dia3: { id: 'dia3', name: `Sessió 3: Dimarts Setmana 2 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [], team: selectedTeam },
+      dia4: { id: 'dia4', name: `Sessió 4: Dijous Setmana 2 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [], team: selectedTeam },
+      dia5: { id: 'dia5', name: `Sessió 5: Dimarts Setmana 3 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [], team: selectedTeam },
+      dia6: { id: 'dia6', name: `Sessió 6: Dijous Setmana 3 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [], team: selectedTeam },
+      dia7: { id: 'dia7', name: `Sessió 7: Dimarts Setmana 4 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [], team: selectedTeam },
+      dia8: { id: 'dia8', name: `Sessió 8: Dijous Setmana 4 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [], team: selectedTeam },
+      dia9: { id: 'dia9', name: `Sessió 9: Dimarts Setmana 5 (${name})`, dayOfWeek: 'Martes', totalDuration: 0, drills: [], team: selectedTeam },
+      dia10: { id: 'dia10', name: `Sessió 10: Dijous Setmana 5 (${name})`, dayOfWeek: 'Jueves', totalDuration: 0, drills: [], team: selectedTeam },
     };
     
     const updatedPlans = [...weeklyPlans, newPlan];
     setWeeklyPlans(updatedPlans);
     setSelectedWeeklyPlanId(newPlan.id);
     syncStateToCloudImmediately({ weeklyPlans: updatedPlans, selectedWeeklyPlanId: newPlan.id });
-    triggerToast(`S'ha creat la planificació de la temporada "${name}" amb èxit!`);
+    triggerToast(`S'ha creat la planificació "${name}" per a l'equip ${teamLabel} amb èxit!`);
   };
 
   const handleDeleteWeeklyPlan = (planId: string) => {
-    if (weeklyPlans.length <= 1) {
-      triggerToast('Sempre has de tenir almenys una planificació activa a la pantalla.');
+    if (teamPlans.length <= 1) {
+      triggerToast('Sempre has de tenir almenys una planificació activa per a aquest equip.');
       return;
     }
     const planToDelete = weeklyPlans.find(p => p.id === planId);
@@ -1740,9 +1811,10 @@ export default function App() {
     const planToDelete = weeklyPlans.find(p => p.id === planIdToDelete);
     if (planToDelete) {
       const remainingPlans = weeklyPlans.filter(p => p.id !== planIdToDelete);
+      const remainingTeamPlans = remainingPlans.filter(p => selectedTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
       let newSelectedId = selectedWeeklyPlanId;
       if (selectedWeeklyPlanId === planIdToDelete) {
-        newSelectedId = remainingPlans[0].id;
+        newSelectedId = remainingTeamPlans.length > 0 ? remainingTeamPlans[0].id : (remainingPlans[0]?.id || 'plan-default');
         setSelectedWeeklyPlanId(newSelectedId);
       }
       setWeeklyPlans(remainingPlans);
@@ -1803,7 +1875,7 @@ export default function App() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullState, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `planificacion_basket_juniorA_${new Date().toISOString().slice(0, 10)}.json`);
+      downloadAnchor.setAttribute("download", `planificacion_basket_${selectedTeam}_${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1824,7 +1896,8 @@ export default function App() {
           if (parsed && (parsed.drills || parsed.sessions || parsed.weeklyPlans)) {
             if (parsed.drills) setDrills(filterUserOnlyDrills(parsed.drills));
             if (parsed.sessions) setSessions(parsed.sessions);
-            if (parsed.weeklyPlans && Array.isArray(parsed.weeklyPlans)) setWeeklyPlans(parsed.weeklyPlans.map(sanitizeWeeklyPlan));
+            if (parsed.weeklyPlans && Array.isArray(parsed.weeklyPlans)) setWeeklyPlans(ensureAllTeamsPresent(parsed.weeklyPlans.map(sanitizeWeeklyPlan)));
+            if (parsed.selectedTeam) setSelectedTeam(parsed.selectedTeam);
             if (parsed.players && Array.isArray(parsed.players) && parsed.players.length > 0) setPlayers(parsed.players);
             if (parsed.sessionTemplates && Array.isArray(parsed.sessionTemplates)) setSessionTemplates(parsed.sessionTemplates);
             if (parsed.baremosConfig && Array.isArray(parsed.baremosConfig) && parsed.baremosConfig.length > 0) setBaremosConfig(parsed.baremosConfig);
@@ -1869,7 +1942,7 @@ export default function App() {
       {!isSharedMobile && (
         <header id="global-header" className={`${activeView === 'mobile' ? 'hidden md:flex' : 'flex'} flex-col md:flex-row md:h-16 bg-white border-b border-slate-200 justify-between px-3.5 md:px-8 py-2.5 md:py-0 shrink-0 relative z-10 select-none gap-2.5 md:gap-0 md:items-center`}>
           
-          {/* Row 1: Logo, Brand Title, Team Subtitle & Profile Avatar */}
+          {/* Row 1: Logo, Brand Title, Team Switcher & Profile Avatar */}
           <div className="flex items-center justify-between w-full md:w-auto gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl overflow-hidden relative shadow-md border border-orange-500/40 group shrink-0 bg-slate-900">
@@ -1885,8 +1958,40 @@ export default function App() {
                   <h1 className="text-sm md:text-xl font-black tracking-tighter text-slate-900 leading-none truncate">COACH PINETY</h1>
                   <span className="bg-orange-500/10 text-orange-600 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">v1.2</span>
                 </div>
-                <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5 leading-none truncate">{coachProfile.team}</p>
+                <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5 leading-none truncate">
+                  {selectedTeam === 'senior' ? 'Sènior Masculí' : 'Júnior A Masculí'}
+                </p>
               </div>
+            </div>
+
+            {/* Team Switcher Pills in Header */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button
+                type="button"
+                id="header-team-btn-junior"
+                onClick={() => handleSelectTeam('junior_a')}
+                className={`px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded-md transition cursor-pointer flex items-center gap-1 ${
+                  selectedTeam === 'junior_a'
+                    ? 'bg-orange-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+                title="Canviar a equip Júnior A"
+              >
+                <span>🏀 Júnior A</span>
+              </button>
+              <button
+                type="button"
+                id="header-team-btn-senior"
+                onClick={() => handleSelectTeam('senior')}
+                className={`px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded-md transition cursor-pointer flex items-center gap-1 ${
+                  selectedTeam === 'senior'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+                title="Canviar a equip Sènior"
+              >
+                <span>🏆 Sènior</span>
+              </button>
             </div>
 
             {/* Mobile Coach Avatar */}
@@ -2439,6 +2544,8 @@ export default function App() {
               allSessions={sessions}
               selectedSessionId={selectedSessionId}
               drills={drills}
+              selectedTeam={selectedTeam}
+              onSelectTeam={handleSelectTeam}
               onBackToPlanner={() => setActiveView('planner')}
               onNavigateView={setActiveView}
               onAddDrillToSession={handleAddDrillToSession}

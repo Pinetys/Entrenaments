@@ -155,6 +155,8 @@ interface MobileCourtViewProps {
   isSyncing?: boolean;
   lastSynced?: Date | null;
   onForceSaveSession?: () => void;
+  selectedTeam?: 'junior_a' | 'senior';
+  onSelectTeam?: (team: 'junior_a' | 'senior') => void;
 }
 
 export default function MobileCourtView({ 
@@ -180,7 +182,9 @@ export default function MobileCourtView({
   onOpenSync,
   isSyncing = false,
   lastSynced = null,
-  onForceSaveSession
+  onForceSaveSession,
+  selectedTeam = 'junior_a',
+  onSelectTeam
 }: MobileCourtViewProps) {
   const [activeDrillIndex, setActiveDrillIndex] = useState(0);
   const [isFullscreenBoard, setIsFullscreenBoard] = useState(false);
@@ -885,23 +889,57 @@ export default function MobileCourtView({
       )}
 
       {/* HEADER BAR FOR MOBILE */}
-      <div id="mobile-header" className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0">
+      <div id="mobile-header" className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0 gap-2">
         {!isSharedMobile ? (
           <button
             id="btn-mobile-back"
             onClick={onBackToPlanner}
-            className="text-xs px-2.5 py-1.5 font-bold rounded-lg bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
+            className="text-xs px-2 py-1.5 font-bold rounded-lg bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer shrink-0"
           >
             <ChevronLeft size={16} /> Planificador
           </button>
         ) : (
-          <div className="w-[85px]" />
+          <div className="w-[85px] shrink-0" />
         )}
-        <div className="text-center">
-          <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono">Modo Pista (Junior A)</span>
-          <span className="text-xs font-semibold text-slate-200 truncate max-w-44 block">{session.name}</span>
+        
+        {/* Team switcher directly in Mobile Court View */}
+        {onSelectTeam && (
+          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 shrink-0">
+            <button
+              type="button"
+              id="btn-mobile-team-junior"
+              onClick={() => onSelectTeam('junior_a')}
+              className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider transition ${
+                selectedTeam === 'junior_a'
+                  ? 'bg-orange-500 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Júnior A
+            </button>
+            <button
+              type="button"
+              id="btn-mobile-team-senior"
+              onClick={() => onSelectTeam('senior')}
+              className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider transition ${
+                selectedTeam === 'senior'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Sènior
+            </button>
+          </div>
+        )}
+
+        <div className="text-right min-w-0 flex-1">
+          <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono truncate">
+            Modo Pista ({selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})
+          </span>
+          <span className="text-xs font-semibold text-slate-200 truncate block">{session.name}</span>
         </div>
-        <div className="flex items-center gap-1">
+        
+        <div className="flex items-center gap-1 shrink-0">
           {onNavigateView && (
             <button
               id="btn-mobile-open-library"
