@@ -522,34 +522,66 @@ export default function App() {
   const [showMatchModal, setShowMatchModal] = useState<boolean>(false);
   const [selectedMatchDateIndex, setSelectedMatchDateIndex] = useState<number>(5);
 
-  const handleSaveMatchAnnotation = (dateIndex: number, annotation: MatchAnnotation) => {
-    setWeeklyPlans(prevPlans => prevPlans.map(plan => {
-      if (plan.id === selectedWeeklyPlanId) {
-        const existing = plan.matchAnnotations || {};
-        return {
-          ...plan,
-          matchAnnotations: {
-            ...existing,
-            [dateIndex.toString()]: annotation
-          }
-        };
+  const handleSaveMatchAnnotation = (dateIndex: number, annotation: MatchAnnotation, targetTeam?: TeamType) => {
+    const effectiveTeam = targetTeam || annotation.team || selectedTeam;
+    setWeeklyPlans(prevPlans => {
+      // Find the specific plan belonging to this team
+      let targetPlanId = selectedWeeklyPlanId;
+      const currentSelectedPlan = prevPlans.find(p => p.id === selectedWeeklyPlanId);
+      const isCurrentPlanMatchingTeam = currentSelectedPlan && (effectiveTeam === 'senior' ? currentSelectedPlan.team === 'senior' : currentSelectedPlan.team !== 'senior');
+
+      if (!isCurrentPlanMatchingTeam) {
+        const teamPlan = prevPlans.find(p => effectiveTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
+        if (teamPlan) {
+          targetPlanId = teamPlan.id;
+        }
       }
-      return plan;
-    }));
+
+      return prevPlans.map(plan => {
+        if (plan.id === targetPlanId) {
+          const existing = plan.matchAnnotations || {};
+          return {
+            ...plan,
+            matchAnnotations: {
+              ...existing,
+              [dateIndex.toString()]: {
+                ...annotation,
+                team: effectiveTeam
+              }
+            }
+          };
+        }
+        return plan;
+      });
+    });
   };
 
-  const handleDeleteMatchAnnotation = (dateIndex: number) => {
-    setWeeklyPlans(prevPlans => prevPlans.map(plan => {
-      if (plan.id === selectedWeeklyPlanId) {
-        const existing = { ...(plan.matchAnnotations || {}) };
-        delete existing[dateIndex.toString()];
-        return {
-          ...plan,
-          matchAnnotations: existing
-        };
+  const handleDeleteMatchAnnotation = (dateIndex: number, targetTeam?: TeamType) => {
+    const effectiveTeam = targetTeam || selectedTeam;
+    setWeeklyPlans(prevPlans => {
+      let targetPlanId = selectedWeeklyPlanId;
+      const currentSelectedPlan = prevPlans.find(p => p.id === selectedWeeklyPlanId);
+      const isCurrentPlanMatchingTeam = currentSelectedPlan && (effectiveTeam === 'senior' ? currentSelectedPlan.team === 'senior' : currentSelectedPlan.team !== 'senior');
+
+      if (!isCurrentPlanMatchingTeam) {
+        const teamPlan = prevPlans.find(p => effectiveTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
+        if (teamPlan) {
+          targetPlanId = teamPlan.id;
+        }
       }
-      return plan;
-    }));
+
+      return prevPlans.map(plan => {
+        if (plan.id === targetPlanId) {
+          const existing = { ...(plan.matchAnnotations || {}) };
+          delete existing[dateIndex.toString()];
+          return {
+            ...plan,
+            matchAnnotations: existing
+          };
+        }
+        return plan;
+      });
+    });
   };
 
   // Completions list with localStorage persistence
@@ -2845,6 +2877,9 @@ export default function App() {
           isOpen={showMatchModal}
           onClose={() => setShowMatchModal(false)}
           activePlan={activePlan}
+          allWeeklyPlans={weeklyPlans}
+          selectedTeam={selectedTeam}
+          onSelectTeam={handleSelectTeam}
           initialDateIndex={selectedMatchDateIndex}
           onSaveAnnotation={handleSaveMatchAnnotation}
           onDeleteAnnotation={handleDeleteMatchAnnotation}

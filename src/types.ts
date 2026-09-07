@@ -81,8 +81,9 @@ export interface TeamStats {
 
 export interface MatchAnnotation {
   id: string;
+  team?: TeamType; // 'junior_a' | 'senior'
   dateIndex: number; // 0..27 (day index in 28-day microcycle grid)
-  matchDate?: string; // e.g. "Setmana 1 - Dissabte"
+  matchDate?: string; // e.g. "Setmana 1 - Dissabte" or "05/09/2026"
   opponent?: string; // e.g. "CB Manresa"
   isHome?: boolean; // true = Local, false = Visitant
   ourScore?: string | number;

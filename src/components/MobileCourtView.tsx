@@ -867,84 +867,97 @@ export default function MobileCourtView({
     }
   };
 
+  const handleStart75Session = () => {
+    setSessionTimerRunning(true);
+    setIsMotionMode(true);
+    playSynthesizedWhistle();
+    if (keepScreenAwake) {
+      triggerLocalToast('🏀 Cronòmetre de 75′ iniciat amb Lletra Gran! Pantalla encesa.');
+    } else {
+      triggerLocalToast('🏀 Cronòmetre de 75′ iniciat amb Lletra Gran!');
+    }
+  };
+
   const isSessionCompleted = completions.some(c => c.planId === activePlanId && c.sessionId === session.id);
 
   return (
     <div id="mobile-court-view-layout" className="w-full max-w-md mx-auto bg-slate-950 text-white min-h-screen md:min-h-[750px] flex flex-col md:rounded-3xl md:border md:border-slate-800 md:shadow-2xl relative overflow-hidden select-none">
       
-      {/* Network & Completion Control Center for fully supported offline session tracking */}
-      <div className="px-4 py-2 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between text-xs font-sans shrink-0 gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse shadow-xs shadow-emerald-400' : 'bg-amber-500 shadow-xs shadow-amber-400 animate-ping'}`}></span>
-          <span className="text-[9px] font-bold font-mono tracking-wide text-slate-300">
-            {isOnline ? 'ONLINE' : 'OFFLINE'}
-          </span>
-        </div>
+      {/* Network & Completion Control Center for fully supported offline session tracking (Hidden during 75' Session) */}
+      {!sessionTimerRunning && (
+        <div className="px-4 py-2 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between text-xs font-sans shrink-0 gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse shadow-xs shadow-emerald-400' : 'bg-amber-500 shadow-xs shadow-amber-400 animate-ping'}`}></span>
+            <span className="text-[9px] font-bold font-mono tracking-wide text-slate-300">
+              {isOnline ? 'ONLINE' : 'OFFLINE'}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-1.5 ml-auto">
-          <button
-            type="button"
-            id="btn-mobile-sync-active"
-            onClick={onOpenSync}
-            className="px-2 py-1 rounded bg-slate-900 border border-emerald-500/80 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-wide flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
-            title="Sincronització automàtica activa amb l'ordinador. Prem per veure opcions."
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-500 animate-pulse'}`}></span>
-            <span className="font-mono">{isSyncing ? 'SINCRONITZANT...' : (syncCode || 'AUTO-SYNC')}</span>
-          </button>
-
-          {onForceSaveSession && (
+          <div className="flex items-center gap-1.5 ml-auto">
             <button
               type="button"
-              id="btn-mobile-force-save"
-              onClick={onForceSaveSession}
-              disabled={isSyncing}
-              className="px-2 py-1 rounded bg-amber-600/90 hover:bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer disabled:opacity-50"
-              title="Forçar actualització i desar amb el núvol immediatament"
+              id="btn-mobile-sync-active"
+              onClick={onOpenSync}
+              className="px-2 py-1 rounded bg-slate-900 border border-emerald-500/80 hover:bg-slate-800 text-[9px] font-extrabold text-emerald-400 tracking-wide flex items-center gap-1.5 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/10"
+              title="Sincronització automàtica activa amb l'ordinador. Prem per veure opcions."
             >
-              <RefreshCw size={10} className={isSyncing ? "animate-spin" : ""} />
-              <span>{isSyncing ? "Actualitzant..." : "Actualitzar"}</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-500 animate-pulse'}`}></span>
+              <span className="font-mono">{isSyncing ? 'SINCRONITZANT...' : (syncCode || 'AUTO-SYNC')}</span>
             </button>
-          )}
 
-          <button
-            type="button"
-            onClick={() => setShowPerformanceSummary(true)}
-            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
-            title="Obrir Resum de Rendiment post-entrenament i registrar escala RPE"
-          >
-            <Activity size={10} strokeWidth={3} />
-            <span>Resum</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setShowPerformanceSummary(true);
-              if (onToggleCompleteSession && !isSessionCompleted) {
-                onToggleCompleteSession(session.id);
-              }
-            }}
-            className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer border ${
-              isSessionCompleted 
-                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-450 hover:bg-emerald-500/20' 
-                : 'bg-orange-600 hover:bg-orange-700 text-white border-orange-700/50 shadow-xs'
-            }`}
-          >
-            {isSessionCompleted ? (
-              <>
-                <Check size={10} strokeWidth={3.5} />
-                <span>Feta ✓</span>
-              </>
-            ) : (
-              <span>Finalitzar</span>
+            {onForceSaveSession && (
+              <button
+                type="button"
+                id="btn-mobile-force-save"
+                onClick={onForceSaveSession}
+                disabled={isSyncing}
+                className="px-2 py-1 rounded bg-amber-600/90 hover:bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                title="Forçar actualització i desar amb el núvol immediatament"
+              >
+                <RefreshCw size={10} className={isSyncing ? "animate-spin" : ""} />
+                <span>{isSyncing ? "Actualitzant..." : "Actualitzar"}</span>
+              </button>
             )}
-          </button>
-        </div>
-      </div>
 
-      {/* DISMISSIBLE SYNC REMINDER CALLOUT */}
-      {!isLinked && showSyncCallout && (
+            <button
+              type="button"
+              onClick={() => setShowPerformanceSummary(true)}
+              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
+              title="Obrir Resum de Rendiment post-entrenament i registrar escala RPE"
+            >
+              <Activity size={10} strokeWidth={3} />
+              <span>Resum</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowPerformanceSummary(true);
+                if (onToggleCompleteSession && !isSessionCompleted) {
+                  onToggleCompleteSession(session.id);
+                }
+              }}
+              className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition active:scale-95 cursor-pointer border ${
+                isSessionCompleted 
+                  ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-450 hover:bg-emerald-500/20' 
+                  : 'bg-orange-600 hover:bg-orange-700 text-white border-orange-700/50 shadow-xs'
+              }`}
+            >
+              {isSessionCompleted ? (
+                <>
+                  <Check size={10} strokeWidth={3.5} />
+                  <span>Feta ✓</span>
+                </>
+              ) : (
+                <span>Finalitzar</span>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DISMISSIBLE SYNC REMINDER CALLOUT (Hidden during 75' Session) */}
+      {!isLinked && showSyncCallout && !sessionTimerRunning && (
         <div className="bg-gradient-to-r from-amber-600/25 to-orange-600/25 border-b border-amber-500/20 px-4 py-2.5 text-[10px] leading-relaxed flex items-start gap-2 relative animate-in slide-in-from-top duration-300 select-none">
           <span className="text-xs select-none">💡</span>
           <div className="flex-1 space-y-0.5">
@@ -963,74 +976,76 @@ export default function MobileCourtView({
         </div>
       )}
 
-      {/* HEADER BAR FOR MOBILE */}
-      <div id="mobile-header" className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0 gap-2">
-        {!isSharedMobile ? (
-          <button
-            id="btn-mobile-back"
-            onClick={onBackToPlanner}
-            className="text-xs px-2 py-1.5 font-bold rounded-lg bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer shrink-0"
-          >
-            <ChevronLeft size={16} /> Planificador
-          </button>
-        ) : (
-          <div className="w-[85px] shrink-0" />
-        )}
-        
-        {/* Team switcher directly in Mobile Court View */}
-        {onSelectTeam && (
-          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 shrink-0">
+      {/* HEADER BAR FOR MOBILE (Hidden during 75' Session) */}
+      {!sessionTimerRunning && (
+        <div id="mobile-header" className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0 gap-2">
+          {!isSharedMobile ? (
             <button
-              type="button"
-              id="btn-mobile-team-junior"
-              onClick={() => onSelectTeam('junior_a')}
-              className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider transition ${
-                selectedTeam === 'junior_a'
-                  ? 'bg-orange-500 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              id="btn-mobile-back"
+              onClick={onBackToPlanner}
+              className="text-xs px-2 py-1.5 font-bold rounded-lg bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer shrink-0"
             >
-              Júnior A
+              <ChevronLeft size={16} /> Planificador
             </button>
-            <button
-              type="button"
-              id="btn-mobile-team-senior"
-              onClick={() => onSelectTeam('senior')}
-              className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider transition ${
-                selectedTeam === 'senior'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Sènior
-            </button>
-          </div>
-        )}
-
-        <div className="text-right min-w-0 flex-1">
-          <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono truncate">
-            Modo Pista ({selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})
-          </span>
-          <span className="text-xs font-semibold text-slate-200 truncate block">{session.name}</span>
-        </div>
-        
-        <div className="flex items-center gap-1 shrink-0">
-          {onNavigateView && (
-            <button
-              id="btn-mobile-open-library"
-              onClick={() => onNavigateView('database')}
-              className="text-[10px] px-2 py-1 font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
-              title="Obrir Biblioteca d'Exercicis"
-            >
-              <BookOpen size={13} className="text-orange-400" />
-              <span>Biblioteca</span>
-            </button>
+          ) : (
+            <div className="w-[85px] shrink-0" />
           )}
-        </div>
-      </div>
+          
+          {/* Team switcher directly in Mobile Court View */}
+          {onSelectTeam && (
+            <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 shrink-0">
+              <button
+                type="button"
+                id="btn-mobile-team-junior"
+                onClick={() => onSelectTeam('junior_a')}
+                className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider transition ${
+                  selectedTeam === 'junior_a'
+                    ? 'bg-orange-500 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Júnior A
+              </button>
+              <button
+                type="button"
+                id="btn-mobile-team-senior"
+                onClick={() => onSelectTeam('senior')}
+                className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider transition ${
+                  selectedTeam === 'senior'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Sènior
+              </button>
+            </div>
+          )}
 
-      {/* S1-S10 HORIZONTAL SESSION SELECTOR STRIP */}
-      {allSessions && (
+          <div className="text-right min-w-0 flex-1">
+            <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest block font-mono truncate">
+              Modo Pista ({selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})
+            </span>
+            <span className="text-xs font-semibold text-slate-200 truncate block">{session.name}</span>
+          </div>
+          
+          <div className="flex items-center gap-1 shrink-0">
+            {onNavigateView && (
+              <button
+                id="btn-mobile-open-library"
+                onClick={() => onNavigateView('database')}
+                className="text-[10px] px-2 py-1 font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                title="Obrir Biblioteca d'Exercicis"
+              >
+                <BookOpen size={13} className="text-orange-400" />
+                <span>Biblioteca</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* S1-S10 HORIZONTAL SESSION SELECTOR STRIP (Hidden during 75' Session) */}
+      {allSessions && !sessionTimerRunning && (
         <div id="mobile-sessions-strip" className="px-3 py-2 bg-slate-950 border-b border-slate-800/90 shrink-0">
           <div className="flex items-center justify-between mb-1 px-0.5">
             <span className="text-[9px] font-extrabold text-orange-400 uppercase tracking-widest flex items-center gap-1">
@@ -1098,178 +1113,65 @@ export default function MobileCourtView({
         </div>
       )}
 
-  {/* TIMING DOUBLE STOPWATCH UNIT */}
-      <div id="mobile-stopwatch-unit" className="px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0 flex flex-col gap-2">
-        {!isMotionMode ? (
-          <div className="grid grid-cols-2 gap-3">
-            
-            {/* CARD 1: ACTIVE EXERCISE COOLDOWN */}
-            <div className="bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block text-left">Crono Exercici Actiu</span>
-              <div className="flex items-center justify-between mt-1">
-                <span className={`text-2xl font-extrabold font-mono tracking-tighter ${timerRunning ? 'text-green-400 animate-pulse' : 'text-slate-350'}`}>
-                  {formatTime(timeLeft)}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    id="btn-toggle-timer"
-                    type="button"
-                    onClick={() => setTimerRunning(!timerRunning)}
-                    title={timerRunning ? "Pausar exercici" : "Iniciar exercici"}
-                    className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center"
-                    style={{ minWidth: '34px', minHeight: '34px', backgroundColor: timerRunning ? '#e11d48' : '#10b981', color: timerRunning ? '#ffffff' : '#020617' }}
-                  >
-                    {timerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
-                  </button>
-                  <button
-                    id="btn-reset-timer"
-                    type="button"
-                    onClick={() => {
-                      setTimeLeft(activeDrill.duration * 60);
-                      setTimerRunning(false);
-                    }}
-                    title="Reiniciar crono exercici"
-                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
-                    style={{ minWidth: '34px', minHeight: '34px' }}
-                  >
-                    <RotateCcw size={12} />
-                  </button>
-                </div>
-              </div>
-              {/* Tiny background progress bar for active exercise */}
-              <div className="w-full bg-slate-850 h-1 rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, (timeLeft / (activeDrill.duration * 60 || 1)) * 100))}%` }}></div>
-              </div>
-            </div>
-
-            {/* CARD 2: TOTAL SESSION STOPWATCH (75') */}
-            <div className="bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[9px] text-orange-400 font-bold uppercase tracking-wider block text-left truncate">Temps de Sessió</span>
-                <button
-                  type="button"
-                  id="btn-toggle-screen-awake"
-                  onClick={() => {
-                    const nextVal = !keepScreenAwake;
-                    setKeepScreenAwake(nextVal);
-                    try {
-                      localStorage.setItem('basket_planner_keep_screen_awake', JSON.stringify(nextVal));
-                    } catch (e) {}
-                    triggerLocalToast(
-                      nextVal 
-                        ? '🔆 Pantalla sempre activa: El mòbil no es bloquejarà' 
-                        : '🔒 Bloqueig automàtic de pantalla permès'
-                    );
-                  }}
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition cursor-pointer shrink-0 ${
-                    isWakeLockActive
-                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-xs'
-                      : keepScreenAwake
-                        ? 'bg-orange-500/10 text-orange-300 border-orange-500/30'
-                        : 'bg-slate-800 text-slate-400 border-slate-700'
-                  }`}
-                  title={
-                    isWakeLockActive 
-                      ? "Pantalla mantinguda encesa sense bloqueig. Fes clic per desactivar." 
-                      : "Activar/Desactivar bloqueig de pantalla durant l'entrenament"
-                  }
-                >
-                  {isWakeLockActive ? (
-                    <>
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-[7.5px] uppercase font-black">Sense Bloqueig</span>
-                    </>
-                  ) : keepScreenAwake ? (
-                    <>
-                      <Sun size={8} className="text-orange-400" />
-                      <span>75′ Cap</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock size={8} className="text-slate-400" />
-                      <span>75′ Cap</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <span className={`text-2xl font-extrabold font-mono tracking-tighter ${sessionTimerRunning ? 'text-orange-450 animate-pulse' : 'text-slate-350'}`}>
-                  {formatTime(sessionTimeLeft)}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    id="btn-toggle-session-timer"
-                    type="button"
-                    onClick={() => {
-                      const nextRunning = !sessionTimerRunning;
-                      setSessionTimerRunning(nextRunning);
-                      if (nextRunning) {
-                        playSynthesizedWhistle();
-                        if (keepScreenAwake) {
-                          triggerLocalToast('🏀 Sessió iniciada (75′)! Pantalla encesa sense bloqueig.');
-                        } else {
-                          triggerLocalToast('🏀 Sessió de 75′ iniciada!');
-                        }
-                      }
-                    }}
-                    title={sessionTimerRunning ? "Pausar temps general" : "Reanudar temps general"}
-                    className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center"
-                    style={{ minWidth: '34px', minHeight: '34px', backgroundColor: sessionTimerRunning ? '#f59e0b' : '#3d82f6', color: '#ffffff' }}
-                  >
-                    {sessionTimerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
-                  </button>
-                  <button
-                    id="btn-reset-session-timer"
-                    type="button"
-                    onClick={() => {
-                      setSessionTimeLeft(75 * 60);
-                      setSessionTimerRunning(false);
-                    }}
-                    title="Reiniciar a 75′ d'entrenament"
-                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
-                    style={{ minWidth: '34px', minHeight: '34px' }}
-                  >
-                    <RotateCcw size={12} />
-                  </button>
-                </div>
-              </div>
-              {/* Visual colored remaining bar for the 75 minutes */}
-              <div className="w-full bg-slate-850 h-1 rounded-full mt-2 overflow-hidden">
-                <div className="h-full transition-all duration-300" style={{ width: `${(sessionTimeLeft / (75 * 60)) * 100}%`, backgroundColor: sessionTimeLeft < 15 * 60 ? '#f43f5e' : sessionTimeLeft < 30 * 60 ? '#f59e0b' : '#f97316' }}></div>
-              </div>
-            </div>
-
+      {/* COMPACT ACTIVE 75' SESSION BAR (Shows when 75 min timer is running) */}
+      {sessionTimerRunning && (
+        <div className="px-4 py-2 bg-gradient-to-r from-orange-950 via-slate-900 to-orange-950 border-b border-orange-500/30 flex items-center justify-between shrink-0 z-20">
+          <div className="flex items-center gap-2">
+            <span className="text-orange-400 font-black font-mono text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+              Sessió 75′ Activa ({selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})
+            </span>
+            <span className="text-slate-300 text-xs font-bold truncate max-w-[130px]">{session.name}</span>
           </div>
-        ) : (
-          /* MAXIMALLY VIEWABLE LARGE TIMER FOR ON-THE-GO TRAINING */
-          <div className="bg-slate-950 border border-green-500/20 p-3.5 rounded-2xl flex items-center justify-between gap-4 relative overflow-hidden select-none">
-            <div className="min-w-0">
-              <span className="text-[9px] text-green-400 font-extrabold uppercase tracking-widest block text-left">Cronòmetre d'Exercici (LLETRES GRANS)</span>
-              <span className="text-xs text-slate-300 font-semibold truncate block mt-0.5">{activeDrill.title}</span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {isWakeLockActive && (
-                <span className="hidden sm:inline-flex items-center gap-1 text-[9px] font-black text-emerald-400 bg-emerald-950/90 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  <Sun size={10} className="text-emerald-400" /> Sense Bloqueig
-                </span>
-              )}
-              <span className={`text-4xl xs:text-5xl font-black font-mono tracking-tighter ${timerRunning ? 'text-green-400 animate-pulse' : 'text-slate-100'}`}>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsMotionMode(!isMotionMode)}
+              className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-1 active:scale-95 ${
+                isMotionMode
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'bg-slate-800 text-amber-400 border border-slate-700'
+              }`}
+              title="Activar o desactivar lletra gran"
+            >
+              {isMotionMode ? '🏃‍♂️ Lletra Gran ✓' : 'Lletra Gran'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSessionTimerRunning(false)}
+              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 transition cursor-pointer flex items-center gap-1 active:scale-95"
+              title="Pausar cronòmetre de 75′ i veure capçalera completa"
+            >
+              <Pause size={11} />
+              <span>Pausar 75′</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TIMING DOUBLE STOPWATCH UNIT (Both timers visible and legible in large font when running) */}
+      <div id="mobile-stopwatch-unit" className="px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0 flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-3">
+          
+          {/* CARD 1: ACTIVE EXERCISE COOLDOWN */}
+          <div className="bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+            <span className={`text-[9px] font-bold uppercase tracking-wider block text-left ${isMotionMode ? 'text-green-400 font-black' : 'text-slate-400'}`}>
+              Crono Exercici Actiu
+            </span>
+            <div className="flex items-center justify-between mt-1">
+              <span className={`font-extrabold font-mono tracking-tighter ${isMotionMode ? 'text-3xl' : 'text-2xl'} ${timerRunning ? 'text-green-400 animate-pulse' : 'text-slate-350'}`}>
                 {formatTime(timeLeft)}
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <button
                   id="btn-toggle-timer"
                   type="button"
                   onClick={() => setTimerRunning(!timerRunning)}
                   title={timerRunning ? "Pausar exercici" : "Iniciar exercici"}
-                  className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center h-11 w-11"
-                  style={{ backgroundColor: timerRunning ? '#e11d48' : '#10b981', color: '#ffffff' }}
+                  className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center"
+                  style={{ minWidth: '34px', minHeight: '34px', backgroundColor: timerRunning ? '#e11d48' : '#10b981', color: '#ffffff' }}
                 >
-                  {timerRunning ? <Pause size={18} strokeWidth={3} /> : <Play size={18} strokeWidth={3} />}
+                  {timerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
                 </button>
                 <button
                   id="btn-reset-timer"
@@ -1278,82 +1180,180 @@ export default function MobileCourtView({
                     setTimeLeft(activeDrill.duration * 60);
                     setTimerRunning(false);
                   }}
-                  title="Reiniciar"
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center h-11 w-11"
+                  title="Reiniciar crono exercici"
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
+                  style={{ minWidth: '34px', minHeight: '34px' }}
                 >
-                  <RotateCcw size={16} />
+                  <RotateCcw size={12} />
                 </button>
               </div>
             </div>
-            
-            <div className="absolute bottom-0 left-0 right-0 bg-slate-900 h-1.5 overflow-hidden">
+            {/* Tiny background progress bar for active exercise */}
+            <div className="w-full bg-slate-850 h-1 rounded-full mt-2 overflow-hidden">
               <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, (timeLeft / (activeDrill.duration * 60 || 1)) * 100))}%` }}></div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* QUICK SESSION ACTIONS BAR */}
-      <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-end gap-2 shrink-0 overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            id="btn-quick-toggle-screen-awake"
-            onClick={() => {
-              const nextVal = !keepScreenAwake;
-              setKeepScreenAwake(nextVal);
-              try {
-                localStorage.setItem('basket_planner_keep_screen_awake', JSON.stringify(nextVal));
-              } catch (e) {}
-              triggerLocalToast(
-                nextVal 
-                  ? '🔆 Pantalla sempre activa activada' 
-                  : '🔒 Bloqueig automàtic permès'
-              );
-            }}
-            className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
-              isWakeLockActive
-                ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
-                : keepScreenAwake
-                  ? 'bg-slate-800 border border-slate-700 text-orange-400'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400'
-            }`}
-            title="Mantenir pantalla encesa sense bloqueig automàtic durant l'entrenament a pista"
-          >
-            <Sun size={11} className={isWakeLockActive ? "text-emerald-400" : "text-slate-400"} />
-            <span>{isWakeLockActive ? 'Sense Bloqueig' : 'Anti-Bloqueig'}</span>
-          </button>
+          {/* CARD 2: TOTAL SESSION STOPWATCH (75') */}
+          <div className="bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
+            <div className="flex items-center justify-between gap-1">
+              <span className={`text-[9px] text-orange-400 font-bold uppercase tracking-wider block text-left truncate ${isMotionMode ? 'font-black text-orange-300' : ''}`}>
+                Temps 75′
+              </span>
+              <button
+                type="button"
+                id="btn-toggle-screen-awake"
+                onClick={() => {
+                  const nextVal = !keepScreenAwake;
+                  setKeepScreenAwake(nextVal);
+                  try {
+                    localStorage.setItem('basket_planner_keep_screen_awake', JSON.stringify(nextVal));
+                  } catch (e) {}
+                  triggerLocalToast(
+                    nextVal
+                      ? '🔆 Pantalla sempre activa: El mòbil no es bloquejarà'
+                      : '🔒 Bloqueig automàtic de pantalla permès'
+                  );
+                }}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition cursor-pointer shrink-0 ${
+                  isWakeLockActive
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-xs'
+                    : keepScreenAwake
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      : 'bg-slate-900 text-slate-400 border-slate-750 hover:text-slate-300'
+                }`}
+                title="Mantenir pantalla encesa durant els 75' per evitar bloqueig mòbil"
+              >
+                {isWakeLockActive ? (
+                  <>
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[7.5px] uppercase font-black">Sense Bloqueig</span>
+                  </>
+                ) : keepScreenAwake ? (
+                  <>
+                    <Sun size={8} className="text-orange-400" />
+                    <span>75′ Cap</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock size={8} className="text-slate-400" />
+                    <span>75′ Cap</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className={`font-extrabold font-mono tracking-tighter ${isMotionMode ? 'text-3xl' : 'text-2xl'} ${sessionTimerRunning ? 'text-orange-450 animate-pulse' : 'text-slate-350'}`}>
+                {formatTime(sessionTimeLeft)}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  id="btn-toggle-session-timer"
+                  type="button"
+                  onClick={() => {
+                    if (!sessionTimerRunning) {
+                      handleStart75Session();
+                    } else {
+                      setSessionTimerRunning(false);
+                    }
+                  }}
+                  title={sessionTimerRunning ? "Pausar temps general" : "Iniciar sessió de 75′"}
+                  className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center"
+                  style={{ minWidth: '34px', minHeight: '34px', backgroundColor: sessionTimerRunning ? '#f59e0b' : '#3d82f6', color: '#ffffff' }}
+                >
+                  {sessionTimerRunning ? <Pause size={13} strokeWidth={3} /> : <Play size={13} strokeWidth={3} />}
+                </button>
+                <button
+                  id="btn-reset-session-timer"
+                  type="button"
+                  onClick={() => {
+                    setSessionTimeLeft(75 * 60);
+                    setSessionTimerRunning(false);
+                  }}
+                  title="Reiniciar a 75′ d'entrenament"
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
+                  style={{ minWidth: '34px', minHeight: '34px' }}
+                >
+                  <RotateCcw size={12} />
+                </button>
+              </div>
+            </div>
+            {/* Visual colored remaining bar for the 75 minutes */}
+            <div className="w-full bg-slate-850 h-1 rounded-full mt-2 overflow-hidden">
+              <div className="h-full transition-all duration-300" style={{ width: `${(sessionTimeLeft / (75 * 60)) * 100}%`, backgroundColor: sessionTimeLeft < 15 * 60 ? '#f43f5e' : sessionTimeLeft < 30 * 60 ? '#f59e0b' : '#f97316' }}></div>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setIsUltraLightMode(!isUltraLightMode);
-              if (isUltraLightMode) setShowTacticalDiagram(true);
-            }}
-            className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
-              isUltraLightMode 
-                ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25' 
-                : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'
-            }`}
-            title="Mode bàsic ultra-ràpid sense càrrega gràfica per evitar congelacions"
-          >
-            <span>{isUltraLightMode ? '⚡ Modo Bàsic' : '📊 Modo Pissarra'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsMotionMode(!isMotionMode)}
-            className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
-              isMotionMode 
-                ? 'bg-amber-500 hover:bg-amber-450 text-slate-950 shadow-md animate-pulse border border-amber-600' 
-                : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'
-            }`}
-            title="S'amplia la mida dels textos de descripció per a una fons gran ideal en moviment"
-          >
-            {isMotionMode ? '🏃‍♂️ Normal' : '🏃‍♂️ Lletra Gran'}
-          </button>
         </div>
       </div>
+
+      {/* QUICK SESSION ACTIONS BAR (Hidden when 75' timer is running for streamlined court mode) */}
+      {!sessionTimerRunning && (
+        <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-end gap-2 shrink-0 overflow-x-auto no-scrollbar">
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              id="btn-quick-toggle-screen-awake"
+              onClick={() => {
+                const nextVal = !keepScreenAwake;
+                setKeepScreenAwake(nextVal);
+                try {
+                  localStorage.setItem('basket_planner_keep_screen_awake', JSON.stringify(nextVal));
+                } catch (e) {}
+                triggerLocalToast(
+                  nextVal 
+                    ? '🔆 Pantalla sempre activa activada' 
+                    : '🔒 Bloqueig automàtic permès'
+                );
+              }}
+              className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
+                isWakeLockActive
+                  ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+                  : keepScreenAwake
+                    ? 'bg-slate-800 border border-slate-700 text-orange-400'
+                    : 'bg-slate-900 border border-slate-800 text-slate-400'
+              }`}
+              title="Mantenir pantalla encesa sense bloqueig automàtic durant l'entrenament a pista"
+            >
+              <Sun size={11} className={isWakeLockActive ? "text-emerald-400" : "text-slate-400"} />
+              <span>{isWakeLockActive ? 'Sense Bloqueig' : 'Anti-Bloqueig'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsUltraLightMode(!isUltraLightMode);
+                if (isUltraLightMode) setShowTacticalDiagram(true);
+              }}
+              className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
+                isUltraLightMode 
+                  ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25' 
+                  : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'
+              }`}
+              title="Mode bàsic ultra-ràpid sense càrrega gràfica per evitar congelacions"
+            >
+              <span>{isUltraLightMode ? '⚡ Modo Bàsic' : '📊 Modo Pissarra'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsMotionMode(!isMotionMode)}
+              className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
+                isMotionMode 
+                  ? 'bg-amber-500 hover:bg-amber-450 text-slate-950 shadow-md animate-pulse border border-amber-600' 
+                  : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'
+              }`}
+              title="S'amplia la mida dels textos de descripció per a una fons gran ideal en moviment"
+            >
+              {isMotionMode ? '🏃‍♂️ Normal' : '🏃‍♂️ Lletra Gran'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* CORE DISPLAY SWIPE BODY */}
       <div id="mobile-swipe-body" className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
@@ -1458,9 +1458,11 @@ export default function MobileCourtView({
                 id="btn-swipe-prev"
                 onClick={prevDrill}
                 disabled={safeActiveIndex === 0}
-                className="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white disabled:opacity-10 cursor-pointer active:scale-95 transition flex items-center justify-center shrink-0"
+                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5 shrink-0 border-2 border-slate-700 shadow-sm"
+                title="Tornar al pas anterior ràpidament"
               >
-                <ChevronLeft size={22} strokeWidth={3} />
+                <ChevronLeft size={18} strokeWidth={3.5} className="text-orange-400" />
+                <span className="text-[10px] xs:text-[11px] font-black uppercase tracking-wider">Pas anterior</span>
               </button>
 
               <div className="text-center min-w-0 flex-1 px-2 sm:px-3 select-none">
@@ -1474,7 +1476,7 @@ export default function MobileCourtView({
                   Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′)
                 </span>
 
-                <h3 className="text-base xs:text-lg font-black text-white tracking-tight leading-snug uppercase flex items-center justify-center gap-1.5 flex-wrap text-center drop-shadow-sm">
+                <h3 className={`${isMotionMode ? 'text-lg xs:text-xl' : 'text-base xs:text-lg'} font-black text-white tracking-tight leading-snug uppercase flex items-center justify-center gap-1.5 flex-wrap text-center drop-shadow-sm`}>
                   <span>{activeDrill.title}</span>
                   {(() => {
                     const orig = drills.find(d => d.id === activeDrill.drillId);
@@ -1520,15 +1522,93 @@ export default function MobileCourtView({
                 id="btn-swipe-next"
                 onClick={nextDrill}
                 disabled={safeActiveIndex === drillsInSession.length - 1}
-                className="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white disabled:opacity-10 cursor-pointer active:scale-95 transition flex items-center justify-center shrink-0"
+                className="py-2.5 px-2.5 xs:px-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white disabled:opacity-20 cursor-pointer active:scale-95 transition flex items-center justify-center gap-1 shrink-0 border border-orange-500 shadow-xs"
+                title="Passar al següent pas"
               >
-                <ChevronRight size={22} strokeWidth={3} />
+                <span className="text-[10px] font-black uppercase tracking-wider">Següent</span>
+                <ChevronRight size={18} strokeWidth={3} />
               </button>
             </div>
           );
         })()}
 
-        {/* TACTICAL BOARD DISPLAY OR SPECIAL POSTER FOR VIRTUAL PAUSES (PRIMARY PROTAGONIST) */}
+        {/* 1. CUSTOM NOTES SPECIFIC FOR THE ACTIVE TRAINING DAY */}
+        {activeDrill.notes && !isUltraLightMode && (
+          <div 
+            id="mobile-drill-quick-note" 
+            className={`transition-all duration-200 ${
+              isMotionMode 
+                ? 'bg-amber-500 text-slate-950 p-5 rounded-2xl border-2 border-amber-400 space-y-2 shadow-lg' 
+                : 'bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 px-4 py-3 rounded-2xl text-xs space-y-1'
+            }`}
+          >
+            <span className={`font-extrabold uppercase tracking-widest block flex items-center gap-1 ${
+              isMotionMode ? 'text-slate-950 text-xs font-black' : 'text-amber-400 text-[10px]'
+            }`}>
+              <Zap size={isMotionMode ? 14 : 11} className={`fill-amber-950 text-amber-950 ${isMotionMode ? 'animate-pulse' : 'animate-bounce'}`} />
+              Observació d'avui (Codi Pista):
+            </span>
+            <p className={`font-extrabold leading-snug ${isMotionMode ? 'text-lg text-slate-900' : 'text-xs'}`}>{activeDrill.notes}</p>
+          </div>
+        )}
+
+        {/* 2. DRILL DETAILS & EXERCISE DESCRIPTION (ORDERED BEFORE GRAFISME) */}
+        <div className="space-y-4">
+          
+          {/* Direct Instructions list (Descripció de l'Exercici - ALWAYS SHOWN & PROMINENT BEFORE GRAFISME) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
+            <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
+              <Clipboard size={12} className="text-orange-400" />
+              Descripció de l'Exercici
+            </h4>
+            <p className={`leading-relaxed font-sans transition-all duration-200 whitespace-pre-line ${
+              isMotionMode ? 'text-lg text-white font-black px-1 py-1' : 'text-xs text-slate-200 font-medium'
+            }`}>
+              {activeDrill.description || 'Sense descripció.'}
+            </p>
+          </div>
+
+          {/* Objectives Bullet points checklists (Hidden in Basic Mode) */}
+          {!isUltraLightMode && activeDrill.objectives && activeDrill.objectives.length > 0 && (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
+              <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
+                <Users size={12} className="text-sky-400" />
+                Punts de Focus (Nivell A)
+              </h4>
+              <ul className="space-y-3">
+                {activeDrill.objectives.map((obj, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-slate-100">
+                    <span className={`rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-bold flex items-center justify-center shrink-0 mt-0.5 ${
+                      isMotionMode ? 'w-6 h-6 text-xs' : 'w-5 h-5 text-[10px]'
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <span className={`leading-relaxed transition-all duration-200 ${
+                      isMotionMode ? 'text-base text-sky-200 font-black' : 'text-xs text-slate-100 font-medium'
+                    }`}>{obj}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Setup Instructions (Hidden in Basic Mode) */}
+          {!isUltraLightMode && activeDrill.setupInstructions && (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-2 shadow-xs">
+              <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
+                <NotebookText size={12} className="text-yellow-400" />
+                Normes o Restriccions de Pista
+              </h4>
+              <p className={`leading-relaxed font-sans italic transition-all duration-200 ${
+                isMotionMode ? 'text-base font-black text-yellow-300' : 'text-xs text-slate-300'
+              }`}>
+                "{activeDrill.setupInstructions}"
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 3. TACTICAL BOARD DISPLAY OR SPECIAL POSTER (GRAFISME - ORDERED AFTER DESCRIPTION) */}
         {activeDrill.isVirtual ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-inner min-h-64 flex flex-col justify-center items-center">
             {activeDrill.virtualType === 'hydration' ? (
@@ -1616,8 +1696,8 @@ export default function MobileCourtView({
           </div>
         )}
 
-        {/* INTENSITY MONITORING & PEAK EFFORT CONTROL (Hidden in Basic Mode) */}
-        {!activeDrill.isVirtual && !isUltraLightMode && (
+        {/* 4. INTENSITY MONITORING & PEAK EFFORT CONTROL (Hidden in Basic Mode & Hidden when 75' Session is active) */}
+        {!activeDrill.isVirtual && !isUltraLightMode && !sessionTimerRunning && (
           <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-orange-500/20 rounded-xl p-3 shadow-md relative overflow-hidden transition-all">
             <div 
               className="flex items-center justify-between cursor-pointer select-none"
@@ -1772,82 +1852,47 @@ export default function MobileCourtView({
             )}
           </div>
         )}
+      </div>
 
-        {/* CUSTOM NOTES SPECIFIC FOR THE ACTIVE TRAINING DAY */}
-        {activeDrill.notes && !isUltraLightMode && (
-          <div 
-            id="mobile-drill-quick-note" 
-            className={`transition-all duration-200 ${
-              isMotionMode 
-                ? 'bg-amber-500 text-slate-950 p-5 rounded-2xl border-2 border-amber-400 space-y-2 shadow-lg' 
-                : 'bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 px-4 py-3 rounded-2xl text-xs space-y-1'
-            }`}
-          >
-            <span className={`font-extrabold uppercase tracking-widest block flex items-center gap-1 ${
-              isMotionMode ? 'text-slate-950 text-xs font-black' : 'text-amber-400 text-[10px]'
-            }`}>
-              <Zap size={isMotionMode ? 14 : 11} className={`fill-amber-950 text-amber-950 ${isMotionMode ? 'animate-pulse' : 'animate-bounce'}`} />
-              Observació d'avui (Codi Pista):
-            </span>
-            <p className={`font-extrabold leading-snug ${isMotionMode ? 'text-lg text-slate-900' : 'text-xs'}`}>{activeDrill.notes}</p>
-          </div>
-        )}
+      {/* STICKY QUICK NAVIGATION BAR WITH FAST RETURN TO PREVIOUS STEP */}
+      <div id="mobile-sticky-step-nav" className="sticky bottom-0 left-0 right-0 p-2.5 sm:p-3 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-between gap-2.5 shadow-2xl z-30">
+        <button
+          type="button"
+          id="btn-sticky-prev-drill"
+          onClick={prevDrill}
+          disabled={safeActiveIndex === 0}
+          className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:opacity-25 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border-2 border-slate-700 shadow-md"
+          title="Tornar al pas anterior ràpidament"
+        >
+          <ChevronLeft size={18} strokeWidth={3.5} className="text-orange-400" />
+          <span>Pas anterior</span>
+        </button>
 
-        {/* DRILL LARGE CHECKLIST DETAILS FOR COACH SCANNING */}
-        <div className="space-y-4">
-          
-          {/* Direct Instructions list (Descripció de l'Exercici - ALWAYS SHOWN) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
-            <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
-              <Clipboard size={12} className="text-orange-400" />
-              Descripció de l'Exercici
-            </h4>
-            <p className={`leading-relaxed font-sans transition-all duration-200 ${
-              isMotionMode ? 'text-lg text-white font-black px-1 py-1' : 'text-xs text-slate-200 font-medium'
-            }`}>
-              {activeDrill.description || 'Sense descripció.'}
-            </p>
-          </div>
+        <button
+          type="button"
+          onClick={() => toggleDrillCompleted(safeActiveIndex)}
+          className={`py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border shrink-0 ${
+            completedDrillIndices.includes(safeActiveIndex)
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 hover:bg-emerald-500/30'
+              : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
+          }`}
+          title="Marcar exercici com a completat"
+        >
+          <Check size={16} strokeWidth={3.5} className={completedDrillIndices.includes(safeActiveIndex) ? 'text-emerald-400' : 'text-slate-400'} />
+          <span className="hidden xs:inline">{completedDrillIndices.includes(safeActiveIndex) ? 'Fet' : 'Fet'}</span>
+        </button>
 
-          {/* Objectives Bullet points checklists (Hidden in Basic Mode) */}
-          {!isUltraLightMode && activeDrill.objectives && activeDrill.objectives.length > 0 && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
-              <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
-                <Users size={12} className="text-sky-400" />
-                Punts de Focus (Nivell A)
-              </h4>
-              <ul className="space-y-3">
-                {activeDrill.objectives.map((obj, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-slate-100">
-                    <span className={`rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-bold flex items-center justify-center shrink-0 mt-0.5 ${
-                      isMotionMode ? 'w-6 h-6 text-xs' : 'w-5 h-5 text-[10px]'
-                    }`}>
-                      {i + 1}
-                    </span>
-                    <span className={`leading-relaxed transition-all duration-200 ${
-                      isMotionMode ? 'text-base text-sky-200 font-black' : 'text-xs text-slate-100 font-medium'
-                    }`}>{obj}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Setup Instructions (Hidden in Basic Mode) */}
-          {!isUltraLightMode && activeDrill.setupInstructions && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-2 shadow-xs">
-              <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
-                <NotebookText size={12} className="text-yellow-400" />
-                Normes o Restriccions de Pista
-              </h4>
-              <p className={`leading-relaxed font-sans italic transition-all duration-200 ${
-                isMotionMode ? 'text-base font-black text-yellow-300' : 'text-xs text-slate-300'
-              }`}>
-                "{activeDrill.setupInstructions}"
-              </p>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          id="btn-sticky-next-drill"
+          onClick={nextDrill}
+          disabled={safeActiveIndex === drillsInSession.length - 1}
+          className="flex-1 py-2.5 px-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-25 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border border-orange-500 shadow-lg shadow-orange-600/30"
+          title="Passar al següent pas"
+        >
+          <span>{safeActiveIndex === drillsInSession.length - 1 ? 'Últim pas' : 'Següent pas'}</span>
+          <ChevronRight size={18} strokeWidth={3.5} />
+        </button>
       </div>
 
       {/* QUICK FOOTER DOTS TRACKER (Hidden in Motion-Pista Mode for clutter-free scrolling) */}
