@@ -1150,7 +1150,7 @@ export default function MobileCourtView({
       )}
 
       {/* TIMING DOUBLE STOPWATCH UNIT (Both timers visible and legible in large font when running) */}
-      <div id="mobile-stopwatch-unit" className="px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0 flex flex-col gap-2">
+      <div id="mobile-stopwatch-unit" className={`bg-slate-900 border-b border-slate-800 shrink-0 flex flex-col gap-2 ${sessionTimerRunning ? 'px-3 py-2' : 'px-4 py-3'}`}>
         <div className="grid grid-cols-2 gap-3">
           
           {/* CARD 1: ACTIVE EXERCISE COOLDOWN */}
@@ -1356,7 +1356,7 @@ export default function MobileCourtView({
       )}
 
       {/* CORE DISPLAY SWIPE BODY */}
-      <div id="mobile-swipe-body" className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+      <div id="mobile-swipe-body" className={`flex-1 overflow-y-auto ${sessionTimerRunning ? 'px-3.5 sm:px-5 py-2.5 space-y-2.5' : 'px-4 sm:px-5 py-4 space-y-3.5'}`}>
         
         {/* TIME COMPLETE CUSTOM TOAST ALARM BANNER (Non-blocking) */}
         {showFinishedToast && (
@@ -1442,173 +1442,98 @@ export default function MobileCourtView({
           </div>
         )}
 
-        {/* Drill Title block navigation */}
+        {/* Drill Title block navigation - Compact & Space-Efficient */}
         {(() => {
           const rawCat = activeDrill.category || 'Atac';
           const activeNormCat = ['Atac', 'Defensa', 'Transició', 'Físico', 'Competència', 'Escalfament'].includes(rawCat) ? rawCat : 'Atac';
-          return (
-            <div className={`flex items-center justify-between bg-slate-900 border-2 rounded-2xl p-4 sm:p-5 shrink-0 shadow-lg transition-colors duration-300 ${
-              activeNormCat === 'Atac' ? 'border-orange-500' :
-              activeNormCat === 'Defensa' ? 'border-rose-500' :
-              activeNormCat === 'Transició' ? 'border-sky-500' :
-              activeNormCat === 'Físico' ? 'border-amber-500' :
-              activeNormCat === 'Competència' ? 'border-purple-500' : 'border-emerald-500'
-            }`}>
-              <button
-                id="btn-swipe-prev"
-                onClick={prevDrill}
-                disabled={safeActiveIndex === 0}
-                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5 shrink-0 border-2 border-slate-700 shadow-sm"
-                title="Tornar al pas anterior ràpidament"
-              >
-                <ChevronLeft size={18} strokeWidth={3.5} className="text-orange-400" />
-                <span className="text-[10px] xs:text-[11px] font-black uppercase tracking-wider">Pas anterior</span>
-              </button>
+          const orig = drills.find(d => d.id === activeDrill.drillId);
 
-              <div className="text-center min-w-0 flex-1 px-2 sm:px-3 select-none">
-                <span className={`text-[10px] px-2.5 py-1 rounded-full text-white font-extrabold tracking-wider font-mono uppercase inline-block mx-auto mb-1.5 transition-colors shadow-xs ${
+          return (
+            <div className={`bg-slate-900 border rounded-xl px-3 py-2 shrink-0 shadow-md flex items-center justify-between gap-2 transition-colors duration-300 ${
+              activeNormCat === 'Atac' ? 'border-orange-500/60' :
+              activeNormCat === 'Defensa' ? 'border-rose-500/60' :
+              activeNormCat === 'Transició' ? 'border-sky-500/60' :
+              activeNormCat === 'Físico' ? 'border-amber-500/60' :
+              activeNormCat === 'Competència' ? 'border-purple-500/60' : 'border-emerald-500/60'
+            }`}>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className={`text-[10px] px-2 py-0.5 rounded-md text-white font-extrabold font-mono uppercase shrink-0 ${
                   activeNormCat === 'Atac' ? 'bg-orange-600' :
                   activeNormCat === 'Defensa' ? 'bg-rose-600' :
                   activeNormCat === 'Transició' ? 'bg-sky-600' :
                   activeNormCat === 'Físico' ? 'bg-amber-600' :
                   activeNormCat === 'Competència' ? 'bg-purple-600' : 'bg-emerald-600'
                 }`}>
-                  Exercici {safeActiveIndex + 1} de {drillsInSession.length} ({activeDrill.duration}′)
+                  Ex. {safeActiveIndex + 1}/{drillsInSession.length} ({activeDrill.duration}′)
                 </span>
-
-                <h3 className={`${isMotionMode ? 'text-lg xs:text-xl' : 'text-base xs:text-lg'} font-black text-white tracking-tight leading-snug uppercase flex items-center justify-center gap-1.5 flex-wrap text-center drop-shadow-sm`}>
-                  <span>{activeDrill.title}</span>
-                  {(() => {
-                    const orig = drills.find(d => d.id === activeDrill.drillId);
-                    return orig?.isOver15 ? (
-                      <span className="text-rose-400 bg-rose-950/65 border border-rose-500/40 text-[9.5px] font-black px-2 py-0.5 rounded-full select-none inline-flex items-center gap-0.5 uppercase tracking-wider font-mono">
-                        🚫 +15
-                      </span>
-                    ) : null;
-                  })()}
+                <h3 className={`${isMotionMode ? 'text-sm xs:text-base font-black' : 'text-xs xs:text-sm font-bold'} text-white tracking-tight uppercase truncate`}>
+                  {activeDrill.title}
                 </h3>
-
-                {/* Requirement: Actions row - Completion toggle & Secondary 'Ver manual' button in background */}
-                <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => toggleDrillCompleted(safeActiveIndex)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-1 border shadow-xs ${
-                      completedDrillIndices.includes(safeActiveIndex)
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 hover:bg-emerald-500/30'
-                        : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-700'
-                    }`}
-                  >
-                    <Check size={12} strokeWidth={3.5} className={completedDrillIndices.includes(safeActiveIndex) ? 'text-emerald-400' : 'text-slate-400'} />
-                    <span>{completedDrillIndices.includes(safeActiveIndex) ? '✓ EXERCICI COMPLETAT' : 'MARCAR COMPLETAT'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const orig = drills.find(d => d.id === activeDrill.drillId) || activeDrill as any;
-                      if (onPreviewDrill && orig) onPreviewDrill(orig);
-                    }}
-                    title="Veure el manual tàctic tipus llibre"
-                    className="px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-400 hover:text-orange-300 bg-slate-950/60 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 transition cursor-pointer flex items-center gap-1"
-                  >
-                    <BookOpen size={11} className="text-slate-400" />
-                    <span>Ver manual</span>
-                  </button>
-                </div>
+                {orig?.isOver15 && (
+                  <span className="text-rose-400 bg-rose-950/80 border border-rose-500/40 text-[8.5px] font-black px-1.5 py-0.5 rounded font-mono uppercase shrink-0">
+                    +15
+                  </span>
+                )}
               </div>
 
-              <button
-                id="btn-swipe-next"
-                onClick={nextDrill}
-                disabled={safeActiveIndex === drillsInSession.length - 1}
-                className="py-2.5 px-2.5 xs:px-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white disabled:opacity-20 cursor-pointer active:scale-95 transition flex items-center justify-center gap-1 shrink-0 border border-orange-500 shadow-xs"
-                title="Passar al següent pas"
-              >
-                <span className="text-[10px] font-black uppercase tracking-wider">Següent</span>
-                <ChevronRight size={18} strokeWidth={3} />
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => toggleDrillCompleted(safeActiveIndex)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 active:scale-95 ${
+                    completedDrillIndices.includes(safeActiveIndex)
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                  title="Marcar exercici com a completat"
+                >
+                  <Check size={12} strokeWidth={3} className={completedDrillIndices.includes(safeActiveIndex) ? 'text-emerald-400' : 'text-slate-400'} />
+                  <span className="hidden xs:inline">{completedDrillIndices.includes(safeActiveIndex) ? 'Fet' : 'Completar'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const origDrill = drills.find(d => d.id === activeDrill.drillId) || activeDrill as any;
+                    if (onPreviewDrill && origDrill) onPreviewDrill(origDrill);
+                  }}
+                  title="Veure manual complet"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-orange-300 bg-slate-800/80 border border-slate-700 transition cursor-pointer flex items-center justify-center active:scale-95"
+                >
+                  <BookOpen size={12} />
+                </button>
+              </div>
             </div>
           );
         })()}
 
-        {/* 1. CUSTOM NOTES SPECIFIC FOR THE ACTIVE TRAINING DAY */}
-        {activeDrill.notes && !isUltraLightMode && (
-          <div 
-            id="mobile-drill-quick-note" 
-            className={`transition-all duration-200 ${
-              isMotionMode 
-                ? 'bg-amber-500 text-slate-950 p-5 rounded-2xl border-2 border-amber-400 space-y-2 shadow-lg' 
-                : 'bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 px-4 py-3 rounded-2xl text-xs space-y-1'
-            }`}
-          >
-            <span className={`font-extrabold uppercase tracking-widest block flex items-center gap-1 ${
-              isMotionMode ? 'text-slate-950 text-xs font-black' : 'text-amber-400 text-[10px]'
-            }`}>
-              <Zap size={isMotionMode ? 14 : 11} className={`fill-amber-950 text-amber-950 ${isMotionMode ? 'animate-pulse' : 'animate-bounce'}`} />
-              Observació d'avui (Codi Pista):
-            </span>
-            <p className={`font-extrabold leading-snug ${isMotionMode ? 'text-lg text-slate-900' : 'text-xs'}`}>{activeDrill.notes}</p>
-          </div>
-        )}
-
-        {/* 2. DRILL DETAILS & EXERCISE DESCRIPTION (ORDERED BEFORE GRAFISME) */}
-        <div className="space-y-4">
-          
-          {/* Direct Instructions list (Descripció de l'Exercici - ALWAYS SHOWN & PROMINENT BEFORE GRAFISME) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
-            <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
+        {/* 1. EXERCISE DESCRIPTION - Placed directly first so it is immediately visible */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
               <Clipboard size={12} className="text-orange-400" />
               Descripció de l'Exercici
             </h4>
-            <p className={`leading-relaxed font-sans transition-all duration-200 whitespace-pre-line ${
-              isMotionMode ? 'text-lg text-white font-black px-1 py-1' : 'text-xs text-slate-200 font-medium'
-            }`}>
-              {activeDrill.description || 'Sense descripció.'}
-            </p>
+            {activeDrill.notes && !isUltraLightMode && (
+              <span className="text-[9px] font-bold text-amber-400 bg-amber-950/70 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono flex items-center gap-0.5">
+                <Zap size={9} className="text-amber-400 fill-amber-400" /> Nota activa
+              </span>
+            )}
           </div>
-
-          {/* Objectives Bullet points checklists (Hidden in Basic Mode) */}
-          {!isUltraLightMode && activeDrill.objectives && activeDrill.objectives.length > 0 && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3 shadow-xs">
-              <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
-                <Users size={12} className="text-sky-400" />
-                Punts de Focus (Nivell A)
-              </h4>
-              <ul className="space-y-3">
-                {activeDrill.objectives.map((obj, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-slate-100">
-                    <span className={`rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-bold flex items-center justify-center shrink-0 mt-0.5 ${
-                      isMotionMode ? 'w-6 h-6 text-xs' : 'w-5 h-5 text-[10px]'
-                    }`}>
-                      {i + 1}
-                    </span>
-                    <span className={`leading-relaxed transition-all duration-200 ${
-                      isMotionMode ? 'text-base text-sky-200 font-black' : 'text-xs text-slate-100 font-medium'
-                    }`}>{obj}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Setup Instructions (Hidden in Basic Mode) */}
-          {!isUltraLightMode && activeDrill.setupInstructions && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-2 shadow-xs">
-              <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
-                <NotebookText size={12} className="text-yellow-400" />
-                Normes o Restriccions de Pista
-              </h4>
-              <p className={`leading-relaxed font-sans italic transition-all duration-200 ${
-                isMotionMode ? 'text-base font-black text-yellow-300' : 'text-xs text-slate-300'
-              }`}>
-                "{activeDrill.setupInstructions}"
-              </p>
+          <p className={`leading-relaxed font-sans transition-all duration-200 whitespace-pre-line ${
+            isMotionMode ? 'text-base xs:text-lg text-white font-black' : 'text-xs text-slate-200 font-medium'
+          }`}>
+            {activeDrill.description || 'Sense descripció.'}
+          </p>
+          {activeDrill.notes && !isUltraLightMode && (
+            <div className="pt-1.5 border-t border-slate-800/80 flex items-start gap-1.5 text-amber-300">
+              <span className="text-[9.5px] font-bold uppercase tracking-wider text-amber-400 shrink-0 mt-0.5">Observació:</span>
+              <span className={`leading-snug ${isMotionMode ? 'text-sm font-bold text-amber-200' : 'text-xs text-amber-200/90'}`}>{activeDrill.notes}</span>
             </div>
           )}
         </div>
 
-        {/* 3. TACTICAL BOARD DISPLAY OR SPECIAL POSTER (GRAFISME - ORDERED AFTER DESCRIPTION) */}
+        {/* 2. TACTICAL BOARD DISPLAY OR SPECIAL POSTER (GRAFISME - ORDERED IMMEDIATELY AFTER DESCRIPTION) */}
         {activeDrill.isVirtual ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-inner min-h-64 flex flex-col justify-center items-center">
             {activeDrill.virtualType === 'hydration' ? (
@@ -1634,9 +1559,9 @@ export default function MobileCourtView({
             )}
           </div>
         ) : (
-          <div id="mobile-tactical-container" className="space-y-3 relative -mx-5 sm:mx-0">
+          <div id="mobile-tactical-container" className={`space-y-2 relative ${sessionTimerRunning ? '-mx-3.5 sm:mx-0' : '-mx-4 sm:mx-0'}`}>
             {/* Header label for Diagram */}
-            <div className="flex items-center justify-between px-5 sm:px-0">
+            <div className={`flex items-center justify-between ${sessionTimerRunning ? 'px-3.5 sm:px-0' : 'px-4 sm:px-0'}`}>
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <span>Esquema de l'Exercici (Grafisme)</span>
                 {activeBoardStates.length > 1 && (
@@ -1693,6 +1618,50 @@ export default function MobileCourtView({
               setIsFullscreenBoard={setIsFullscreenBoard}
               isUltraLightMode={isUltraLightMode}
             />
+          </div>
+        )}
+
+        {/* 3. SECONDARY DRILL DETAILS: FOCUS POINTS & COURT RULES (PLACED AFTER GRAFISME) */}
+        {((!isUltraLightMode && activeDrill.objectives && activeDrill.objectives.length > 0) || (!isUltraLightMode && activeDrill.setupInstructions)) && (
+          <div className="space-y-3 pt-1">
+            {/* Objectives Bullet points checklists */}
+            {activeDrill.objectives && activeDrill.objectives.length > 0 && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2.5 shadow-xs">
+                <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 border-b border-slate-800 pb-1.5 shrink-0">
+                  <Users size={12} className="text-sky-400" />
+                  Punts de Focus (Nivell A)
+                </h4>
+                <ul className="space-y-2">
+                  {activeDrill.objectives.map((obj, i) => (
+                    <li key={i} className="flex items-start gap-2 text-slate-100">
+                      <span className={`rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-bold flex items-center justify-center shrink-0 mt-0.5 ${
+                        isMotionMode ? 'w-5 h-5 text-[10px]' : 'w-4 h-4 text-[9px]'
+                      }`}>
+                        {i + 1}
+                      </span>
+                      <span className={`leading-relaxed transition-all duration-200 ${
+                        isMotionMode ? 'text-sm text-sky-200 font-black' : 'text-xs text-slate-200 font-medium'
+                      }`}>{obj}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Setup Instructions */}
+            {activeDrill.setupInstructions && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-1.5 shadow-xs">
+                <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
+                  <NotebookText size={12} className="text-yellow-400" />
+                  Normes o Restriccions de Pista
+                </h4>
+                <p className={`leading-relaxed font-sans italic transition-all duration-200 ${
+                  isMotionMode ? 'text-sm font-bold text-yellow-300' : 'text-xs text-slate-300'
+                }`}>
+                  "{activeDrill.setupInstructions}"
+                </p>
+              </div>
+            )}
           </div>
         )}
 
