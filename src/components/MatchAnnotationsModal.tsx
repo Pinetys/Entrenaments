@@ -28,9 +28,11 @@ interface MatchAnnotationsModalProps {
   isOpen: boolean;
   onClose: () => void;
   activePlan: WeeklyPlan;
-  initialDateIndex?: number;
-  onSaveAnnotation: (dateIndex: number, annotation: MatchAnnotation, targetTeam?: TeamType) => void;
-  onDeleteAnnotation: (dateIndex: number, targetTeam?: TeamType) => void;
+  initialDateIndex?: number | string;
+  initialDateStr?: string;
+  initialMatch?: MatchAnnotation | null;
+  onSaveAnnotation: (dateIndex: number | string, annotation: MatchAnnotation, targetTeam?: TeamType) => void;
+  onDeleteAnnotation: (dateIndex: number | string, targetTeam?: TeamType) => void;
   triggerToast?: (msg: string) => void;
   selectedTeam?: TeamType;
   onSelectTeam?: (team: TeamType) => void;
@@ -41,6 +43,9 @@ export default function MatchAnnotationsModal({
   isOpen,
   onClose,
   activePlan,
+  initialDateIndex,
+  initialDateStr,
+  initialMatch,
   onSaveAnnotation,
   onDeleteAnnotation,
   triggerToast,
@@ -57,7 +62,7 @@ export default function MatchAnnotationsModal({
   const [activeTab, setActiveTab] = useState<'stats' | 'matches' | 'form'>('stats');
 
   // Form State for Adding / Editing Match
-  const [editingDateIndex, setEditingDateIndex] = useState<number | null>(null);
+  const [editingDateIndex, setEditingDateIndex] = useState<number | string | null>(null);
   const [formOpponent, setFormOpponent] = useState<string>('');
   const [formDate, setFormDate] = useState<string>(() => new Date().toLocaleDateString('ca-ES'));
   const [formIsHome, setFormIsHome] = useState<boolean>(true);
@@ -121,7 +126,14 @@ export default function MatchAnnotationsModal({
     });
 
     // Sort descending by date or dateIndex
-    return list.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
+    return list.sort((a, b) => {
+      const aVal = typeof a.dateIndex === 'number' ? a.dateIndex : (a.matchDate || String(a.dateIndex));
+      const bVal = typeof b.dateIndex === 'number' ? b.dateIndex : (b.matchDate || String(b.dateIndex));
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return bVal - aVal;
+      }
+      return String(bVal).localeCompare(String(aVal));
+    });
   }, [allWeeklyPlans, activePlan, currentTeam]);
 
   // Aggregate Season Statistics ONLY for the currentTeam
@@ -328,6 +340,23 @@ export default function MatchAnnotationsModal({
     setActiveTab('form');
   };
 
+  // Synchronize when opened with initial date or match from calendar
+  React.useEffect(() => {
+    if (!isOpen) return;
+    if (initialMatch) {
+      handleEditMatch(initialMatch);
+    } else if (initialDateStr) {
+      resetForm();
+      setFormDate(initialDateStr);
+      if (initialDateIndex !== undefined && initialDateIndex !== null) {
+        setEditingDateIndex(initialDateIndex);
+      } else {
+        setEditingDateIndex(Date.now() % 100000);
+      }
+      setActiveTab('form');
+    }
+  }, [isOpen, initialMatch, initialDateStr, initialDateIndex]);
+
   // Save match cleanly with team tag
   const handleSaveMatch = () => {
     if (!formOpponent.trim()) {
@@ -372,7 +401,7 @@ export default function MatchAnnotationsModal({
   };
 
   // Delete match
-  const handleDelete = (dateIndex: number) => {
+  const handleDelete = (dateIndex: number | string) => {
     if (window.confirm('Segur que vols eliminar aquest partit?')) {
       onDeleteAnnotation(dateIndex, currentTeam);
       if (triggerToast) triggerToast('🗑️ Partit eliminat correctament.');

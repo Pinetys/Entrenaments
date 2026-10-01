@@ -25,7 +25,11 @@ import {
   User,
   NotebookPen,
   Users,
-  Save
+  Save,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+  Plus
 } from 'lucide-react';
 import coachPinetyLogo from './assets/images/coach_pinety_logo_1785329115241.jpg';
 import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player, TeamType } from './types';
@@ -72,6 +76,179 @@ export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr:
   dia9: { label: 'S9', dateStr: 'Dijous 24 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Presió a Tot Camp' },
   dia10: { label: 'S10', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
 };
+
+export interface SeasonMonthDef {
+  key: string; // e.g. "2026-09"
+  name: string; // "Setembre 2026"
+  shortName: string; // "Set '26"
+  monthName: string; // "Setembre"
+  year: number;
+  monthIndex: number; // 0..11
+  term: string; // e.g. "Pretemporada & 1r Trimestre"
+}
+
+export const SEASON_MONTHS: SeasonMonthDef[] = [
+  { key: '2026-09', name: 'Setembre 2026', shortName: "Set '26", monthName: 'Setembre', year: 2026, monthIndex: 8, term: 'Pretemporada & 1r Trimestre' },
+  { key: '2026-10', name: 'Octubre 2026', shortName: "Oct '26", monthName: 'Octubre', year: 2026, monthIndex: 9, term: 'Lliga Regular · 1r Trimestre' },
+  { key: '2026-11', name: 'Novembre 2026', shortName: "Nov '26", monthName: 'Novembre', year: 2026, monthIndex: 10, term: 'Lliga Regular · 1r Trimestre' },
+  { key: '2026-12', name: 'Desembre 2026', shortName: "Des '26", monthName: 'Desembre', year: 2026, monthIndex: 11, term: 'Aturada Nadal · 1r Trimestre' },
+  { key: '2027-01', name: 'Gener 2027', shortName: "Gen '27", monthName: 'Gener', year: 2027, monthIndex: 0, term: 'Retorn Lliga · 2n Trimestre' },
+  { key: '2027-02', name: 'Febrer 2027', shortName: "Feb '27", monthName: 'Febrer', year: 2027, monthIndex: 1, term: 'Lliga Regular · 2n Trimestre' },
+  { key: '2027-03', name: 'Març 2027', shortName: "Mar '27", monthName: 'Març', year: 2027, monthIndex: 2, term: 'Lliga Regular · 2n Trimestre' },
+  { key: '2027-04', name: 'Abril 2027', shortName: "Abr '27", monthName: 'Abril', year: 2027, monthIndex: 3, term: 'Recta Final · 3r Trimestre' },
+  { key: '2027-05', name: 'Maig 2027', shortName: "Mai '27", monthName: 'Maig', year: 2027, monthIndex: 4, term: 'Fases Finals & Play-offs' },
+  { key: '2027-06', name: 'Juny 2027', shortName: "Jun '27", monthName: 'Juny', year: 2027, monthIndex: 5, term: 'Cloenda Temporada' },
+];
+
+export const DEFAULT_SESSION_DATES: Record<string, string> = {
+  dia1: '2026-08-31',
+  dia2: '2026-09-02',
+  dia3: '2026-09-03',
+  dia4: '2026-09-08',
+  dia5: '2026-09-10',
+  dia6: '2026-09-15',
+  dia7: '2026-09-17',
+  dia8: '2026-09-22',
+  dia9: '2026-09-24',
+  dia10: '2026-09-29',
+};
+
+export const LEGACY_MATCH_INDEX_DATES: Record<string, string> = {
+  '0': '2026-08-31',
+  '1': '2026-09-01',
+  '2': '2026-09-02',
+  '3': '2026-09-03',
+  '4': '2026-09-04',
+  '5': '2026-09-05',
+  '6': '2026-09-06',
+  '7': '2026-09-07',
+  '8': '2026-09-08',
+  '9': '2026-09-09',
+  '10': '2026-09-10',
+  '11': '2026-09-11',
+  '12': '2026-09-12',
+  '13': '2026-09-13',
+  '14': '2026-09-14',
+  '15': '2026-09-15',
+  '16': '2026-09-16',
+  '17': '2026-09-17',
+  '18': '2026-09-18',
+  '19': '2026-09-19',
+  '20': '2026-09-20',
+  '21': '2026-09-21',
+  '22': '2026-09-22',
+  '23': '2026-09-23',
+  '24': '2026-09-24',
+  '25': '2026-09-25',
+  '26': '2026-09-26',
+  '27': '2026-09-27',
+  '28': '2026-09-28',
+  '29': '2026-09-29',
+  '30': '2026-09-30',
+  '31': '2026-10-01',
+  '32': '2026-10-02',
+  '33': '2026-10-03',
+  '34': '2026-10-04',
+};
+
+export interface MonthDayItem {
+  dayNumber: number;
+  dateStr: string;
+  isCurrentMonth: boolean;
+  year: number;
+  monthIndex: number;
+  dayOfWeekIndex: number;
+  displayLabel: string;
+}
+
+export function getMonthCalendarDays(year: number, monthIndex: number): MonthDayItem[] {
+  const firstDayOfMonth = new Date(year, monthIndex, 1);
+  const jsDay = firstDayOfMonth.getDay();
+  const firstDayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // 0=Mon .. 6=Sun
+  
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, monthIndex, 0).getDate();
+  
+  const days: MonthDayItem[] = [];
+  const monthShorts = ['Gen', 'Feb', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Des'];
+
+  // Leading days from previous month
+  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    const d = daysInPrevMonth - i;
+    const prevMonthIndex = monthIndex === 0 ? 11 : monthIndex - 1;
+    const prevYear = monthIndex === 0 ? year - 1 : year;
+    const dateStr = `${prevYear}-${String(prevMonthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dow = (firstDayOfWeek - 1 - i);
+    days.push({
+      dayNumber: d,
+      dateStr,
+      isCurrentMonth: false,
+      year: prevYear,
+      monthIndex: prevMonthIndex,
+      dayOfWeekIndex: dow,
+      displayLabel: `${d} ${monthShorts[prevMonthIndex]}`
+    });
+  }
+  
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const currentDow = (firstDayOfWeek + (d - 1)) % 7;
+    days.push({
+      dayNumber: d,
+      dateStr,
+      isCurrentMonth: true,
+      year,
+      monthIndex,
+      dayOfWeekIndex: currentDow,
+      displayLabel: d === 1 ? `1 ${monthShorts[monthIndex]}` : `${d}`
+    });
+  }
+  
+  // Trailing days to finish the last week (multiple of 7)
+  const remaining = (7 - (days.length % 7)) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    const nextMonthIndex = monthIndex === 11 ? 0 : monthIndex + 1;
+    const nextYear = monthIndex === 11 ? year + 1 : year;
+    const dateStr = `${nextYear}-${String(nextMonthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dow = days.length % 7;
+    days.push({
+      dayNumber: d,
+      dateStr,
+      isCurrentMonth: false,
+      year: nextYear,
+      monthIndex: nextMonthIndex,
+      dayOfWeekIndex: dow,
+      displayLabel: d === 1 ? `1 ${monthShorts[nextMonthIndex]}` : `${d}`
+    });
+  }
+  
+  return days;
+}
+
+export function formatDateToCa(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const d = new Date(year, month, day);
+    const dayNames = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
+    const monthNames = ['de Gener', 'de Febrer', 'de Març', 'd’Abril', 'de Maig', 'de Juny', 'de Juliol', 'd’Agost', 'de Setembre', 'd’Octubre', 'de Novembre', 'de Desembre'];
+    return `${dayNames[d.getDay()]} ${day} ${monthNames[month]}`;
+  }
+  return dateStr;
+}
+
+export function formatDateCaInput(dateStr: string): string {
+  if (!dateStr) return new Date().toLocaleDateString('ca-ES');
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
 
 export const DEFAULT_SESSIONS: Record<string, TrainingSession> = RECOVERED_SESSIONS;
 
@@ -520,9 +697,11 @@ export default function App() {
 
   // Match annotations state
   const [showMatchModal, setShowMatchModal] = useState<boolean>(false);
-  const [selectedMatchDateIndex, setSelectedMatchDateIndex] = useState<number>(5);
+  const [selectedMatchDateIndex, setSelectedMatchDateIndex] = useState<number | string>(5);
+  const [selectedMatchDateStr, setSelectedMatchDateStr] = useState<string | undefined>(undefined);
+  const [editingMatch, setEditingMatch] = useState<MatchAnnotation | null>(null);
 
-  const handleSaveMatchAnnotation = (dateIndex: number, annotation: MatchAnnotation, targetTeam?: TeamType) => {
+  const handleSaveMatchAnnotation = (dateIndex: number | string, annotation: MatchAnnotation, targetTeam?: TeamType) => {
     const effectiveTeam = targetTeam || annotation.team || selectedTeam;
     setWeeklyPlans(prevPlans => {
       // Find the specific plan belonging to this team
@@ -556,7 +735,7 @@ export default function App() {
     });
   };
 
-  const handleDeleteMatchAnnotation = (dateIndex: number, targetTeam?: TeamType) => {
+  const handleDeleteMatchAnnotation = (dateIndex: number | string, targetTeam?: TeamType) => {
     const effectiveTeam = targetTeam || selectedTeam;
     setWeeklyPlans(prevPlans => {
       let targetPlanId = selectedWeeklyPlanId;
@@ -787,7 +966,9 @@ export default function App() {
   
   // Mobile direct photo pairing code state
   const [mobilePairingCode, setMobilePairingCode] = useState<string | null>(null);
-  const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
+  const [isCalendarExpanded, setIsCalendarExpanded] = useState(true);
+  const [selectedSeasonMonthKey, setSelectedSeasonMonthKey] = useState<string>('2026-09');
+  const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'season'>('month');
 
   const latestStateRef = useRef<{
     drills: Drill[];
@@ -2270,7 +2451,7 @@ export default function App() {
         {activeView === 'planner' ? (
           <div className="space-y-6">
             
-            {/* UNIFIED CALENDARI DEL MICROCICLE & SESSIÓ ACTIVA CARD */}
+            {/* UNIFIED CALENDARI DE LA TEMPORADA & SESSIÓ ACTIVA CARD */}
             <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-xs space-y-3.5">
               
               {/* Header Row */}
@@ -2280,25 +2461,30 @@ export default function App() {
                     <Calendar size={18} />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900">
-                        Calendari del Microcicle & Sessió Activa
+                        Calendari de la Temporada & Sessió Activa
                       </h2>
-                      <span className="text-[9px] font-mono font-black text-orange-600 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded hidden sm:inline-block">
+                      <span className="text-[9px] font-mono font-black text-orange-600 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded">
                         FCBQ STANDARD
+                      </span>
+                      <span className="text-[9px] font-mono font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                        SETEMBRE 2026 - JUNY 2027 (10 MESOS)
                       </span>
                     </div>
                     <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">
-                      Gestió centralitzada de sessions d'entrenament i partits del microcicle
+                      Planificació integral de sessions d'entrenament i partits de tota la temporada
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
+                <div className="flex items-center gap-2 self-start lg:self-auto shrink-0 flex-wrap">
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedMatchDateIndex(5);
+                      setEditingMatch(null);
+                      setSelectedMatchDateStr(new Date().toLocaleDateString('ca-ES'));
+                      setSelectedMatchDateIndex(Date.now() % 100000);
                       setShowMatchModal(true);
                     }}
                     className="py-1.5 px-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold rounded-md text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-xs"
@@ -2313,7 +2499,7 @@ export default function App() {
                     onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
                     className="py-1.5 px-3 border border-slate-200 hover:bg-slate-50 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 transition cursor-pointer"
                   >
-                    <span>{isCalendarExpanded ? "▲ Amagar Matriu" : "▼ Mostrar Matriu"}</span>
+                    <span>{isCalendarExpanded ? "▲ Amagar Calendari" : "▼ Mostrar Calendari"}</span>
                   </button>
                 </div>
               </div>
@@ -2376,116 +2562,395 @@ export default function App() {
                 </div>
               </div>
 
-              {isCalendarExpanded && (
-                <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-200">
-                  <p className="text-[10px] text-slate-500 font-bold">Fes clic als dies d'entrenament (dilluns/dimecres/dimarts/dijous) o als caps de setmana per obrir les anotacions del partit:</p>
-                  <div className="grid grid-cols-7 gap-1 md:gap-1.5">
-                    {/* Header days */}
-                    {['Dil', 'Dim', 'Dmc', 'Dij', 'Div', 'Dis', 'Diu'].map(dayName => (
-                      <div key={dayName} className="text-center py-1 text-[8px] font-black uppercase tracking-widest text-slate-400 font-mono">
-                        {dayName}
-                      </div>
-                    ))}
+              {/* EXPANDED FULL SEASON CALENDAR (SEPTEMBER TO JUNE) */}
+              {isCalendarExpanded && (() => {
+                const currentSeasonMonth = SEASON_MONTHS.find(m => m.key === selectedSeasonMonthKey) || SEASON_MONTHS[0];
+                const currentMonthDays = getMonthCalendarDays(currentSeasonMonth.year, currentSeasonMonth.monthIndex);
+                const currentMonthIndexInSeason = SEASON_MONTHS.findIndex(m => m.key === currentSeasonMonth.key);
 
-                    {/* 35 calendar squares starting Monday 31st August 2026 */}
-                    {Array.from({ length: 35 }).map((_, i) => {
-                      const dayOfWeekIndex = i % 7; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
-                      const weekIndex = Math.floor(i / 7);
-                      const isWeekend = dayOfWeekIndex >= 5; // Saturday/Sunday
-
-                      let dayLabel = '';
-                      if (i === 0) dayLabel = '31 Ago';
-                      else if (i === 1) dayLabel = '1 Set';
-                      else if (i <= 30) dayLabel = `${i}`;
-                      else if (i === 31) dayLabel = '1 Oct';
-                      else dayLabel = `${i - 30}`;
-
-                      const SESSION_MAP: Record<number, { code: string; num: number }> = {
-                        0: { code: 'dia1', num: 1 },
-                        2: { code: 'dia2', num: 2 },
-                        3: { code: 'dia3', num: 3 },
-                        8: { code: 'dia4', num: 4 },
-                        10: { code: 'dia5', num: 5 },
-                        15: { code: 'dia6', num: 6 },
-                        17: { code: 'dia7', num: 7 },
-                        22: { code: 'dia8', num: 8 },
-                        24: { code: 'dia9', num: 9 },
-                        29: { code: 'dia10', num: 10 },
-                      };
-
-                      const sessionInfo = SESSION_MAP[i];
-                      const sessionCode = sessionInfo?.code || '';
-                      const sessionNum = sessionInfo?.num || 0;
-
-                      const matchItem = activePlan.matchAnnotations?.[i.toString()];
-                      const hasMatchData = Boolean(matchItem);
-
-                      let bgStyle = "bg-slate-50 text-slate-700 hover:bg-slate-100";
-                      let borderStyle = "border border-slate-200";
-                      let content = null;
-
-                      if (sessionCode) {
-                        const isActive = selectedSessionId === sessionCode;
-                        bgStyle = isActive 
-                          ? "bg-orange-500 text-white shadow-xs relative scale-[1.01] z-5" 
-                          : "bg-orange-50/70 text-slate-800 hover:bg-orange-100/95";
-                        borderStyle = isActive 
-                          ? "border border-orange-600 font-extrabold ring-2 ring-orange-200" 
-                          : "border border-dashed border-orange-300";
-                        content = (
-                          <div className="mt-0.5 flex flex-col items-center">
-                            <span className={`text-[7px] uppercase tracking-tight font-black truncate max-w-full px-1 py-0.5 rounded ${isActive ? 'bg-orange-750 text-white' : 'bg-orange-100 text-orange-850'}`}>
-                              🏀 S{sessionNum}
-                            </span>
-                            <span className="text-[6px] block font-mono mt-0.5 truncate max-w-full leading-none opacity-90">Set. {weekIndex + 1}</span>
-                          </div>
-                        );
-                      } else if (isWeekend) {
-                        bgStyle = hasMatchData
-                          ? "bg-amber-500 text-white shadow-xs font-bold scale-[1.01] hover:bg-amber-600"
-                          : "bg-amber-50/80 hover:bg-amber-100/95 text-amber-900";
-                        borderStyle = hasMatchData
-                          ? "border border-amber-600 ring-2 ring-amber-300 font-extrabold"
-                          : "border border-amber-300 border-dashed";
-                        content = (
-                          <div className="mt-0.5 flex flex-col items-center">
-                            <span className={`text-[7px] uppercase tracking-tight font-black truncate max-w-full px-1 py-0.5 rounded ${hasMatchData ? 'bg-amber-950 text-amber-100' : 'bg-amber-200/90 text-amber-950'}`}>
-                              {matchItem?.opponent ? `🏆 vs ${matchItem.opponent}` : '🏆 PARTIT'}
-                            </span>
-                            <span className="text-[6px] font-mono font-bold mt-0.5 block leading-none">
-                              {matchItem?.ourScore !== undefined && matchItem?.opponentScore !== undefined
-                                ? `${matchItem.ourScore}-${matchItem.opponentScore}`
-                                : hasMatchData ? '📝 Anotat' : '📝 Anotar'}
-                            </span>
-                          </div>
-                        );
-                      } else {
-                        content = (
-                          <span className="text-[6px] font-mono text-slate-400 block mt-1 opacity-50 leading-none">Lliure</span>
-                        );
+                // Helper to find session on a date
+                const findSessionForDate = (dateStr: string): TrainingSession | undefined => {
+                  for (const sess of Object.values(sessions) as (TrainingSession | undefined)[]) {
+                    if (sess?.scheduledTime && sess.scheduledTime.startsWith(dateStr)) {
+                      return sess;
+                    }
+                  }
+                  for (const [sessId, defDate] of Object.entries(DEFAULT_SESSION_DATES)) {
+                    if (defDate === dateStr) {
+                      const sess = (sessions as Record<string, TrainingSession | undefined>)[sessId];
+                      if (sess && (!sess.scheduledTime || sess.scheduledTime.startsWith(dateStr))) {
+                        return sess;
                       }
+                    }
+                  }
+                  return undefined;
+                };
 
-                      return (
-                        <div
-                          key={i}
+                // Helper to find match annotation on a date
+                const findMatchForDate = (dateStr: string): MatchAnnotation | undefined => {
+                  if (!activePlan?.matchAnnotations) return undefined;
+                  const annMap = activePlan.matchAnnotations as Record<string, MatchAnnotation | undefined>;
+                  if (annMap[dateStr]) {
+                    return annMap[dateStr];
+                  }
+                  for (const [key, ann] of Object.entries(annMap)) {
+                    if (!ann) continue;
+                    if (ann.matchDate && (ann.matchDate === dateStr || ann.matchDate === formatDateCaInput(dateStr))) {
+                      return ann;
+                    }
+                    if (LEGACY_MATCH_INDEX_DATES[key] === dateStr) {
+                      return ann;
+                    }
+                  }
+                  return undefined;
+                };
+
+                // Calculate summary counts for current month
+                const monthSessionCount = currentMonthDays.filter(d => d.isCurrentMonth && !!findSessionForDate(d.dateStr)).length;
+                const monthMatchCount = currentMonthDays.filter(d => d.isCurrentMonth && !!findMatchForDate(d.dateStr)).length;
+
+                return (
+                  <div className="pt-3 border-t border-slate-100 space-y-3.5 animate-in fade-in duration-200">
+                    
+                    {/* Season Month Tabs & View Switcher */}
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 bg-slate-100/70 p-2 rounded-lg border border-slate-200">
+                      
+                      {/* 10 Season Month Navigation Strip (Setembre a Juny) */}
+                      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                        <button
+                          type="button"
+                          disabled={currentMonthIndexInSeason === 0}
                           onClick={() => {
-                            if (sessionCode) {
-                              setSelectedSessionId(sessionCode);
-                            } else {
-                              setSelectedMatchDateIndex(i);
-                              setShowMatchModal(true);
+                            if (currentMonthIndexInSeason > 0) {
+                              setSelectedSeasonMonthKey(SEASON_MONTHS[currentMonthIndexInSeason - 1].key);
                             }
                           }}
-                          className={`p-1 min-h-[36px] sm:min-h-[40px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
+                          className={`p-1.5 rounded text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-200 transition ${
+                            currentMonthIndexInSeason === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+                          }`}
+                          title="Mes anterior"
                         >
-                          <span className="text-[8px] font-black font-mono self-start">{dayLabel}</span>
-                          {content}
+                          <ChevronLeft size={16} />
+                        </button>
+
+                        {SEASON_MONTHS.map((m) => {
+                          const isActive = m.key === selectedSeasonMonthKey;
+                          return (
+                            <button
+                              key={m.key}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSeasonMonthKey(m.key);
+                                setCalendarViewMode('month');
+                              }}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                                isActive
+                                  ? 'bg-orange-500 text-white font-black shadow-xs ring-1 ring-orange-600'
+                                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
+                              }`}
+                            >
+                              <span>{m.shortName}</span>
+                              <span className={`text-[8px] font-mono px-1 rounded ${isActive ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                {m.year === 2026 ? "'26" : "'27"}
+                              </span>
+                            </button>
+                          );
+                        })}
+
+                        <button
+                          type="button"
+                          disabled={currentMonthIndexInSeason === SEASON_MONTHS.length - 1}
+                          onClick={() => {
+                            if (currentMonthIndexInSeason < SEASON_MONTHS.length - 1) {
+                              setSelectedSeasonMonthKey(SEASON_MONTHS[currentMonthIndexInSeason + 1].key);
+                            }
+                          }}
+                          className={`p-1.5 rounded text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-200 transition ${
+                            currentMonthIndexInSeason === SEASON_MONTHS.length - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+                          }`}
+                          title="Mes següent"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+
+                      {/* View Mode Toggle: Vista Mensual vs Temporada Completa */}
+                      <div className="flex items-center gap-1 self-end md:self-auto shrink-0 bg-white p-0.5 rounded-md border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => setCalendarViewMode('month')}
+                          className={`px-2 py-1 rounded text-[10px] font-extrabold transition cursor-pointer flex items-center gap-1 ${
+                            calendarViewMode === 'month'
+                              ? 'bg-slate-900 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          <Calendar size={12} />
+                          <span>Vista Mensual</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCalendarViewMode('season')}
+                          className={`px-2 py-1 rounded text-[10px] font-extrabold transition cursor-pointer flex items-center gap-1 ${
+                            calendarViewMode === 'season'
+                              ? 'bg-slate-900 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          <CalendarDays size={12} />
+                          <span>Temporada Completa (Set - Jun)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {calendarViewMode === 'month' ? (
+                      /* MONTHLY CALENDAR DETAIL VIEW */
+                      <div className="space-y-2">
+                        {/* Month Subheader Banner */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                              🏀 {currentSeasonMonth.name}
+                            </span>
+                            <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">
+                              {currentSeasonMonth.term}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
+                            <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-700">
+                              {monthSessionCount} Sessions Programades
+                            </span>
+                            <span className="bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold text-amber-800">
+                              {monthMatchCount} Partits Anotats
+                            </span>
+                          </div>
                         </div>
-                      );
-                    })}
+
+                        <p className="text-[9.5px] text-slate-500 font-medium px-1">
+                          Fes clic a qualsevol sessió per seleccionar-la, als caps de setmana per anotar partit, o a un dia buit entre setmana per programar la sessió activa.
+                        </p>
+
+                        {/* Calendar 7-column header */}
+                        <div className="grid grid-cols-7 gap-1 md:gap-1.5">
+                          {['Dil (Entr)', 'Dim (Entr)', 'Dmc (Entr)', 'Dij (Entr)', 'Div', 'Dis (Partit)', 'Diu (Partit)'].map((dayHeader, idx) => (
+                            <div 
+                              key={dayHeader} 
+                              className={`text-center py-1 text-[8px] font-black uppercase tracking-wider font-mono rounded ${
+                                idx >= 5 ? 'text-amber-700 bg-amber-50/70 border border-amber-200/50' : 'text-slate-500 bg-slate-50'
+                              }`}
+                            >
+                              {dayHeader}
+                            </div>
+                          ))}
+
+                          {/* Month Day Cells */}
+                          {currentMonthDays.map((day, i) => {
+                            const isWeekend = day.dayOfWeekIndex >= 5;
+                            const session = findSessionForDate(day.dateStr);
+                            const matchItem = findMatchForDate(day.dateStr);
+                            const hasMatchData = Boolean(matchItem);
+
+                            let bgStyle = day.isCurrentMonth ? "bg-slate-50 text-slate-700 hover:bg-slate-100" : "bg-slate-100/50 text-slate-400 opacity-60";
+                            let borderStyle = "border border-slate-200";
+                            let content = null;
+
+                            if (session) {
+                              const isSelected = selectedSessionId === session.id;
+                              const isCompleted = completions.some(c => c.planId === activePlan.id && c.sessionId === session.id);
+                              const sessionNum = session.id.replace('dia', '');
+                              
+                              bgStyle = isSelected 
+                                ? "bg-orange-500 text-white shadow-xs relative scale-[1.01] z-5" 
+                                : "bg-orange-50/90 text-slate-800 hover:bg-orange-100/95";
+                              borderStyle = isSelected 
+                                ? "border border-orange-600 font-extrabold ring-2 ring-orange-200" 
+                                : "border border-orange-300";
+                              
+                              content = (
+                                <div className="mt-0.5 flex flex-col items-center gap-0.5">
+                                  <div className="flex items-center gap-1">
+                                    <span className={`text-[7px] uppercase tracking-tight font-black px-1 py-0.5 rounded ${isSelected ? 'bg-orange-750 text-white' : 'bg-orange-200 text-orange-900'}`}>
+                                      🏀 S{sessionNum}
+                                    </span>
+                                    {isCompleted && (
+                                      <span className="text-[8px] font-bold text-emerald-600" title="Sessió completada">✓</span>
+                                    )}
+                                  </div>
+                                  <span className={`text-[6.5px] font-mono block truncate max-w-full leading-none opacity-90 ${isSelected ? 'text-white' : 'text-slate-600'}`}>
+                                    {session.scheduledTime ? session.scheduledTime.split('T')[1]?.slice(0, 5) : '19:30'}
+                                  </span>
+                                </div>
+                              );
+                            } else if (isWeekend) {
+                              bgStyle = hasMatchData
+                                ? "bg-amber-500 text-white shadow-xs font-bold scale-[1.01] hover:bg-amber-600"
+                                : "bg-amber-50/80 hover:bg-amber-100/95 text-amber-900";
+                              borderStyle = hasMatchData
+                                ? "border border-amber-600 ring-2 ring-amber-300 font-extrabold"
+                                : "border border-amber-300 border-dashed";
+                              content = (
+                                <div className="mt-0.5 flex flex-col items-center">
+                                  <span className={`text-[7px] uppercase tracking-tight font-black truncate max-w-full px-1 py-0.5 rounded ${hasMatchData ? 'bg-amber-950 text-amber-100' : 'bg-amber-200/90 text-amber-950'}`}>
+                                    {matchItem?.opponent ? `🏆 vs ${matchItem.opponent}` : '🏆 PARTIT'}
+                                  </span>
+                                  <span className="text-[6.5px] font-mono font-bold mt-0.5 block leading-none">
+                                    {matchItem?.ourScore !== undefined && matchItem?.opponentScore !== undefined
+                                      ? `${matchItem.ourScore}-${matchItem.opponentScore}`
+                                      : hasMatchData ? '📝 Anotat' : '📝 Anotar'}
+                                  </span>
+                                </div>
+                              );
+                            } else {
+                              content = (
+                                <div className="mt-0.5 flex flex-col items-center">
+                                  <span className="text-[6.5px] font-mono text-slate-400 group-hover:text-orange-600 leading-none">
+                                    Lliure
+                                  </span>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={day.dateStr + '-' + i}
+                                onClick={() => {
+                                  if (session) {
+                                    setSelectedSessionId(session.id);
+                                    triggerToast(`🏀 Sessió ${session.id.toUpperCase()} seleccionada!`);
+                                  } else if (matchItem) {
+                                    setEditingMatch(matchItem);
+                                    setSelectedMatchDateStr(day.dateStr);
+                                    setSelectedMatchDateIndex(matchItem.dateIndex);
+                                    setShowMatchModal(true);
+                                  } else if (isWeekend) {
+                                    setEditingMatch(null);
+                                    setSelectedMatchDateStr(formatDateCaInput(day.dateStr));
+                                    setSelectedMatchDateIndex(day.dateStr);
+                                    setShowMatchModal(true);
+                                  } else {
+                                    // Weekday with no session: quick assign active session here
+                                    const activeTarget = sessions[selectedSessionId] || activeSession;
+                                    handleUpdateSession({
+                                      ...activeTarget,
+                                      scheduledTime: `${day.dateStr}T19:30`
+                                    });
+                                    triggerToast(`🏀 Sessió S${activeTarget.id.replace('dia','')} programada pel ${formatDateToCa(day.dateStr)} a les 19:30!`);
+                                  }
+                                }}
+                                className={`group p-1 min-h-[42px] sm:min-h-[48px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
+                                title={
+                                  session 
+                                    ? `Sessió ${session.id.toUpperCase()}: ${session.name}`
+                                    : matchItem 
+                                      ? `Partit: vs ${matchItem.opponent}`
+                                      : isWeekend 
+                                        ? `Cap de setmana: Clic per anotar partit (${formatDateToCa(day.dateStr)})`
+                                        : `Dia d'entrenament lliure: Clic per programar Sessió ${selectedSessionId.toUpperCase()} (${formatDateToCa(day.dateStr)})`
+                                }
+                              >
+                                <span className={`text-[8px] font-black font-mono self-start ${day.isCurrentMonth ? '' : 'opacity-60'}`}>
+                                  {day.displayLabel}
+                                </span>
+                                {content}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      /* FULL SEASON 10-MONTH GRID OVERVIEW (SETEMBRE A JUNY) */
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
+                            <CalendarDays size={14} className="text-orange-500" />
+                            <span>Visió Global de la Temporada 2026 - 2027 (Setembre - Juny)</span>
+                          </h3>
+                          <span className="text-[10px] font-mono text-slate-500">
+                            10 mesos oficials de competició FCBQ
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                          {SEASON_MONTHS.map((m) => {
+                            const monthDays = getMonthCalendarDays(m.year, m.monthIndex);
+                            const sessCount = monthDays.filter(d => d.isCurrentMonth && !!findSessionForDate(d.dateStr)).length;
+                            const matchCount = monthDays.filter(d => d.isCurrentMonth && !!findMatchForDate(d.dateStr)).length;
+                            const isCurrentSelected = m.key === selectedSeasonMonthKey;
+
+                            return (
+                              <div
+                                key={m.key}
+                                onClick={() => {
+                                  setSelectedSeasonMonthKey(m.key);
+                                  setCalendarViewMode('month');
+                                }}
+                                className={`p-2.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                                  isCurrentSelected
+                                    ? 'bg-orange-50/70 border-orange-400 ring-2 ring-orange-200 shadow-xs'
+                                    : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-orange-300'
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-1 border-b border-slate-100 pb-1.5">
+                                  <div>
+                                    <div className="text-xs font-black text-slate-900 leading-tight">
+                                      {m.name}
+                                    </div>
+                                    <div className="text-[8px] font-mono text-slate-500 truncate mt-0.5">
+                                      {m.term}
+                                    </div>
+                                  </div>
+                                  <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded font-black ${
+                                    isCurrentSelected ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {m.shortName}
+                                  </span>
+                                </div>
+
+                                {/* Mini Day Grid */}
+                                <div className="grid grid-cols-7 gap-0.5">
+                                  {monthDays.filter(d => d.isCurrentMonth).map((d) => {
+                                    const hasSess = !!findSessionForDate(d.dateStr);
+                                    const hasMatch = !!findMatchForDate(d.dateStr);
+                                    const isWk = d.dayOfWeekIndex >= 5;
+
+                                    let miniBg = "bg-slate-100 text-slate-600";
+                                    if (hasSess) miniBg = "bg-orange-500 text-white font-bold";
+                                    else if (hasMatch) miniBg = "bg-amber-500 text-white font-bold";
+                                    else if (isWk) miniBg = "bg-amber-50 text-amber-800";
+
+                                    return (
+                                      <div
+                                        key={d.dateStr}
+                                        className={`h-4 text-[7px] font-mono flex items-center justify-center rounded-2xs ${miniBg}`}
+                                        title={`${d.dateStr}${hasSess ? ' • Sessió' : ''}${hasMatch ? ' • Partit' : ''}`}
+                                      >
+                                        {d.dayNumber}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[8.5px] font-mono">
+                                  <span className="text-orange-700 font-bold">
+                                    🏀 {sessCount} sess.
+                                  </span>
+                                  <span className="text-amber-800 font-bold">
+                                    🏆 {matchCount} part.
+                                  </span>
+                                  <span className="text-slate-400 group-hover:text-slate-700 font-medium">
+                                    Veure →
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <SessionPlanner
@@ -2875,12 +3340,18 @@ export default function App() {
       {showMatchModal && (
         <MatchAnnotationsModal
           isOpen={showMatchModal}
-          onClose={() => setShowMatchModal(false)}
+          onClose={() => {
+            setShowMatchModal(false);
+            setEditingMatch(null);
+            setSelectedMatchDateStr(undefined);
+          }}
           activePlan={activePlan}
           allWeeklyPlans={weeklyPlans}
           selectedTeam={selectedTeam}
           onSelectTeam={handleSelectTeam}
           initialDateIndex={selectedMatchDateIndex}
+          initialDateStr={selectedMatchDateStr}
+          initialMatch={editingMatch}
           onSaveAnnotation={handleSaveMatchAnnotation}
           onDeleteAnnotation={handleDeleteMatchAnnotation}
           triggerToast={triggerToast}
