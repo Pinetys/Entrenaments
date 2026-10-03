@@ -29,7 +29,9 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
-  Plus
+  Plus,
+  Trash2,
+  Copy
 } from 'lucide-react';
 import coachPinetyLogo from './assets/images/coach_pinety_logo_1785329115241.jpg';
 import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player, TeamType } from './types';
@@ -43,6 +45,7 @@ import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import CoachProfileModal from './components/CoachProfileModal';
 import MatchAnnotationsModal from './components/MatchAnnotationsModal';
+import { DayPlanningModal } from './components/DayPlanningModal';
 import PlayerRosterModal, { DEFAULT_BAREMOS, BaremoItem } from './components/PlayerRosterModal';
 import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile, DEFAULT_SYNC_CODE } from './lib/firebase';
 import { 
@@ -517,11 +520,10 @@ export default function App() {
   // Wrap sessions derivation in React.useMemo to stabilize its reference completely.
   const sessions = React.useMemo<Record<string, TrainingSession>>(() => {
     const fallbackDict = selectedTeam === 'senior' ? RECOVERED_SENIOR_SESSIONS : DEFAULT_SESSIONS;
-    const fallbackPlan = activePlan || teamPlans[0] || {
-      dia1: fallbackDict.dia1,
-      dia2: fallbackDict.dia2
-    };
-    return {
+    const fallbackPlan = activePlan || teamPlans[0] || {};
+    
+    // Start with dia1..dia10
+    const result: Record<string, TrainingSession> = {
       dia1: fallbackPlan.dia1 || fallbackDict.dia1,
       dia2: fallbackPlan.dia2 || fallbackDict.dia2,
       dia3: fallbackPlan.dia3 || fallbackDict.dia3,
@@ -533,6 +535,26 @@ export default function App() {
       dia9: fallbackPlan.dia9 || fallbackDict.dia9,
       dia10: fallbackPlan.dia10 || fallbackDict.dia10,
     };
+
+    // Any sessions in fallbackPlan.sessions dictionary
+    if (fallbackPlan.sessions && typeof fallbackPlan.sessions === 'object') {
+      Object.entries(fallbackPlan.sessions).forEach(([id, s]) => {
+        if (s && typeof s === 'object' && 'drills' in (s as any)) {
+          result[id] = s as TrainingSession;
+        }
+      });
+    }
+
+    // Any top-level keys like dia11, dia12, sess-..., etc.
+    Object.entries(fallbackPlan).forEach(([k, v]) => {
+      if (k.startsWith('dia') || k.startsWith('sess-')) {
+        if (v && typeof v === 'object' && 'drills' in (v as any) && !result[k]) {
+          result[k] = v as TrainingSession;
+        }
+      }
+    });
+
+    return result;
   }, [activePlan, teamPlans, selectedTeam]);
 
   // Custom setSessions wrapper that writes modifications directly into the active slice of weeklyPlans
@@ -540,35 +562,25 @@ export default function App() {
     setWeeklyPlans(prevPlans => {
       const updated = prevPlans.map(plan => {
         if (plan.id === activePlan.id || plan.id === selectedWeeklyPlanId) {
-          const fallbackDict = plan.team === 'senior' ? RECOVERED_SENIOR_SESSIONS : DEFAULT_SESSIONS;
-          const currentFullSessions = {
-            dia1: plan.dia1 || fallbackDict.dia1,
-            dia2: plan.dia2 || fallbackDict.dia2,
-            dia3: plan.dia3 || fallbackDict.dia3,
-            dia4: plan.dia4 || fallbackDict.dia4,
-            dia5: plan.dia5 || fallbackDict.dia5,
-            dia6: plan.dia6 || fallbackDict.dia6,
-            dia7: plan.dia7 || fallbackDict.dia7,
-            dia8: plan.dia8 || fallbackDict.dia8,
-            dia9: plan.dia9 || fallbackDict.dia9,
-            dia10: plan.dia10 || fallbackDict.dia10,
-          };
+          const currentFullSessions = { ...sessions };
           const resolved = typeof newSessionsValOrFn === 'function' 
             ? newSessionsValOrFn(currentFullSessions) 
             : newSessionsValOrFn;
-          return {
+          
+          const nextPlan: any = {
             ...plan,
-            dia1: resolved.dia1,
-            dia2: resolved.dia2,
-            dia3: resolved.dia3,
-            dia4: resolved.dia4,
-            dia5: resolved.dia5,
-            dia6: resolved.dia6,
-            dia7: resolved.dia7,
-            dia8: resolved.dia8,
-            dia9: resolved.dia9,
-            dia10: resolved.dia10,
+            sessions: {
+              ...(plan.sessions || {}),
+              ...resolved
+            }
           };
+
+          // Also set top-level keys for backwards compatibility
+          Object.entries(resolved).forEach(([k, v]) => {
+            nextPlan[k] = v;
+          });
+
+          return nextPlan;
         }
         return plan;
       });
@@ -583,15 +595,15 @@ export default function App() {
           selectedTeam: selectedTeam,
           selectedWeeklyPlanId: cur.selectedWeeklyPlanId || selectedWeeklyPlanId || 'plan-default',
           selectedSessionId: cur.selectedSessionId || selectedSessionId || 'dia1',
-          completions: cur.completions || completions || [],
-          favoriteDrillIds: cur.favoriteDrillIds || favoriteDrillIds || [],
-          coachProfile: cur.coachProfile || coachProfile || DEFAULT_COACH_PROFILE,
-          players: cur.players || players || [],
-          sessionTemplates: cur.sessionTemplates || sessionTemplates || [],
-          baremosConfig: cur.baremosConfig || baremosConfig || DEFAULT_BAREMOS,
-          updatedAt: nowIso
+          completions: cur.completions || completions,
+          favoriteDrillIds: cur.favoriteDrillIds || favoriteDrillIds,
+          coachProfile: cur.coachProfile || coachProfile,
+          players: cur.players || players,
+          sessionTemplates: cur.sessionTemplates || sessionTemplates,
+          baremosConfig: cur.baremosConfig || baremosConfig
         };
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
+        const stateWithTimestamp = { ...normalized, updatedAt: nowIso };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateWithTimestamp));
       } catch (e) {}
 
       return updated;
@@ -701,6 +713,15 @@ export default function App() {
   const [selectedMatchDateStr, setSelectedMatchDateStr] = useState<string | undefined>(undefined);
   const [editingMatch, setEditingMatch] = useState<MatchAnnotation | null>(null);
 
+  // Plan workout modal state for clicking on calendar days
+  const [showPlanWorkoutModal, setShowPlanWorkoutModal] = useState<boolean>(false);
+  const [planWorkoutDate, setPlanWorkoutDate] = useState<string | null>(null);
+  const [planWorkoutTitle, setPlanWorkoutTitle] = useState<string>('');
+  const [planWorkoutTime, setPlanWorkoutTime] = useState<string>('19:30');
+  const [planWorkoutDuration, setPlanWorkoutDuration] = useState<number>(75);
+  const [planWorkoutTemplateId, setPlanWorkoutTemplateId] = useState<string>('');
+  const [planWorkoutCopySessionId, setPlanWorkoutCopySessionId] = useState<string>('');
+
   const handleSaveMatchAnnotation = (dateIndex: number | string, annotation: MatchAnnotation, targetTeam?: TeamType) => {
     const effectiveTeam = targetTeam || annotation.team || selectedTeam;
     setWeeklyPlans(prevPlans => {
@@ -761,6 +782,24 @@ export default function App() {
         return plan;
       });
     });
+  };
+
+  const findMatchForDate = (dateStr: string): MatchAnnotation | undefined => {
+    if (!activePlan?.matchAnnotations) return undefined;
+    const annMap = activePlan.matchAnnotations as Record<string, MatchAnnotation | undefined>;
+    if (annMap[dateStr]) {
+      return annMap[dateStr];
+    }
+    for (const [key, ann] of Object.entries(annMap)) {
+      if (!ann) continue;
+      if (ann.matchDate && (ann.matchDate === dateStr || ann.matchDate === formatDateCaInput(dateStr))) {
+        return ann;
+      }
+      if (LEGACY_MATCH_INDEX_DATES[key] === dateStr) {
+        return ann;
+      }
+    }
+    return undefined;
   };
 
   // Completions list with localStorage persistence
@@ -969,6 +1008,7 @@ export default function App() {
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(true);
   const [selectedSeasonMonthKey, setSelectedSeasonMonthKey] = useState<string>('2026-09');
   const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'season'>('month');
+  const [planningDateStr, setPlanningDateStr] = useState<string | null>(null);
 
   const latestStateRef = useRef<{
     drills: Drill[];
@@ -2081,6 +2121,144 @@ export default function App() {
     triggerToast(`🔄 Sessió duplicada correctament a la ${targetName}!`);
   };
 
+  const handleDeleteSession = (sessionId: string) => {
+    setWeeklyPlans(prevPlans => {
+      const updated = prevPlans.map(plan => {
+        if (plan.id === activePlan.id || plan.id === selectedWeeklyPlanId) {
+          const nextPlan: any = { ...plan };
+          if (nextPlan.sessions) {
+            const nextDict = { ...nextPlan.sessions };
+            delete nextDict[sessionId];
+            nextPlan.sessions = nextDict;
+          }
+          delete nextPlan[sessionId];
+          // If dia1..dia10, clear scheduledTime and drills
+          if (sessionId.startsWith('dia') && parseInt(sessionId.replace('dia', ''), 10) <= 10) {
+            nextPlan[sessionId] = {
+              ...(nextPlan[sessionId] || {}),
+              scheduledTime: undefined,
+              drills: [],
+              totalDuration: 0
+            };
+          }
+          return nextPlan;
+        }
+        return plan;
+      });
+      return updated;
+    });
+
+    if (selectedSessionId === sessionId) {
+      setSelectedSessionId('dia1');
+    }
+    triggerToast('🗑️ Sessió eliminada de la planificació.');
+  };
+
+  const handleCreateSessionOnDate = (dateStr: string, customTitle?: string, templateDrills?: any[], time?: string): TrainingSession => {
+    const existingNums = Object.keys(sessions)
+      .map(k => {
+        const match = k.match(/dia(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(n => !isNaN(n));
+    const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+    const newId = `dia${nextNum}`;
+    const defaultTime = time || (selectedTeam === 'senior' ? '21:00' : '19:30');
+    const dateLabel = formatDateToCa(dateStr);
+    const title = customTitle || `Sessió ${nextNum}: ${dateLabel} (${selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})`;
+
+    const newSession: TrainingSession = {
+      id: newId,
+      name: title,
+      dayOfWeek: dateLabel.split(' ')[0] || 'Entrenament',
+      scheduledTime: `${dateStr}T${defaultTime}`,
+      totalDuration: templateDrills && templateDrills.length > 0
+        ? templateDrills.reduce((acc: number, d: any) => acc + (d.duration || 10), 0)
+        : 75,
+      drills: templateDrills && templateDrills.length > 0 ? templateDrills : [],
+      team: selectedTeam
+    };
+
+    setSessions(prev => ({
+      ...prev,
+      [newId]: newSession
+    }));
+    setSelectedSessionId(newId);
+    triggerToast(`🏀 Sessió S${nextNum} creada pel ${dateLabel}!`);
+    return newSession;
+  };
+
+  const handleUnscheduleSession = (sessionId: string) => {
+    const current = sessions[sessionId];
+    if (current) {
+      handleUpdateSession({
+        ...current,
+        scheduledTime: undefined
+      });
+      triggerToast(`📅 Sessió ${sessionId.toUpperCase()} desprogramada.`);
+    }
+  };
+
+  const handleAutoGenerateMonthSessions = (monthDef: SeasonMonthDef) => {
+    const monthDays = getMonthCalendarDays(monthDef.year, monthDef.monthIndex);
+    // Training day indices: 0=Dil, 1=Dim, 2=Dmc, 3=Dij, 4=Div, 5=Dis, 6=Diu
+    // Tant el Júnior A com el Sènior entrenen Dimarts (1) i Dijous (3)
+    const trainingDayIndices = [1, 3];
+    const defaultTime = selectedTeam === 'senior' ? '21:00' : '19:30';
+
+    const currentSessions = { ...sessions };
+    const existingNums = Object.keys(currentSessions)
+      .map(k => {
+        const match = k.match(/dia(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(n => !isNaN(n));
+    let nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+
+    let createdCount = 0;
+    const newSessionsMap: Record<string, TrainingSession> = {};
+
+    monthDays.filter(d => d.isCurrentMonth).forEach(d => {
+      if (trainingDayIndices.includes(d.dayOfWeekIndex)) {
+        // Check if there is already a session on this date
+        const hasSession = (Object.values(currentSessions) as (TrainingSession | undefined)[]).some(s => s?.scheduledTime && s.scheduledTime.startsWith(d.dateStr));
+        if (!hasSession) {
+          const newId = `dia${nextNum}`;
+          const dateLabel = formatDateToCa(d.dateStr);
+          const newSession: TrainingSession = {
+            id: newId,
+            name: `Sessió ${nextNum}: ${dateLabel} (${selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})`,
+            dayOfWeek: dateLabel.split(' ')[0] || 'Entrenament',
+            scheduledTime: `${d.dateStr}T${defaultTime}`,
+            totalDuration: 75,
+            drills: [],
+            team: selectedTeam
+          };
+          newSessionsMap[newId] = newSession;
+          currentSessions[newId] = newSession;
+          nextNum++;
+          createdCount++;
+        }
+      }
+    });
+
+    if (createdCount === 0) {
+      triggerToast(`ℹ️ Ja estan totes les sessions programades per a ${monthDef.name}.`);
+      return;
+    }
+
+    setSessions(prev => ({
+      ...prev,
+      ...newSessionsMap
+    }));
+
+    const firstCreatedId = Object.keys(newSessionsMap)[0];
+    if (firstCreatedId) {
+      setSelectedSessionId(firstCreatedId);
+    }
+    triggerToast(`🏀 S'han programat ${createdCount} entrenaments per a ${monthDef.name}!`);
+  };
+
   // Back up configuration package via local json download
   const handleExportJson = () => {
     try {
@@ -2516,49 +2694,90 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* S1..S10 Direct Switcher Buttons */}
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/80">
-                  {[
-                    { id: 'dia1', label: 'S1', title: 'Dil 31 Ago' },
-                    { id: 'dia2', label: 'S2', title: 'Dmc 2 Set' },
-                    { id: 'dia3', label: 'S3', title: 'Dij 3 Set' },
-                    { id: 'dia4', label: 'S4', title: 'Dim 8 Set' },
-                    { id: 'dia5', label: 'S5', title: 'Dij 10 Set' },
-                    { id: 'dia6', label: 'S6', title: 'Dim 15 Set' },
-                    { id: 'dia7', label: 'S7', title: 'Dij 17 Set' },
-                    { id: 'dia8', label: 'S8', title: 'Dim 22 Set' },
-                    { id: 'dia9', label: 'S9', title: 'Dij 24 Set' },
-                    { id: 'dia10', label: 'S10', title: 'Dim 29 Set' },
-                  ].map((item) => {
-                    const itemSession = sessions[item.id];
-                    const isScheduled = !!itemSession?.scheduledTime;
-                    const isSelected = selectedSessionId === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        id={`btn-session-select-${item.id}`}
-                        onClick={() => setSelectedSessionId(item.id)}
-                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all leading-tight shrink-0 text-center cursor-pointer ${
-                          isSelected
-                            ? 'bg-orange-500 text-white shadow-xs font-black ring-1 ring-orange-600'
-                            : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/90'
-                        }`}
-                      >
-                        <div className="flex items-center justify-center gap-1">
-                          <span>{item.label}</span>
-                          {isScheduled && (
-                            <span 
-                              className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-200' : 'bg-emerald-500'}`} 
-                              title="Sessió Planificada" 
-                            />
-                          )}
-                        </div>
-                        <div className={`text-[8px] font-mono tracking-tighter ${isSelected ? 'text-orange-100 font-medium' : 'text-slate-400'}`}>
-                          {item.title}
-                        </div>
-                      </button>
-                    );
-                  })}
+                {/* Dynamic Session Switcher Buttons Strip */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/80">
+                  {(Object.values(sessions) as TrainingSession[])
+                    .sort((a, b) => {
+                      const aNum = parseInt(a.id.replace('dia', ''), 10) || 0;
+                      const bNum = parseInt(b.id.replace('dia', ''), 10) || 0;
+                      return aNum - bNum;
+                    })
+                    .map((itemSession) => {
+                      const isScheduled = !!itemSession?.scheduledTime;
+                      const isSelected = selectedSessionId === itemSession.id;
+                      const sessNum = itemSession.id.replace('dia', '');
+                      
+                      let dateBadge = 'Pendent';
+                      if (itemSession.scheduledTime) {
+                        const dateOnly = itemSession.scheduledTime.split('T')[0];
+                        const parts = dateOnly.split('-');
+                        if (parts.length === 3) {
+                          const mNames = ['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov','Des'];
+                          dateBadge = `${parseInt(parts[2], 10)} ${mNames[parseInt(parts[1], 10) - 1]}`;
+                        }
+                      }
+
+                      return (
+                        <button
+                          key={itemSession.id}
+                          id={`btn-session-select-${itemSession.id}`}
+                          onClick={() => setSelectedSessionId(itemSession.id)}
+                          className={`px-2.5 py-1 rounded text-xs font-bold transition-all leading-tight shrink-0 text-center cursor-pointer ${
+                            isSelected
+                              ? 'bg-orange-500 text-white shadow-xs font-black ring-1 ring-orange-600'
+                              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/90'
+                          }`}
+                          title={`${itemSession.name} - ${isScheduled ? `Planificada pel ${itemSession.scheduledTime}` : 'Sense data programada'}`}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            <span>S{sessNum}</span>
+                            {isScheduled && (
+                              <span 
+                                className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-200' : 'bg-emerald-500'}`} 
+                                title="Sessió Planificada" 
+                              />
+                            )}
+                          </div>
+                          <div className={`text-[8px] font-mono tracking-tighter ${isSelected ? 'text-orange-100 font-medium' : isScheduled ? 'text-emerald-700 font-semibold' : 'text-slate-400'}`}>
+                            {dateBadge}
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                  {/* Add New Session Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const existingNums = Object.keys(sessions)
+                        .map(k => {
+                          const match = k.match(/dia(\d+)/);
+                          return match ? parseInt(match[1], 10) : 0;
+                        })
+                        .filter(n => !isNaN(n));
+                      const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+                      const newId = `dia${nextNum}`;
+                      const newSess: TrainingSession = {
+                        id: newId,
+                        name: `Sessió ${nextNum}: Nova Sessió (${selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})`,
+                        dayOfWeek: 'Entrenament',
+                        totalDuration: 75,
+                        drills: [],
+                        team: selectedTeam
+                      };
+                      setSessions(prev => ({
+                        ...prev,
+                        [newId]: newSess
+                      }));
+                      setSelectedSessionId(newId);
+                      triggerToast(`➕ Nova Sessió S${nextNum} afegida!`);
+                    }}
+                    className="px-2 py-1 bg-white hover:bg-orange-50 border border-dashed border-orange-300 hover:border-orange-500 text-orange-600 rounded text-xs font-black transition shrink-0 flex items-center gap-1 cursor-pointer"
+                    title="Afegir nova sessió al banc de sessions"
+                  >
+                    <Plus size={12} />
+                    <span>Nova</span>
+                  </button>
                 </div>
               </div>
 
@@ -2573,14 +2792,6 @@ export default function App() {
                   for (const sess of Object.values(sessions) as (TrainingSession | undefined)[]) {
                     if (sess?.scheduledTime && sess.scheduledTime.startsWith(dateStr)) {
                       return sess;
-                    }
-                  }
-                  for (const [sessId, defDate] of Object.entries(DEFAULT_SESSION_DATES)) {
-                    if (defDate === dateStr) {
-                      const sess = (sessions as Record<string, TrainingSession | undefined>)[sessId];
-                      if (sess && (!sess.scheduledTime || sess.scheduledTime.startsWith(dateStr))) {
-                        return sess;
-                      }
                     }
                   }
                   return undefined;
@@ -2708,13 +2919,22 @@ export default function App() {
                       <div className="space-y-2">
                         {/* Month Subheader Banner */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-black text-slate-900 uppercase tracking-tight">
                               🏀 {currentSeasonMonth.name}
                             </span>
                             <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">
                               {currentSeasonMonth.term}
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => handleAutoGenerateMonthSessions(currentSeasonMonth)}
+                              className="py-1 px-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-extrabold rounded-md text-[10px] uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-xs"
+                              title={`Generar automàticament sessions per a ${currentSeasonMonth.name} (Dimarts i Dijous ${selectedTeam === 'senior' ? 'a les 21:00' : 'a les 19:30'})`}
+                            >
+                              <Sparkles size={12} />
+                              <span>Auto-planificar Mes ⚡</span>
+                            </button>
                           </div>
                           <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
                             <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-700">
@@ -2727,19 +2947,31 @@ export default function App() {
                         </div>
 
                         <p className="text-[9.5px] text-slate-500 font-medium px-1">
-                          Fes clic a qualsevol sessió per seleccionar-la, als caps de setmana per anotar partit, o a un dia buit entre setmana per programar la sessió activa.
+                          Fes clic a qualsevol dia per planificar l'entrenament (crear sessió, assignar-ne una, canviar hora o editar) o per anotar un partit.
                         </p>
 
                         {/* Calendar 7-column header */}
                         <div className="grid grid-cols-7 gap-1 md:gap-1.5">
-                          {['Dil (Entr)', 'Dim (Entr)', 'Dmc (Entr)', 'Dij (Entr)', 'Div', 'Dis (Partit)', 'Diu (Partit)'].map((dayHeader, idx) => (
+                          {[
+                            { label: 'Dil', isTrain: false, isMatch: false },
+                            { label: 'Dim (Entr)', isTrain: true, isMatch: false },
+                            { label: 'Dmc', isTrain: false, isMatch: false },
+                            { label: 'Dij (Entr)', isTrain: true, isMatch: false },
+                            { label: 'Div', isTrain: false, isMatch: false },
+                            { label: 'Dis (Partit)', isTrain: false, isMatch: true },
+                            { label: 'Diu (Partit)', isTrain: false, isMatch: true },
+                          ].map((dayHeader) => (
                             <div 
-                              key={dayHeader} 
+                              key={dayHeader.label} 
                               className={`text-center py-1 text-[8px] font-black uppercase tracking-wider font-mono rounded ${
-                                idx >= 5 ? 'text-amber-700 bg-amber-50/70 border border-amber-200/50' : 'text-slate-500 bg-slate-50'
+                                dayHeader.isMatch 
+                                  ? 'text-amber-700 bg-amber-50/70 border border-amber-200/50' 
+                                  : dayHeader.isTrain
+                                    ? 'text-orange-700 bg-orange-50/80 border border-orange-200/60 font-black'
+                                    : 'text-slate-400 bg-slate-50'
                               }`}
                             >
-                              {dayHeader}
+                              {dayHeader.label}
                             </div>
                           ))}
 
@@ -2814,38 +3046,17 @@ export default function App() {
                               <div
                                 key={day.dateStr + '-' + i}
                                 onClick={() => {
-                                  if (session) {
-                                    setSelectedSessionId(session.id);
-                                    triggerToast(`🏀 Sessió ${session.id.toUpperCase()} seleccionada!`);
-                                  } else if (matchItem) {
-                                    setEditingMatch(matchItem);
-                                    setSelectedMatchDateStr(day.dateStr);
-                                    setSelectedMatchDateIndex(matchItem.dateIndex);
-                                    setShowMatchModal(true);
-                                  } else if (isWeekend) {
-                                    setEditingMatch(null);
-                                    setSelectedMatchDateStr(formatDateCaInput(day.dateStr));
-                                    setSelectedMatchDateIndex(day.dateStr);
-                                    setShowMatchModal(true);
-                                  } else {
-                                    // Weekday with no session: quick assign active session here
-                                    const activeTarget = sessions[selectedSessionId] || activeSession;
-                                    handleUpdateSession({
-                                      ...activeTarget,
-                                      scheduledTime: `${day.dateStr}T19:30`
-                                    });
-                                    triggerToast(`🏀 Sessió S${activeTarget.id.replace('dia','')} programada pel ${formatDateToCa(day.dateStr)} a les 19:30!`);
-                                  }
+                                  setPlanningDateStr(day.dateStr);
                                 }}
-                                className={`group p-1 min-h-[42px] sm:min-h-[48px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
+                                className={`group p-1 min-h-[44px] sm:min-h-[50px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
                                 title={
                                   session 
-                                    ? `Sessió ${session.id.toUpperCase()}: ${session.name}`
+                                    ? `Sessió ${session.id.toUpperCase()}: ${session.name} (Clic per gestionar o editar)`
                                     : matchItem 
-                                      ? `Partit: vs ${matchItem.opponent}`
+                                      ? `Partit: vs ${matchItem.opponent} (Clic per gestionar)`
                                       : isWeekend 
-                                        ? `Cap de setmana: Clic per anotar partit (${formatDateToCa(day.dateStr)})`
-                                        : `Dia d'entrenament lliure: Clic per programar Sessió ${selectedSessionId.toUpperCase()} (${formatDateToCa(day.dateStr)})`
+                                        ? `Cap de setmana: Clic per planificar entrenament o anotar partit (${formatDateToCa(day.dateStr)})`
+                                        : `Dia lliure: Clic per planificar entrenament o partit (${formatDateToCa(day.dateStr)})`
                                 }
                               >
                                 <span className={`text-[8px] font-black font-mono self-start ${day.isCurrentMonth ? '' : 'opacity-60'}`}>
@@ -2921,8 +3132,12 @@ export default function App() {
                                     return (
                                       <div
                                         key={d.dateStr}
-                                        className={`h-4 text-[7px] font-mono flex items-center justify-center rounded-2xs ${miniBg}`}
-                                        title={`${d.dateStr}${hasSess ? ' • Sessió' : ''}${hasMatch ? ' • Partit' : ''}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPlanningDateStr(d.dateStr);
+                                        }}
+                                        className={`h-4 text-[7px] font-mono flex items-center justify-center rounded-2xs cursor-pointer hover:ring-1 hover:ring-orange-400 transition ${miniBg}`}
+                                        title={`${d.dateStr}${hasSess ? ' • Sessió' : ''}${hasMatch ? ' • Partit' : ''} (Clic per planificar)`}
                                       >
                                         {d.dayNumber}
                                       </div>
@@ -3354,6 +3569,38 @@ export default function App() {
           initialMatch={editingMatch}
           onSaveAnnotation={handleSaveMatchAnnotation}
           onDeleteAnnotation={handleDeleteMatchAnnotation}
+          triggerToast={triggerToast}
+        />
+      )}
+
+      {/* DAY PLANNING MODAL */}
+      {planningDateStr && (
+        <DayPlanningModal
+          isOpen={!!planningDateStr}
+          onClose={() => setPlanningDateStr(null)}
+          dateStr={planningDateStr}
+          sessions={sessions}
+          selectedSessionId={selectedSessionId}
+          selectedTeam={selectedTeam}
+          activePlan={activePlan}
+          matchAnnotation={findMatchForDate(planningDateStr)}
+          sessionTemplates={sessionTemplates}
+          drills={drills}
+          onSelectSession={(sessId) => {
+            setSelectedSessionId(sessId);
+          }}
+          onUpdateSession={handleUpdateSession}
+          onCreateSession={(date, title, templateDrills, time) => {
+            return handleCreateSessionOnDate(date, title, templateDrills, time);
+          }}
+          onUnscheduleSession={handleUnscheduleSession}
+          onDeleteSession={handleDeleteSession}
+          onOpenMatchModal={(dStr, existingMatch) => {
+            setEditingMatch(existingMatch || null);
+            setSelectedMatchDateStr(dStr);
+            setSelectedMatchDateIndex(existingMatch?.dateIndex || dStr);
+            setShowMatchModal(true);
+          }}
           triggerToast={triggerToast}
         />
       )}

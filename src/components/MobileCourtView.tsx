@@ -1058,18 +1058,32 @@ export default function MobileCourtView({
           </div>
           
           <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-800">
-            {[
-              { id: 'dia1', label: 'S1', defaultTitle: 'Dil 31 Ago' },
-              { id: 'dia2', label: 'S2', defaultTitle: 'Dmc 2 Set' },
-              { id: 'dia3', label: 'S3', defaultTitle: 'Dij 3 Set' },
-              { id: 'dia4', label: 'S4', defaultTitle: 'Dim 8 Set' },
-              { id: 'dia5', label: 'S5', defaultTitle: 'Dij 10 Set' },
-              { id: 'dia6', label: 'S6', defaultTitle: 'Dim 15 Set' },
-              { id: 'dia7', label: 'S7', defaultTitle: 'Dij 17 Set' },
-              { id: 'dia8', label: 'S8', defaultTitle: 'Dim 22 Set' },
-              { id: 'dia9', label: 'S9', defaultTitle: 'Dij 24 Set' },
-              { id: 'dia10', label: 'S10', defaultTitle: 'Dim 29 Set' },
-            ].map(s => {
+            {(allSessions
+              ? Object.values(allSessions)
+                  .sort((a, b) => {
+                    const numA = parseInt(a.id.replace('dia', ''), 10) || 0;
+                    const numB = parseInt(b.id.replace('dia', ''), 10) || 0;
+                    return numA - numB;
+                  })
+                  .map(s => {
+                    const num = s.id.replace('dia', '');
+                    const label = `S${num}`;
+                    const timePart = s.scheduledTime ? s.scheduledTime.split('T')[0].slice(5) : '';
+                    return { id: s.id, label, defaultTitle: timePart || `S${num}` };
+                  })
+              : [
+                  { id: 'dia1', label: 'S1', defaultTitle: 'Dil 31 Ago' },
+                  { id: 'dia2', label: 'S2', defaultTitle: 'Dmc 2 Set' },
+                  { id: 'dia3', label: 'S3', defaultTitle: 'Dij 3 Set' },
+                  { id: 'dia4', label: 'S4', defaultTitle: 'Dim 8 Set' },
+                  { id: 'dia5', label: 'S5', defaultTitle: 'Dij 10 Set' },
+                  { id: 'dia6', label: 'S6', defaultTitle: 'Dim 15 Set' },
+                  { id: 'dia7', label: 'S7', defaultTitle: 'Dij 17 Set' },
+                  { id: 'dia8', label: 'S8', defaultTitle: 'Dim 22 Set' },
+                  { id: 'dia9', label: 'S9', defaultTitle: 'Dij 24 Set' },
+                  { id: 'dia10', label: 'S10', defaultTitle: 'Dim 29 Set' },
+                ]
+            ).map(s => {
               const currentSess = allSessions[s.id];
               const drillCount = currentSess?.drills?.length || 0;
               const isSelected = (selectedSessionId || session.id) === s.id;

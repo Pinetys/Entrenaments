@@ -581,18 +581,24 @@ export default function SessionPlanner({
                       </button>
                     </div>
                     <div className="space-y-1 max-h-48 overflow-y-auto no-scrollbar">
-                      {[
-                        { id: 'dia1', num: 1 },
-                        { id: 'dia2', num: 2 },
-                        { id: 'dia3', num: 3 },
-                        { id: 'dia4', num: 4 },
-                        { id: 'dia5', num: 5 },
-                        { id: 'dia6', num: 6 },
-                        { id: 'dia7', num: 7 },
-                        { id: 'dia8', num: 8 },
-                        { id: 'dia9', num: 9 },
-                        { id: 'dia10', num: 10 }
-                      ]
+                      {(allSessions
+                        ? Object.keys(allSessions).map(k => {
+                            const match = k.match(/dia(\d+)/);
+                            return { id: k, num: match ? parseInt(match[1], 10) : k };
+                          })
+                        : [
+                            { id: 'dia1', num: 1 },
+                            { id: 'dia2', num: 2 },
+                            { id: 'dia3', num: 3 },
+                            { id: 'dia4', num: 4 },
+                            { id: 'dia5', num: 5 },
+                            { id: 'dia6', num: 6 },
+                            { id: 'dia7', num: 7 },
+                            { id: 'dia8', num: 8 },
+                            { id: 'dia9', num: 9 },
+                            { id: 'dia10', num: 10 }
+                          ]
+                      )
                       .filter(s => s.id !== session.id)
                       .map(target => {
                         const destSession = allSessions ? allSessions[target.id] : (activePlan[target.id as keyof WeeklyPlan] as TrainingSession | undefined);

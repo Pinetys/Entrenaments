@@ -114,6 +114,8 @@ export interface WeeklyPlan {
   dia11?: TrainingSession;
   dia12?: TrainingSession;
   matchAnnotations?: Record<string, MatchAnnotation>; // key is dateIndex string (e.g. "5", "6", etc.)
+  sessions?: Record<string, TrainingSession>; // Full season training sessions
+  [key: string]: any;
 }
 
 export interface Player {
