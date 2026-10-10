@@ -247,6 +247,24 @@ export default function MobileCourtView({
   const [wakeLockSupported, setWakeLockSupported] = useState<boolean>(true);
   const wakeLockSentinelRef = useRef<any>(null);
 
+  // Screen touch lock state to prevent accidental touches in pocket / on court
+  const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
+  const [autoLockOnTimer, setAutoLockOnTimer] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('basket_planner_auto_lock_timer');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  // Automatically lock screen when active exercise timer or 75' timer is running in court mode
+  useEffect(() => {
+    if ((timerRunning || sessionTimerRunning) && autoLockOnTimer) {
+      setIsScreenLocked(true);
+    }
+  }, [timerRunning, sessionTimerRunning, autoLockOnTimer]);
+
   // Background screen lock resilient timestamp references
   const targetEndTimeRef = useRef<number | null>(null);
   const sessionTargetEndTimeRef = useRef<number | null>(null);
@@ -778,7 +796,7 @@ export default function MobileCourtView({
     }
     setWakeLockSupported(true);
 
-    const shouldKeepAwake = keepScreenAwake && (sessionTimerRunning || timerRunning);
+    const shouldKeepAwake = keepScreenAwake && (sessionTimerRunning || timerRunning || isScreenLocked);
 
     const requestWakeLock = async () => {
       try {
@@ -827,7 +845,7 @@ export default function MobileCourtView({
         wakeLockSentinelRef.current = null;
       }
     };
-  }, [keepScreenAwake, sessionTimerRunning, timerRunning]);
+  }, [keepScreenAwake, sessionTimerRunning, timerRunning, isScreenLocked]);
 
   if (drillsInSession.length === 0) {
     return (
@@ -976,13 +994,56 @@ export default function MobileCourtView({
         </div>
       )}
 
+      {/* SCREEN LOCKED TOP BANNER (Shown when screen is locked in court mode) */}
+      {isScreenLocked && (
+        <div
+          id="screen-locked-bar"
+          className="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-b border-amber-500/40 px-3.5 py-2 flex items-center justify-between shrink-0 z-30 shadow-md backdrop-blur-md"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-amber-500/25 border border-amber-500/40 flex items-center justify-center text-amber-300 shadow-xs">
+              <Lock size={13} className="animate-pulse" />
+            </div>
+            <div>
+              <div className="text-[11px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5 leading-tight">
+                <span>Pantalla Bloquejada (Mode Pista)</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+              </div>
+              <p className="text-[9px] text-amber-200/80 font-medium">
+                Tocs protegits mentre el temporitzador està actiu
+              </p>
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            id="btn-unlock-screen-header"
+            onClick={() => {
+              setIsScreenLocked(false);
+              triggerLocalToast('🔓 Pantalla desbloquejada');
+            }}
+            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition select-none"
+            title="Desbloquejar la pantalla per interactuar amb els botons"
+          >
+            <Unlock size={14} strokeWidth={2.5} />
+            <span>Desbloquejar</span>
+          </button>
+        </div>
+      )}
+
       {/* HEADER BAR FOR MOBILE (Hidden during 75' Session) */}
       {!sessionTimerRunning && (
         <div id="mobile-header" className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10 shrink-0 gap-2">
           {!isSharedMobile ? (
             <button
               id="btn-mobile-back"
-              onClick={onBackToPlanner}
+              onClick={() => {
+                if (isScreenLocked) {
+                  triggerLocalToast('🔒 Pantalla bloquejada. Desbloqueja primer per sortir de pista.');
+                  return;
+                }
+                onBackToPlanner();
+              }}
               className="text-xs px-2 py-1.5 font-bold rounded-lg bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer shrink-0"
             >
               <ChevronLeft size={16} /> Planificador
@@ -1072,16 +1133,16 @@ export default function MobileCourtView({
                     return { id: s.id, label, defaultTitle: timePart || `S${num}` };
                   })
               : [
-                  { id: 'dia1', label: 'S1', defaultTitle: 'Dil 31 Ago' },
-                  { id: 'dia2', label: 'S2', defaultTitle: 'Dmc 2 Set' },
-                  { id: 'dia3', label: 'S3', defaultTitle: 'Dij 3 Set' },
-                  { id: 'dia4', label: 'S4', defaultTitle: 'Dim 8 Set' },
-                  { id: 'dia5', label: 'S5', defaultTitle: 'Dij 10 Set' },
-                  { id: 'dia6', label: 'S6', defaultTitle: 'Dim 15 Set' },
-                  { id: 'dia7', label: 'S7', defaultTitle: 'Dij 17 Set' },
-                  { id: 'dia8', label: 'S8', defaultTitle: 'Dim 22 Set' },
-                  { id: 'dia9', label: 'S9', defaultTitle: 'Dij 24 Set' },
-                  { id: 'dia10', label: 'S10', defaultTitle: 'Dim 29 Set' },
+                  { id: 'dia1', label: 'S1', defaultTitle: 'Dim 1 Set' },
+                  { id: 'dia2', label: 'S2', defaultTitle: 'Dij 3 Set' },
+                  { id: 'dia3', label: 'S3', defaultTitle: 'Dim 8 Set' },
+                  { id: 'dia4', label: 'S4', defaultTitle: 'Dij 10 Set' },
+                  { id: 'dia5', label: 'S5', defaultTitle: 'Dim 15 Set' },
+                  { id: 'dia6', label: 'S6', defaultTitle: 'Dij 17 Set' },
+                  { id: 'dia7', label: 'S7', defaultTitle: 'Dim 22 Set' },
+                  { id: 'dia8', label: 'S8', defaultTitle: 'Dij 24 Set' },
+                  { id: 'dia9', label: 'S9', defaultTitle: 'Dim 29 Set' },
+                  { id: 'dia10', label: 'S10', defaultTitle: 'Dij 1 Oct' },
                 ]
             ).map(s => {
               const currentSess = allSessions[s.id];
@@ -1094,7 +1155,13 @@ export default function MobileCourtView({
                   key={s.id}
                   id={`btn-mobile-select-sess-${s.id}`}
                   type="button"
-                  onClick={() => onSelectSessionId?.(s.id)}
+                  onClick={() => {
+                    if (isScreenLocked) {
+                      triggerLocalToast('🔒 Pantalla bloquejada. Desbloqueja per canviar de sessió.');
+                      return;
+                    }
+                    onSelectSessionId?.(s.id);
+                  }}
                   className={`px-2.5 py-1.5 rounded-xl text-left shrink-0 transition-all flex flex-col justify-between min-w-[70px] cursor-pointer border ${
                     isSelected
                       ? 'bg-gradient-to-br from-orange-600 to-amber-700 text-white border-orange-400 shadow-md shadow-orange-900/40 ring-1 ring-orange-400/50'
@@ -1169,9 +1236,29 @@ export default function MobileCourtView({
           
           {/* CARD 1: ACTIVE EXERCISE COOLDOWN */}
           <div className="bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl flex flex-col justify-between relative overflow-hidden">
-            <span className={`text-[9px] font-bold uppercase tracking-wider block text-left ${isMotionMode ? 'text-green-400 font-black' : 'text-slate-400'}`}>
-              Crono Exercici Actiu
-            </span>
+            <div className="flex items-center justify-between gap-1">
+              <span className={`text-[9px] font-bold uppercase tracking-wider block text-left ${isMotionMode ? 'text-green-400 font-black' : 'text-slate-400'}`}>
+                Crono Exercici Actiu
+              </span>
+              <button
+                type="button"
+                id="btn-toggle-screen-lock-card1"
+                onClick={() => {
+                  const next = !isScreenLocked;
+                  setIsScreenLocked(next);
+                  triggerLocalToast(next ? '🔒 Pantalla bloquejada contra tocs' : '🔓 Pantalla desbloquejada');
+                }}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition cursor-pointer shrink-0 ${
+                  isScreenLocked
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-xs'
+                    : 'bg-slate-900 text-slate-400 border-slate-750 hover:text-slate-300'
+                }`}
+                title={isScreenLocked ? "Desbloquejar pantalla" : "Bloquejar pantalla contra tocs accidentals a pista"}
+              >
+                {isScreenLocked ? <Lock size={8} className="text-amber-400" /> : <Unlock size={8} className="text-slate-400" />}
+                <span>{isScreenLocked ? 'Bloquejada' : 'Bloqueig'}</span>
+              </button>
+            </div>
             <div className="flex items-center justify-between mt-1">
               <span className={`font-extrabold font-mono tracking-tighter ${isMotionMode ? 'text-3xl' : 'text-2xl'} ${timerRunning ? 'text-green-400 animate-pulse' : 'text-slate-350'}`}>
                 {formatTime(timeLeft)}
@@ -1180,7 +1267,14 @@ export default function MobileCourtView({
                 <button
                   id="btn-toggle-timer"
                   type="button"
-                  onClick={() => setTimerRunning(!timerRunning)}
+                  onClick={() => {
+                    const nextRunning = !timerRunning;
+                    setTimerRunning(nextRunning);
+                    if (nextRunning && autoLockOnTimer) {
+                      setIsScreenLocked(true);
+                      triggerLocalToast('🔒 Temporitzador iniciat: Pantalla bloquejada');
+                    }
+                  }}
                   title={timerRunning ? "Pausar exercici" : "Iniciar exercici"}
                   className="p-2 rounded-full font-bold shadow transition active:scale-95 cursor-pointer flex items-center justify-center"
                   style={{ minWidth: '34px', minHeight: '34px', backgroundColor: timerRunning ? '#e11d48' : '#10b981', color: '#ffffff' }}
@@ -1191,11 +1285,19 @@ export default function MobileCourtView({
                   id="btn-reset-timer"
                   type="button"
                   onClick={() => {
+                    if (isScreenLocked) {
+                      triggerLocalToast('🔒 Pantalla bloquejada. Desbloqueja per reiniciar el crono.');
+                      return;
+                    }
                     setTimeLeft(activeDrill.duration * 60);
                     setTimerRunning(false);
                   }}
                   title="Reiniciar crono exercici"
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
+                  className={`p-2 rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center ${
+                    isScreenLocked 
+                      ? 'bg-slate-900 text-slate-600 border border-slate-800' 
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
+                  }`}
                   style={{ minWidth: '34px', minHeight: '34px' }}
                 >
                   <RotateCcw size={12} />
@@ -1244,7 +1346,7 @@ export default function MobileCourtView({
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                     </span>
-                    <span className="text-[7.5px] uppercase font-black">Sense Bloqueig</span>
+                    <span className="text-[7.5px] uppercase font-black">Sense Apagar</span>
                   </>
                 ) : keepScreenAwake ? (
                   <>
@@ -1270,6 +1372,10 @@ export default function MobileCourtView({
                   onClick={() => {
                     if (!sessionTimerRunning) {
                       handleStart75Session();
+                      if (autoLockOnTimer) {
+                        setIsScreenLocked(true);
+                        triggerLocalToast('🔒 Crono 75′ iniciat: Pantalla bloquejada');
+                      }
                     } else {
                       setSessionTimerRunning(false);
                     }
@@ -1284,11 +1390,19 @@ export default function MobileCourtView({
                   id="btn-reset-session-timer"
                   type="button"
                   onClick={() => {
+                    if (isScreenLocked) {
+                      triggerLocalToast('🔒 Pantalla bloquejada. Desbloqueja per reiniciar la sessió.');
+                      return;
+                    }
                     setSessionTimeLeft(75 * 60);
                     setSessionTimerRunning(false);
                   }}
                   title="Reiniciar a 75′ d'entrenament"
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center"
+                  className={`p-2 rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center ${
+                    isScreenLocked
+                      ? 'bg-slate-900 text-slate-600 border border-slate-800'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
+                  }`}
                   style={{ minWidth: '34px', minHeight: '34px' }}
                 >
                   <RotateCcw size={12} />
@@ -1309,6 +1423,33 @@ export default function MobileCourtView({
         <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-end gap-2 shrink-0 overflow-x-auto no-scrollbar">
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {/* Auto Lock Screen on Timer Toggle */}
+            <button
+              type="button"
+              id="btn-quick-toggle-autolock"
+              onClick={() => {
+                const nextVal = !autoLockOnTimer;
+                setAutoLockOnTimer(nextVal);
+                try {
+                  localStorage.setItem('basket_planner_auto_lock_timer', JSON.stringify(nextVal));
+                } catch (e) {}
+                triggerLocalToast(
+                  nextVal
+                    ? '🔒 Bloqueig automàtic de pantalla en temporitzador: ACTIVAT'
+                    : '🔓 Bloqueig automàtic de pantalla en temporitzador: DESACTIVAT'
+                );
+              }}
+              className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
+                autoLockOnTimer
+                  ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300'
+                  : 'bg-slate-800 border border-slate-700 text-slate-400'
+              }`}
+              title="Bloquejar automàticament la pantalla contra tocs quan s'inicia el temporitzador"
+            >
+              <Lock size={11} className={autoLockOnTimer ? "text-amber-400" : "text-slate-400"} />
+              <span>{autoLockOnTimer ? 'Auto-Bloqueig: Sí' : 'Auto-Bloqueig: No'}</span>
+            </button>
+
             <button
               type="button"
               id="btn-quick-toggle-screen-awake"
@@ -1331,10 +1472,10 @@ export default function MobileCourtView({
                     ? 'bg-slate-800 border border-slate-700 text-orange-400'
                     : 'bg-slate-900 border border-slate-800 text-slate-400'
               }`}
-              title="Mantenir pantalla encesa sense bloqueig automàtic durant l'entrenament a pista"
+              title="Mantenir pantalla encesa sense apagar durant l'entrenament a pista"
             >
               <Sun size={11} className={isWakeLockActive ? "text-emerald-400" : "text-slate-400"} />
-              <span>{isWakeLockActive ? 'Sense Bloqueig' : 'Anti-Bloqueig'}</span>
+              <span>{isWakeLockActive ? 'Sense Apagar' : 'Anti-Apagament'}</span>
             </button>
 
             <button
@@ -1839,43 +1980,73 @@ export default function MobileCourtView({
 
       {/* STICKY QUICK NAVIGATION BAR WITH FAST RETURN TO PREVIOUS STEP */}
       <div id="mobile-sticky-step-nav" className="sticky bottom-0 left-0 right-0 p-2.5 sm:p-3 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-between gap-2.5 shadow-2xl z-30">
-        <button
-          type="button"
-          id="btn-sticky-prev-drill"
-          onClick={prevDrill}
-          disabled={safeActiveIndex === 0}
-          className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:opacity-25 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border-2 border-slate-700 shadow-md"
-          title="Tornar al pas anterior ràpidament"
-        >
-          <ChevronLeft size={18} strokeWidth={3.5} className="text-orange-400" />
-          <span>Pas anterior</span>
-        </button>
+        {isScreenLocked ? (
+          <div className="flex-1 flex items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2">
+            <div className="flex items-center gap-2">
+              <Lock size={15} className="text-amber-400 animate-pulse" />
+              <div className="text-left">
+                <span className="text-xs font-black text-amber-300 uppercase tracking-wide block leading-tight">
+                  Pantalla Bloquejada
+                </span>
+                <span className="text-[9px] text-amber-200/70 font-medium">
+                  Tocs protegits durant l'exercici
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="btn-unlock-screen-bottom"
+              onClick={() => {
+                setIsScreenLocked(false);
+                triggerLocalToast('🔓 Pantalla desbloquejada');
+              }}
+              className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider rounded-lg shadow cursor-pointer transition flex items-center gap-1.5"
+            >
+              <Unlock size={14} strokeWidth={2.5} />
+              <span>Desbloquejar</span>
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              id="btn-sticky-prev-drill"
+              onClick={prevDrill}
+              disabled={safeActiveIndex === 0}
+              className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:opacity-25 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border-2 border-slate-700 shadow-md"
+              title="Tornar al pas anterior ràpidament"
+            >
+              <ChevronLeft size={18} strokeWidth={3.5} className="text-orange-400" />
+              <span>Pas anterior</span>
+            </button>
 
-        <button
-          type="button"
-          onClick={() => toggleDrillCompleted(safeActiveIndex)}
-          className={`py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border shrink-0 ${
-            completedDrillIndices.includes(safeActiveIndex)
-              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 hover:bg-emerald-500/30'
-              : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-          }`}
-          title="Marcar exercici com a completat"
-        >
-          <Check size={16} strokeWidth={3.5} className={completedDrillIndices.includes(safeActiveIndex) ? 'text-emerald-400' : 'text-slate-400'} />
-          <span className="hidden xs:inline">{completedDrillIndices.includes(safeActiveIndex) ? 'Fet' : 'Fet'}</span>
-        </button>
+            <button
+              type="button"
+              onClick={() => toggleDrillCompleted(safeActiveIndex)}
+              className={`py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border shrink-0 ${
+                completedDrillIndices.includes(safeActiveIndex)
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 hover:bg-emerald-500/30'
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
+              }`}
+              title="Marcar exercici com a completat"
+            >
+              <Check size={16} strokeWidth={3.5} className={completedDrillIndices.includes(safeActiveIndex) ? 'text-emerald-400' : 'text-slate-400'} />
+              <span className="hidden xs:inline">{completedDrillIndices.includes(safeActiveIndex) ? 'Fet' : 'Fet'}</span>
+            </button>
 
-        <button
-          type="button"
-          id="btn-sticky-next-drill"
-          onClick={nextDrill}
-          disabled={safeActiveIndex === drillsInSession.length - 1}
-          className="flex-1 py-2.5 px-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-25 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border border-orange-500 shadow-lg shadow-orange-600/30"
-          title="Passar al següent pas"
-        >
-          <span>{safeActiveIndex === drillsInSession.length - 1 ? 'Últim pas' : 'Següent pas'}</span>
-          <ChevronRight size={18} strokeWidth={3.5} />
-        </button>
+            <button
+              type="button"
+              id="btn-sticky-next-drill"
+              onClick={nextDrill}
+              disabled={safeActiveIndex === drillsInSession.length - 1}
+              className="flex-1 py-2.5 px-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-25 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border border-orange-500 shadow-lg shadow-orange-600/30"
+              title="Passar al següent pas"
+            >
+              <span>{safeActiveIndex === drillsInSession.length - 1 ? 'Últim pas' : 'Següent pas'}</span>
+              <ChevronRight size={18} strokeWidth={3.5} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* QUICK FOOTER DOTS TRACKER (Hidden in Motion-Pista Mode for clutter-free scrolling) */}
@@ -1898,7 +2069,13 @@ export default function MobileCourtView({
             return (
               <button
                 key={i}
-                onClick={() => setActiveDrillIndex(i)}
+                onClick={() => {
+                  if (isScreenLocked) {
+                    triggerLocalToast('🔒 Pantalla bloquejada. Desbloqueja per navegar.');
+                    return;
+                  }
+                  setActiveDrillIndex(i);
+                }}
                 type="button"
                 className={`w-2 h-2 rounded-full cursor-pointer transition-all duration-300 ${colorClass}`}
               />

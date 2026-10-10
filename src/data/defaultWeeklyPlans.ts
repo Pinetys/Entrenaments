@@ -67,9 +67,9 @@ export const RECOVERED_DRILLS_MAP: Record<string, Partial<Drill>> = {
 export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
   dia1: {
     id: 'dia1',
-    name: 'Sessió 1: Dilluns 31 d’Agost - Pretemporada & Ritme de Transició',
-    dayOfWeek: 'Dilluns',
-    scheduledTime: '2026-08-31T19:30',
+    name: 'Sessió 1: Dimarts 1 de Setembre - Pretemporada & Ritme de Transició',
+    dayOfWeek: 'Dimarts',
+    scheduledTime: '2026-09-01T19:30',
     totalDuration: 75,
     drills: [
       { drillId: 'drill-rueda-11', duration: 15, notes: 'Activa ritme de cames ràpides i passe fort de sortida.' },
@@ -82,9 +82,9 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
   },
   dia2: {
     id: 'dia2',
-    name: 'Sessió 2: Dimecres 2 de Setembre - Defensa i Bloquejos (Pick & Roll)',
-    dayOfWeek: 'Dimecres',
-    scheduledTime: '2026-09-02T19:30',
+    name: 'Sessió 2: Dijous 3 de Setembre - Defensa i Bloquejos (Pick & Roll)',
+    dayOfWeek: 'Dijous',
+    scheduledTime: '2026-09-03T19:30',
     totalDuration: 60,
     drills: [
       { drillId: 'drill-rueda-11', duration: 10, notes: 'Estiramiento dinámico activo.' },
@@ -97,9 +97,9 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
   },
   dia3: {
     id: 'dia3',
-    name: 'Sessió 3: Dijous 3 de Setembre - Transició i Joc Continu',
-    dayOfWeek: 'Dijous',
-    scheduledTime: '2026-09-03T19:30',
+    name: 'Sessió 3: Dimarts 8 de Setembre - Transició i Joc Continu',
+    dayOfWeek: 'Dimarts',
+    scheduledTime: '2026-09-08T19:30',
     totalDuration: 49,
     drills: [
       { drillId: 'drill-rueda-11', duration: 12, notes: 'Saca el balón con rabia. Comunicación vocal intensa de Nivel A.' },
@@ -111,9 +111,9 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
   },
   dia4: {
     id: 'dia4',
-    name: 'Sessió 4: Dimarts 8 de Setembre - Pick & Roll Situacions',
-    dayOfWeek: 'Dimarts',
-    scheduledTime: '2026-09-08T19:30',
+    name: 'Sessió 4: Dijous 10 de Setembre - Pick & Roll Situacions',
+    dayOfWeek: 'Dijous',
+    scheduledTime: '2026-09-10T19:30',
     totalDuration: 55,
     drills: [
       { drillId: 'drill-rueda-11', duration: 10, notes: 'Calentar piernas, flexiones si se cae el balón.' },
@@ -126,33 +126,33 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
   },
   dia5: {
     id: 'dia5',
-    name: 'Sessió 5: Dijous 10 de Setembre - Construcció del Contraatac',
-    dayOfWeek: 'Dijous',
-    scheduledTime: '2026-09-10T19:30',
-    totalDuration: 0,
-    drills: []
-  },
-  dia6: {
-    id: 'dia6',
-    name: 'Sessió 6: Dimarts 15 de Setembre - Defensa d’Ajudes Col·lectives',
+    name: 'Sessió 5: Dimarts 15 de Setembre - Construcció del Contraatac',
     dayOfWeek: 'Dimarts',
     scheduledTime: '2026-09-15T19:30',
     totalDuration: 0,
     drills: []
   },
-  dia7: {
-    id: 'dia7',
-    name: 'Sessió 7: Dijous 17 de Setembre - Presió a Tot Camp',
+  dia6: {
+    id: 'dia6',
+    name: 'Sessió 6: Dijous 17 de Setembre - Defensa d’Ajudes Col·lectives',
     dayOfWeek: 'Dijous',
     scheduledTime: '2026-09-17T19:30',
     totalDuration: 0,
     drills: []
   },
-  dia8: {
-    id: 'dia8',
-    name: 'Sessió 8: Dimarts 22 de Setembre - Roda de Tir Prepartit i Ajustos',
+  dia7: {
+    id: 'dia7',
+    name: 'Sessió 7: Dimarts 22 de Setembre - Presió a Tot Camp',
     dayOfWeek: 'Dimarts',
     scheduledTime: '2026-09-22T19:30',
+    totalDuration: 0,
+    drills: []
+  },
+  dia8: {
+    id: 'dia8',
+    name: 'Sessió 8: Dijous 24 de Setembre - Roda de Tir Prepartit i Ajustos',
+    dayOfWeek: 'Dijous',
+    scheduledTime: '2026-09-24T19:30',
     totalDuration: 27,
     drills: [
       { drillId: 'drill-rueda-11', duration: 12, notes: 'Roda 11 ritme de tir continu.' },
@@ -161,17 +161,17 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
   },
   dia9: {
     id: 'dia9',
-    name: 'Sessió 9: Dijous 24 de Setembre - Presió a Tot Camp',
-    dayOfWeek: 'Dijous',
-    scheduledTime: '2026-09-24T19:30',
+    name: 'Sessió 9: Dimarts 29 de Setembre - Presió a Tot Camp',
+    dayOfWeek: 'Dimarts',
+    scheduledTime: '2026-09-29T19:30',
     totalDuration: 0,
     drills: []
   },
   dia10: {
     id: 'dia10',
-    name: 'Sessió 10: Dimarts 29 de Setembre - Roda de Tir Prepartit i Ajustos',
-    dayOfWeek: 'Dimarts',
-    scheduledTime: '2026-09-29T19:30',
+    name: 'Sessió 10: Dijous 1 d’Octubre - Roda de Tir Prepartit i Ajustos',
+    dayOfWeek: 'Dijous',
+    scheduledTime: '2026-10-01T19:30',
     totalDuration: 0,
     drills: []
   }
@@ -180,9 +180,9 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
 export const RECOVERED_SENIOR_SESSIONS: Record<string, TrainingSession> = {
   dia1: {
     id: 'dia1',
-    name: 'Sessió 1: Dilluns 31 d’Agost - Pretemporada Sènior: Ritme 5v5 i Transició Ofensiva',
-    dayOfWeek: 'Dilluns',
-    scheduledTime: '2026-08-31T21:00',
+    name: 'Sessió 1: Dimarts 1 de Setembre - Pretemporada Sènior: Ritme 5v5 i Transició Ofensiva',
+    dayOfWeek: 'Dimarts',
+    scheduledTime: '2026-09-01T21:00',
     totalDuration: 75,
     team: 'senior',
     drills: [
@@ -196,9 +196,9 @@ export const RECOVERED_SENIOR_SESSIONS: Record<string, TrainingSession> = {
   },
   dia2: {
     id: 'dia2',
-    name: 'Sessió 2: Dimecres 2 de Setembre - Pick & Roll Ofensiu (Lectures Short Roll & Pop) i Balanç',
-    dayOfWeek: 'Dimecres',
-    scheduledTime: '2026-09-02T21:00',
+    name: 'Sessió 2: Dijous 3 de Setembre - Pick & Roll Ofensiu (Lectures Short Roll & Pop) i Balanç',
+    dayOfWeek: 'Dijous',
+    scheduledTime: '2026-09-03T21:00',
     totalDuration: 75,
     team: 'senior',
     drills: [
@@ -212,9 +212,9 @@ export const RECOVERED_SENIOR_SESSIONS: Record<string, TrainingSession> = {
   },
   dia3: {
     id: 'dia3',
-    name: 'Sessió 3: Dijous 3 de Setembre - Defensa de Pick & Roll (Drop / Next / Switch) i Rebot',
-    dayOfWeek: 'Dijous',
-    scheduledTime: '2026-09-03T21:00',
+    name: 'Sessió 3: Dimarts 8 de Setembre - Defensa de Pick & Roll (Drop / Next / Switch) i Rebot',
+    dayOfWeek: 'Dimarts',
+    scheduledTime: '2026-09-08T21:00',
     totalDuration: 60,
     team: 'senior',
     drills: [
@@ -227,9 +227,9 @@ export const RECOVERED_SENIOR_SESSIONS: Record<string, TrainingSession> = {
   },
   dia4: {
     id: 'dia4',
-    name: 'Sessió 4: Dimarts 8 de Setembre - Espaiat 5-Oberts (Spacing), Tallades i Extra Pass',
-    dayOfWeek: 'Dimarts',
-    scheduledTime: '2026-09-08T21:00',
+    name: 'Sessió 4: Dijous 10 de Setembre - Espaiat 5-Oberts (Spacing), Tallades i Extra Pass',
+    dayOfWeek: 'Dijous',
+    scheduledTime: '2026-09-10T21:00',
     totalDuration: 60,
     team: 'senior',
     drills: [
@@ -242,54 +242,54 @@ export const RECOVERED_SENIOR_SESSIONS: Record<string, TrainingSession> = {
   },
   dia5: {
     id: 'dia5',
-    name: 'Sessió 5: Dijous 10 de Setembre - Sortida de Pressió i Lectura de Superioritats',
-    dayOfWeek: 'Dijous',
-    scheduledTime: '2026-09-10T21:00',
-    totalDuration: 0,
-    team: 'senior',
-    drills: []
-  },
-  dia6: {
-    id: 'dia6',
-    name: 'Sessió 6: Dimarts 15 de Setembre - Situacions Especials (ATO, Fons, Bandes) i Tir',
+    name: 'Sessió 5: Dimarts 15 de Setembre - Sortida de Pressió i Lectura de Superioritats',
     dayOfWeek: 'Dimarts',
     scheduledTime: '2026-09-15T21:00',
     totalDuration: 0,
     team: 'senior',
     drills: []
   },
-  dia7: {
-    id: 'dia7',
-    name: 'Sessió 7: Dijous 17 de Setembre - Transició Defensiva i Defensa de Transició Ràpida',
+  dia6: {
+    id: 'dia6',
+    name: 'Sessió 6: Dijous 17 de Setembre - Situacions Especials (ATO, Fons, Bandes) i Tir',
     dayOfWeek: 'Dijous',
     scheduledTime: '2026-09-17T21:00',
     totalDuration: 0,
     team: 'senior',
     drills: []
   },
-  dia8: {
-    id: 'dia8',
-    name: 'Sessió 8: Dimarts 22 de Setembre - Situacions de Clot i Desavantatge (Closeouts & Rotacions)',
+  dia7: {
+    id: 'dia7',
+    name: 'Sessió 7: Dimarts 22 de Setembre - Transició Defensiva i Defensa de Transició Ràpida',
     dayOfWeek: 'Dimarts',
     scheduledTime: '2026-09-22T21:00',
     totalDuration: 0,
     team: 'senior',
     drills: []
   },
-  dia9: {
-    id: 'dia9',
-    name: 'Sessió 9: Dijous 24 de Setembre - Preparació Tàctica de Partit i Scouting',
+  dia8: {
+    id: 'dia8',
+    name: 'Sessió 8: Dijous 24 de Setembre - Situacions de Clot i Desavantatge (Closeouts & Rotacions)',
     dayOfWeek: 'Dijous',
     scheduledTime: '2026-09-24T21:00',
     totalDuration: 0,
     team: 'senior',
     drills: []
   },
-  dia10: {
-    id: 'dia10',
-    name: 'Sessió 10: Dimarts 29 de Setembre - Roda de Tir Prepartit, Ajustos 5v5 i Ritme',
+  dia9: {
+    id: 'dia9',
+    name: 'Sessió 9: Dimarts 29 de Setembre - Preparació Tàctica de Partit i Scouting',
     dayOfWeek: 'Dimarts',
     scheduledTime: '2026-09-29T21:00',
+    totalDuration: 0,
+    team: 'senior',
+    drills: []
+  },
+  dia10: {
+    id: 'dia10',
+    name: 'Sessió 10: Dijous 1 d’Octubre - Roda de Tir Prepartit, Ajustos 5v5 i Ritme',
+    dayOfWeek: 'Dijous',
+    scheduledTime: '2026-10-01T21:00',
     totalDuration: 0,
     team: 'senior',
     drills: []

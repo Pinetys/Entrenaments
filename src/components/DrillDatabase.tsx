@@ -23,16 +23,16 @@ const EMPTY_BOARD = { paths: [], pins: [] };
 const NOOP_CHANGE = () => {};
 
 export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr: string; dayOfWeek: string; defaultTitle: string }> = {
-  dia1: { label: 'S1', dateStr: 'Dilluns 31 d’Agost', dayOfWeek: 'Dilluns', defaultTitle: 'Pretemporada & Ritme' },
-  dia2: { label: 'S2', dateStr: 'Dimecres 2 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Fonaments i Intensitat Defensiva' },
-  dia3: { label: 'S3', dateStr: 'Dijous 3 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Ritme de Transició i Tir' },
-  dia4: { label: 'S4', dateStr: 'Dimarts 8 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Defensa de l’1v1 i Ajudes' },
-  dia5: { label: 'S5', dateStr: 'Dijous 10 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Transició i Joc Continu' },
-  dia6: { label: 'S6', dateStr: 'Dimarts 15 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Pick & Roll Situacions' },
-  dia7: { label: 'S7', dateStr: 'Dijous 17 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Construcció del Contraatac' },
-  dia8: { label: 'S8', dateStr: 'Dimarts 22 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Defensa d’Ajudes Col·lectives' },
-  dia9: { label: 'S9', dateStr: 'Dijous 24 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Presió a Tot Camp' },
-  dia10: { label: 'S10', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
+  dia1: { label: 'S1', dateStr: 'Dimarts 1 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Pretemporada & Ritme' },
+  dia2: { label: 'S2', dateStr: 'Dijous 3 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Fonaments i Intensitat Defensiva' },
+  dia3: { label: 'S3', dateStr: 'Dimarts 8 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Ritme de Transició i Tir' },
+  dia4: { label: 'S4', dateStr: 'Dijous 10 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Defensa de l’1v1 i Ajudes' },
+  dia5: { label: 'S5', dateStr: 'Dimarts 15 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Construcció del Contraatac' },
+  dia6: { label: 'S6', dateStr: 'Dijous 17 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Defensa d’Ajudes Col·lectives' },
+  dia7: { label: 'S7', dateStr: 'Dimarts 22 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Presió a Tot Camp' },
+  dia8: { label: 'S8', dateStr: 'Dijous 24 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
+  dia9: { label: 'S9', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Presió a Tot Camp' },
+  dia10: { label: 'S10', dateStr: 'Dijous 1 d’Octubre', dayOfWeek: 'Dijous', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
 };
 
 export function formatSessionOptionName(sessId: string, sess?: Partial<TrainingSession>): { title: string; subtitle: string } {

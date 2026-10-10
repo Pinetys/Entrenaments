@@ -104,16 +104,16 @@ export const SEASON_MONTHS: SeasonMonthDef[] = [
 ];
 
 export const DEFAULT_SESSION_DATES: Record<string, string> = {
-  dia1: '2026-08-31',
-  dia2: '2026-09-02',
-  dia3: '2026-09-03',
-  dia4: '2026-09-08',
-  dia5: '2026-09-10',
-  dia6: '2026-09-15',
-  dia7: '2026-09-17',
-  dia8: '2026-09-22',
-  dia9: '2026-09-24',
-  dia10: '2026-09-29',
+  dia1: '2026-09-01',
+  dia2: '2026-09-03',
+  dia3: '2026-09-08',
+  dia4: '2026-09-10',
+  dia5: '2026-09-15',
+  dia6: '2026-09-17',
+  dia7: '2026-09-22',
+  dia8: '2026-09-24',
+  dia9: '2026-09-29',
+  dia10: '2026-10-01',
 };
 
 export const LEGACY_MATCH_INDEX_DATES: Record<string, string> = {
