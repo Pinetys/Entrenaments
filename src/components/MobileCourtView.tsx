@@ -41,6 +41,7 @@ import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types'
 import TacticalBoard from './TacticalBoard';
 import { getEnhancedSessionDrills } from './SessionPlanner';
 import PerformanceSummaryModal from './PerformanceSummaryModal';
+import NoSleep from 'nosleep.js';
 
 let sharedAudioCtx: AudioContext | null = null;
 function getSharedAudioContext(): AudioContext | null {
@@ -246,6 +247,21 @@ export default function MobileCourtView({
   const [isWakeLockActive, setIsWakeLockActive] = useState<boolean>(false);
   const [wakeLockSupported, setWakeLockSupported] = useState<boolean>(true);
   const wakeLockSentinelRef = useRef<any>(null);
+  const noSleepRef = useRef<NoSleep | null>(null);
+
+  // Universal NoSleep instance to prevent screen sleep across all mobile browsers (iOS & Android)
+  useEffect(() => {
+    try {
+      noSleepRef.current = new NoSleep();
+    } catch (e) {
+      console.warn('NoSleep init:', e);
+    }
+    return () => {
+      try {
+        noSleepRef.current?.disable();
+      } catch (e) {}
+    };
+  }, []);
 
   // Screen touch lock state to prevent accidental touches in pocket / on court
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
@@ -415,6 +431,36 @@ export default function MobileCourtView({
     }
   }, [drillsInSession.length, activeDrillIndex]);
 
+  // Clear stale target refs whenever a timer is paused or stopped so resuming computes accurately
+  useEffect(() => {
+    if (!sessionTimerRunning) {
+      sessionTargetEndTimeRef.current = null;
+    }
+  }, [sessionTimerRunning]);
+
+  useEffect(() => {
+    if (!timerRunning) {
+      targetEndTimeRef.current = null;
+    }
+  }, [timerRunning]);
+
+  useEffect(() => {
+    if (!restTimerRunning) {
+      restTargetEndTimeRef.current = null;
+    }
+  }, [restTimerRunning]);
+
+  // Reset session timer to clean 75 minutes when switching sessions
+  useEffect(() => {
+    setSessionTimerRunning(false);
+    setTimerRunning(false);
+    setRestTimerRunning(false);
+    sessionTargetEndTimeRef.current = null;
+    targetEndTimeRef.current = null;
+    restTargetEndTimeRef.current = null;
+    setSessionTimeLeft(75 * 60);
+  }, [session.id]);
+
   // Sync Timer when active drill changes (unless restored from localStorage)
   const isInitialMountRef = useRef(true);
   const prevActiveIndexRef = useRef<number | null>(null);
@@ -434,8 +480,12 @@ export default function MobileCourtView({
             } else if (activeDrill) {
               setTimeLeft(activeDrill.duration * 60);
             }
-            if (typeof parsed.sessionTimeLeft === 'number' && parsed.sessionTimeLeft > 0) {
+            // Only restore sessionTimeLeft if the state was saved recently while timer was actively running
+            const isRecent = parsed.updatedAt && (Date.now() - parsed.updatedAt < 30 * 60 * 1000);
+            if (parsed.timerRunning && isRecent && typeof parsed.sessionTimeLeft === 'number' && parsed.sessionTimeLeft > 0 && parsed.sessionTimeLeft <= 75 * 60) {
               setSessionTimeLeft(parsed.sessionTimeLeft);
+            } else {
+              setSessionTimeLeft(75 * 60);
             }
             return;
           }
@@ -679,21 +729,47 @@ export default function MobileCourtView({
   // Requirement 2: Background screen lock resilient timer tick & visibility listener
   useEffect(() => {
     const isAnyTimerActive = timerRunning || sessionTimerRunning || restTimerRunning || intensityTimerRunning;
-    if (!isAnyTimerActive) return;
+    if (!isAnyTimerActive) {
+      targetEndTimeRef.current = null;
+      sessionTargetEndTimeRef.current = null;
+      restTargetEndTimeRef.current = null;
+      intensityStartTimeRef.current = null;
+      return;
+    }
 
     // Synchronize target timestamps when timers become active
     const now = Date.now();
-    if (timerRunning && !targetEndTimeRef.current) {
-      targetEndTimeRef.current = now + timeLeft * 1000;
+    if (timerRunning) {
+      if (!targetEndTimeRef.current) {
+        targetEndTimeRef.current = now + (timeLeft > 0 ? timeLeft : (activeDrill ? activeDrill.duration * 60 : 60)) * 1000;
+      }
+    } else {
+      targetEndTimeRef.current = null;
     }
-    if (sessionTimerRunning && !sessionTargetEndTimeRef.current) {
-      sessionTargetEndTimeRef.current = now + sessionTimeLeft * 1000;
+
+    if (sessionTimerRunning) {
+      if (!sessionTargetEndTimeRef.current) {
+        const curSess = (sessionTimeLeft <= 0 || sessionTimeLeft > 75 * 60) ? 75 * 60 : sessionTimeLeft;
+        sessionTargetEndTimeRef.current = now + curSess * 1000;
+      }
+    } else {
+      sessionTargetEndTimeRef.current = null;
     }
-    if (restTimerRunning && !restTargetEndTimeRef.current) {
-      restTargetEndTimeRef.current = now + restTimeLeft * 1000;
+
+    if (restTimerRunning) {
+      if (!restTargetEndTimeRef.current) {
+        restTargetEndTimeRef.current = now + (restTimeLeft > 0 ? restTimeLeft : 60) * 1000;
+      }
+    } else {
+      restTargetEndTimeRef.current = null;
     }
-    if (intensityTimerRunning && !intensityStartTimeRef.current) {
-      intensityStartTimeRef.current = now - intensityElapsed * 1000;
+
+    if (intensityTimerRunning) {
+      if (!intensityStartTimeRef.current) {
+        intensityStartTimeRef.current = now - intensityElapsed * 1000;
+      }
+    } else {
+      intensityStartTimeRef.current = null;
     }
 
     const interval = setInterval(() => {
@@ -788,64 +864,118 @@ export default function MobileCourtView({
     };
   }, [timerRunning, sessionTimerRunning, restTimerRunning, intensityTimerRunning, safeActiveIndex]);
 
-  // Screen Wake Lock API: Requests system lock so mobile screen stays awake during active timer
-  useEffect(() => {
-    if (typeof navigator === 'undefined' || !('wakeLock' in navigator)) {
-      setWakeLockSupported(false);
-      return;
+  // Screen Stay-Awake Engine (Native Screen Wake Lock API + NoSleep video-loop fallback for iOS/Android)
+  const acquireScreenWakeLock = async () => {
+    // 1. NoSleep fallback: Keeps screen on across iOS Safari, WebViews, and Android browsers
+    try {
+      if (noSleepRef.current && !noSleepRef.current.isEnabled) {
+        await noSleepRef.current.enable();
+      }
+    } catch (e) {
+      // Ignored if user interaction token is handled on click
     }
-    setWakeLockSupported(true);
 
-    const shouldKeepAwake = keepScreenAwake && (sessionTimerRunning || timerRunning || isScreenLocked);
-
-    const requestWakeLock = async () => {
+    // 2. Native Screen Wake Lock API
+    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+      setWakeLockSupported(true);
       try {
-        if (shouldKeepAwake) {
-          if (!wakeLockSentinelRef.current || wakeLockSentinelRef.current.released) {
-            const sentinel = await (navigator as any).wakeLock.request('screen');
-            wakeLockSentinelRef.current = sentinel;
-            setIsWakeLockActive(true);
+        if (!wakeLockSentinelRef.current || wakeLockSentinelRef.current.released) {
+          const sentinel = await (navigator as any).wakeLock.request('screen');
+          wakeLockSentinelRef.current = sentinel;
+          setIsWakeLockActive(true);
 
-            sentinel.addEventListener('release', () => {
-              setIsWakeLockActive(false);
-            });
-          }
-        } else {
-          if (wakeLockSentinelRef.current && !wakeLockSentinelRef.current.released) {
-            await wakeLockSentinelRef.current.release();
-            wakeLockSentinelRef.current = null;
+          sentinel.addEventListener('release', () => {
             setIsWakeLockActive(false);
-          }
+          });
+        } else {
+          setIsWakeLockActive(true);
         }
       } catch (err) {
-        console.warn('Screen wake lock request failed or was dismissed:', err);
-        setIsWakeLockActive(false);
+        console.warn('Native screen wake lock request failed or pending gesture:', err);
+        // If native wake lock fails, NoSleep keeps the screen awake
+        if (noSleepRef.current?.isEnabled) {
+          setIsWakeLockActive(true);
+        }
+      }
+    } else {
+      setWakeLockSupported(false);
+      // Supported through NoSleep
+      if (noSleepRef.current?.isEnabled) {
+        setIsWakeLockActive(true);
+      }
+    }
+  };
+
+  const releaseScreenWakeLock = async () => {
+    try {
+      if (noSleepRef.current && noSleepRef.current.isEnabled) {
+        noSleepRef.current.disable();
+      }
+    } catch (e) {}
+
+    if (wakeLockSentinelRef.current && !wakeLockSentinelRef.current.released) {
+      try {
+        await wakeLockSentinelRef.current.release();
+      } catch (e) {}
+      wakeLockSentinelRef.current = null;
+    }
+    setIsWakeLockActive(false);
+  };
+
+  // Requirement: Screen must stay awake continuously during the 75-minute countdown (sessionTimerRunning)
+  useEffect(() => {
+    // 75-minute countdown unconditionally enforces screen staying awake
+    const shouldKeepAwake = sessionTimerRunning || (keepScreenAwake && (timerRunning || isScreenLocked));
+
+    if (shouldKeepAwake) {
+      acquireScreenWakeLock();
+    } else {
+      releaseScreenWakeLock();
+    }
+
+    // Re-acquire lock when switching back to tab/browser or phone is focused
+    const handleReacquire = () => {
+      const activeShouldKeepAwake = sessionTimerRunning || (keepScreenAwake && (timerRunning || isScreenLocked));
+      if (document.visibilityState === 'visible' && activeShouldKeepAwake) {
+        acquireScreenWakeLock();
       }
     };
 
-    requestWakeLock();
-
-    // Re-acquire lock on visibilitychange when user switches back to browser tab
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && shouldKeepAwake) {
-        requestWakeLock();
+    // Re-acquire lock on any touch/interaction during active 75' session
+    const handleTouchGesture = () => {
+      const activeShouldKeepAwake = sessionTimerRunning || (keepScreenAwake && (timerRunning || isScreenLocked));
+      if (activeShouldKeepAwake && (!isWakeLockActive || !noSleepRef.current?.isEnabled)) {
+        acquireScreenWakeLock();
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleReacquire);
+    window.addEventListener('focus', handleReacquire);
+    window.addEventListener('touchstart', handleTouchGesture, { passive: true });
+
+    // Periodic heartbeat check every 15 seconds during active 75' session to prevent any timeout
+    let heartbeatInterval: any = null;
+    if (sessionTimerRunning) {
+      heartbeatInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          acquireScreenWakeLock();
+        }
+      }, 15000);
+    }
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
-      if (wakeLockSentinelRef.current && !wakeLockSentinelRef.current.released) {
+      document.removeEventListener('visibilitychange', handleReacquire);
+      window.removeEventListener('focus', handleReacquire);
+      window.removeEventListener('touchstart', handleTouchGesture);
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (!sessionTimerRunning && wakeLockSentinelRef.current && !wakeLockSentinelRef.current.released) {
         try {
           wakeLockSentinelRef.current.release();
         } catch (e) {}
         wakeLockSentinelRef.current = null;
       }
     };
-  }, [keepScreenAwake, sessionTimerRunning, timerRunning, isScreenLocked]);
+  }, [keepScreenAwake, sessionTimerRunning, timerRunning, isScreenLocked, isWakeLockActive]);
 
   if (drillsInSession.length === 0) {
     return (
@@ -886,14 +1016,23 @@ export default function MobileCourtView({
   };
 
   const handleStart75Session = () => {
+    // 1. Immediately engage screen wake lock on user touch gesture
+    acquireScreenWakeLock();
+    setKeepScreenAwake(true);
+    try {
+      localStorage.setItem('basket_planner_keep_screen_awake', JSON.stringify(true));
+    } catch (e) {}
+
+    // If timer is finished, at 0, or corrupted/stale, reset cleanly to 75 minutes (4500 seconds)
+    const validSecs = (sessionTimeLeft <= 0 || sessionTimeLeft > 75 * 60) ? 75 * 60 : sessionTimeLeft;
+    if (sessionTimeLeft <= 0 || sessionTimeLeft > 75 * 60) {
+      setSessionTimeLeft(75 * 60);
+    }
+    sessionTargetEndTimeRef.current = Date.now() + validSecs * 1000;
     setSessionTimerRunning(true);
     setIsMotionMode(true);
     playSynthesizedWhistle();
-    if (keepScreenAwake) {
-      triggerLocalToast('🏀 Cronòmetre de 75′ iniciat amb Lletra Gran! Pantalla encesa.');
-    } else {
-      triggerLocalToast('🏀 Cronòmetre de 75′ iniciat amb Lletra Gran!');
-    }
+    triggerLocalToast('🏀 Cronòmetre 75′ en marxa! Pantalla mòbil mantinguda encesa.');
   };
 
   const isSessionCompleted = completions.some(c => c.planId === activePlanId && c.sessionId === session.id);
@@ -1205,6 +1344,10 @@ export default function MobileCourtView({
             <span className="text-slate-300 text-xs font-bold truncate max-w-[130px]">{session.name}</span>
           </div>
           <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[8.5px] font-black uppercase tracking-wider">
+              <Sun size={9} className="text-emerald-400 animate-pulse" />
+              <span>Pantalla Encesa</span>
+            </span>
             <button
               type="button"
               onClick={() => setIsMotionMode(!isMotionMode)}
@@ -1219,7 +1362,13 @@ export default function MobileCourtView({
             </button>
             <button
               type="button"
-              onClick={() => setSessionTimerRunning(false)}
+              onClick={() => {
+                setSessionTimerRunning(false);
+                sessionTargetEndTimeRef.current = null;
+                if (!keepScreenAwake) {
+                  releaseScreenWakeLock();
+                }
+              }}
               className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 transition cursor-pointer flex items-center gap-1 active:scale-95"
               title="Pausar cronòmetre de 75′ i veure capçalera completa"
             >
@@ -1269,6 +1418,9 @@ export default function MobileCourtView({
                   type="button"
                   onClick={() => {
                     const nextRunning = !timerRunning;
+                    if (!nextRunning) {
+                      targetEndTimeRef.current = null;
+                    }
                     setTimerRunning(nextRunning);
                     if (nextRunning && autoLockOnTimer) {
                       setIsScreenLocked(true);
@@ -1289,6 +1441,7 @@ export default function MobileCourtView({
                       triggerLocalToast('🔒 Pantalla bloquejada. Desbloqueja per reiniciar el crono.');
                       return;
                     }
+                    targetEndTimeRef.current = null;
                     setTimeLeft(activeDrill.duration * 60);
                     setTimerRunning(false);
                   }}
@@ -1325,14 +1478,21 @@ export default function MobileCourtView({
                   try {
                     localStorage.setItem('basket_planner_keep_screen_awake', JSON.stringify(nextVal));
                   } catch (e) {}
+                  if (nextVal || sessionTimerRunning) {
+                    acquireScreenWakeLock();
+                  } else {
+                    releaseScreenWakeLock();
+                  }
                   triggerLocalToast(
-                    nextVal
-                      ? '🔆 Pantalla sempre activa: El mòbil no es bloquejarà'
-                      : '🔒 Bloqueig automàtic de pantalla permès'
+                    sessionTimerRunning
+                      ? '🔆 Pantalla sempre encesa activa durant la sessió de 75′'
+                      : nextVal
+                        ? '🔆 Pantalla sempre activa: El mòbil no es bloquejarà'
+                        : '🔒 Bloqueig automàtic de pantalla permès'
                   );
                 }}
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition cursor-pointer shrink-0 ${
-                  isWakeLockActive
+                  (sessionTimerRunning || isWakeLockActive)
                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-xs'
                     : keepScreenAwake
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
@@ -1340,23 +1500,23 @@ export default function MobileCourtView({
                 }`}
                 title="Mantenir pantalla encesa durant els 75' per evitar bloqueig mòbil"
               >
-                {isWakeLockActive ? (
+                {(sessionTimerRunning || isWakeLockActive) ? (
                   <>
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                     </span>
-                    <span className="text-[7.5px] uppercase font-black">Sense Apagar</span>
+                    <span className="text-[7.5px] uppercase font-black">Pantalla Encesa (75′)</span>
                   </>
                 ) : keepScreenAwake ? (
                   <>
                     <Sun size={8} className="text-orange-400" />
-                    <span>75′ Cap</span>
+                    <span>Sense Apagar</span>
                   </>
                 ) : (
                   <>
                     <Lock size={8} className="text-slate-400" />
-                    <span>75′ Cap</span>
+                    <span>Auto-Apagar</span>
                   </>
                 )}
               </button>
@@ -1371,13 +1531,18 @@ export default function MobileCourtView({
                   type="button"
                   onClick={() => {
                     if (!sessionTimerRunning) {
+                      acquireScreenWakeLock();
                       handleStart75Session();
                       if (autoLockOnTimer) {
                         setIsScreenLocked(true);
-                        triggerLocalToast('🔒 Crono 75′ iniciat: Pantalla bloquejada');
+                        triggerLocalToast('🔒 Crono 75′ iniciat: Pantalla bloquejada (Encesa)');
                       }
                     } else {
                       setSessionTimerRunning(false);
+                      sessionTargetEndTimeRef.current = null;
+                      if (!keepScreenAwake) {
+                        releaseScreenWakeLock();
+                      }
                     }
                   }}
                   title={sessionTimerRunning ? "Pausar temps general" : "Iniciar sessió de 75′"}
@@ -1394,8 +1559,22 @@ export default function MobileCourtView({
                       triggerLocalToast('🔒 Pantalla bloquejada. Desbloqueja per reiniciar la sessió.');
                       return;
                     }
+                    sessionTargetEndTimeRef.current = null;
                     setSessionTimeLeft(75 * 60);
                     setSessionTimerRunning(false);
+                    if (!keepScreenAwake) {
+                      releaseScreenWakeLock();
+                    }
+                    try {
+                      const saved = localStorage.getItem(`basket_planner_court_state_${session.id}`);
+                      if (saved) {
+                        const parsed = JSON.parse(saved);
+                        parsed.sessionTimeLeft = 75 * 60;
+                        parsed.timerRunning = false;
+                        localStorage.setItem(`basket_planner_court_state_${session.id}`, JSON.stringify(parsed));
+                      }
+                    } catch (e) {}
+                    triggerLocalToast('🔄 Temps general reiniciat a 75′');
                   }}
                   title="Reiniciar a 75′ d'entrenament"
                   className={`p-2 rounded-full transition active:scale-95 cursor-pointer flex items-center justify-center ${
@@ -1459,6 +1638,11 @@ export default function MobileCourtView({
                 try {
                   localStorage.setItem('basket_planner_keep_screen_awake', JSON.stringify(nextVal));
                 } catch (e) {}
+                if (nextVal || sessionTimerRunning) {
+                  acquireScreenWakeLock();
+                } else {
+                  releaseScreenWakeLock();
+                }
                 triggerLocalToast(
                   nextVal 
                     ? '🔆 Pantalla sempre activa activada' 
@@ -1466,7 +1650,7 @@ export default function MobileCourtView({
                 );
               }}
               className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95 ${
-                isWakeLockActive
+                (sessionTimerRunning || isWakeLockActive)
                   ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
                   : keepScreenAwake
                     ? 'bg-slate-800 border border-slate-700 text-orange-400'
@@ -1474,8 +1658,8 @@ export default function MobileCourtView({
               }`}
               title="Mantenir pantalla encesa sense apagar durant l'entrenament a pista"
             >
-              <Sun size={11} className={isWakeLockActive ? "text-emerald-400" : "text-slate-400"} />
-              <span>{isWakeLockActive ? 'Sense Apagar' : 'Anti-Apagament'}</span>
+              <Sun size={11} className={(sessionTimerRunning || isWakeLockActive) ? "text-emerald-400" : "text-slate-400"} />
+              <span>{(sessionTimerRunning || isWakeLockActive) ? 'Sense Apagar' : 'Anti-Apagament'}</span>
             </button>
 
             <button
@@ -1988,8 +2172,9 @@ export default function MobileCourtView({
                 <span className="text-xs font-black text-amber-300 uppercase tracking-wide block leading-tight">
                   Pantalla Bloquejada
                 </span>
-                <span className="text-[9px] text-amber-200/70 font-medium">
-                  Tocs protegits durant l'exercici
+                <span className="text-[9px] text-amber-200/80 font-medium flex items-center gap-1">
+                  <Sun size={9} className="text-emerald-400 inline shrink-0" />
+                  <span>Pantalla encesa contínua ({sessionTimerRunning ? `75′: ${formatTime(sessionTimeLeft)}` : formatTime(timeLeft)})</span>
                 </span>
               </div>
             </div>
