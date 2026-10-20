@@ -174,6 +174,86 @@ export const RECOVERED_SESSIONS: Record<string, TrainingSession> = {
     scheduledTime: '2026-10-01T19:30',
     totalDuration: 0,
     drills: []
+  },
+  dia11: {
+    id: 'dia11',
+    name: 'Sessió 11: Dimecres 2 de Setembre - Fonaments i Espaiat (20:00 - 21:00)',
+    dayOfWeek: 'Dimecres',
+    scheduledTime: '2026-09-02T20:00',
+    totalDuration: 60,
+    team: 'junior_a',
+    drills: [
+      { drillId: 'drill-rueda-11', duration: 10, notes: 'Escalfament i coordinació de peus.' },
+      { drillId: 'virtual-hydration', duration: 3, notes: 'Pausa d’hidratació.' },
+      { drillId: 'drill-spacing-junior-spacing', duration: 15, notes: 'Ocupació racional del perímetre de 4-oberts.' },
+      { drillId: 'virtual-freethrows', duration: 5, notes: 'Tirs lliures sota fatiga.' },
+      { drillId: 'drill-junior-transicion-3x2', duration: 15, notes: 'Transició ofensiva i balanç defensiu ràpid.' },
+      { drillId: 'drill-rueda-tiro-competitiva', duration: 12, notes: 'Roda de tir continu per parelles.' }
+    ]
+  },
+  dia12: {
+    id: 'dia12',
+    name: 'Sessió 12: Dimecres 9 de Setembre - Transició Dinàmica & Sortida de Pressió (20:00 - 21:00)',
+    dayOfWeek: 'Dimecres',
+    scheduledTime: '2026-09-09T20:00',
+    totalDuration: 60,
+    team: 'junior_a',
+    drills: [
+      { drillId: 'drill-rueda-11', duration: 10, notes: 'Escalfament de contraatac ràpid.' },
+      { drillId: 'virtual-hydration', duration: 3, notes: 'Pausa d’hidratació.' },
+      { drillId: 'drill-press-break', duration: 15, notes: 'Sortida de línia de pressió 1-2-1-1.' },
+      { drillId: 'virtual-freethrows', duration: 5, notes: 'Rutina de tirs lliures consecutius.' },
+      { drillId: 'drill-spacing-junior-spacing', duration: 15, notes: 'Espaiat i passada extra a la cantonada.' },
+      { drillId: 'drill-rueda-tiro-competitiva', duration: 12, notes: 'Tir de ritme des de sortida de blocatge.' }
+    ]
+  },
+  dia13: {
+    id: 'dia13',
+    name: 'Sessió 13: Dimecres 16 de Setembre - Defensa Shell i Moviment de Pilota (20:00 - 21:00)',
+    dayOfWeek: 'Dimecres',
+    scheduledTime: '2026-09-16T20:00',
+    totalDuration: 60,
+    team: 'junior_a',
+    drills: [
+      { drillId: 'drill-rueda-11', duration: 10, notes: 'Roda 11 a intensitat de competició.' },
+      { drillId: 'virtual-hydration', duration: 3, notes: 'Hidratació.' },
+      { drillId: 'drill-defensa-shell', duration: 17, notes: 'Defensa col·lectiva 4x4 i ajudes defensives.' },
+      { drillId: 'virtual-freethrows', duration: 5, notes: 'Tirs lliures de concentració.' },
+      { drillId: 'drill-junior-transicion-3x2', duration: 15, notes: '3x2 continu a tot el camp.' },
+      { drillId: 'drill-rueda-tiro-competitiva', duration: 10, notes: 'Concurs de triples per equips.' }
+    ]
+  },
+  dia14: {
+    id: 'dia14',
+    name: 'Sessió 14: Dimecres 23 de Setembre - Ritme de Contraatac i 5v5 (20:00 - 21:00)',
+    dayOfWeek: 'Dimecres',
+    scheduledTime: '2026-09-23T20:00',
+    totalDuration: 60,
+    team: 'junior_a',
+    drills: [
+      { drillId: 'drill-rueda-11', duration: 10, notes: 'Escalfament dinàmic.' },
+      { drillId: 'virtual-hydration', duration: 3, notes: 'Hidratació.' },
+      { drillId: 'drill-press-break', duration: 17, notes: 'Atac contra pressió i finalització en superioritat.' },
+      { drillId: 'virtual-freethrows', duration: 5, notes: 'Tirs lliures de fatiga.' },
+      { drillId: 'drill-spacing-junior-spacing', duration: 15, notes: 'Lectura de talls i reemplaçaments de fons.' },
+      { drillId: 'drill-rueda-tiro-competitiva', duration: 10, notes: 'Tir ràpid sota pressió.' }
+    ]
+  },
+  dia15: {
+    id: 'dia15',
+    name: 'Sessió 15: Dimecres 30 de Setembre - Ajustos Tàctics & Roda de Tir (20:00 - 21:00)',
+    dayOfWeek: 'Dimecres',
+    scheduledTime: '2026-09-30T20:00',
+    totalDuration: 60,
+    team: 'junior_a',
+    drills: [
+      { drillId: 'drill-rueda-11', duration: 10, notes: 'Roda 11 de precisió.' },
+      { drillId: 'virtual-hydration', duration: 3, notes: 'Hidratació.' },
+      { drillId: 'drill-junior-transicion-3x2', duration: 15, notes: 'Lectura ràpida de balanç defensiu.' },
+      { drillId: 'virtual-freethrows', duration: 5, notes: 'Sèries de 10 tirs lliures per parella.' },
+      { drillId: 'drill-rueda-tiro-competitiva', duration: 15, notes: 'Roda de tir competitiva de posició.' },
+      { drillId: 'drill-spacing-junior-spacing', duration: 12, notes: 'Repàs d’estratègia i ocupació d’espais.' }
+    ]
   }
 };
 
@@ -310,7 +390,20 @@ export const RECOVERED_WEEKLY_PLAN: WeeklyPlan = {
   dia7: RECOVERED_SESSIONS.dia7,
   dia8: RECOVERED_SESSIONS.dia8,
   dia9: RECOVERED_SESSIONS.dia9,
-  dia10: RECOVERED_SESSIONS.dia10
+  dia10: RECOVERED_SESSIONS.dia10,
+  dia11: RECOVERED_SESSIONS.dia11,
+  dia12: RECOVERED_SESSIONS.dia12,
+  dia13: RECOVERED_SESSIONS.dia13,
+  dia14: RECOVERED_SESSIONS.dia14,
+  dia15: RECOVERED_SESSIONS.dia15
+};
+
+export const RECOVERED_JUNIOR_WEDNESDAY_SESSIONS: Record<string, TrainingSession> = {
+  dia11: RECOVERED_SESSIONS.dia11,
+  dia12: RECOVERED_SESSIONS.dia12,
+  dia13: RECOVERED_SESSIONS.dia13,
+  dia14: RECOVERED_SESSIONS.dia14,
+  dia15: RECOVERED_SESSIONS.dia15
 };
 
 export const RECOVERED_SENIOR_WEEKLY_PLAN: WeeklyPlan = {

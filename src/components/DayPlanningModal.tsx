@@ -65,7 +65,9 @@ export const DayPlanningModal: React.FC<DayPlanningModalProps> = ({
     s => s?.scheduledTime && s.scheduledTime.startsWith(dateStr)
   );
 
-  const defaultTime = selectedTeam === 'senior' ? '21:00' : '19:30';
+  const dateObj = new Date(dateStr + 'T12:00:00');
+  const isWednesday = dateObj.getDay() === 3;
+  const defaultTime = selectedTeam === 'senior' ? '21:00' : (isWednesday ? '20:00' : '19:30');
 
   // State for editing scheduled session time
   const [sessionTime, setSessionTime] = useState<string>(() => {
@@ -124,9 +126,10 @@ export const DayPlanningModal: React.FC<DayPlanningModalProps> = ({
   if (!isOpen) return null;
 
   // Determine day of week
-  const dateObj = new Date(dateStr + 'T12:00:00');
   const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-  const isOfficialTrainingDay = dateObj.getDay() === 2 || dateObj.getDay() === 4; // Dimarts (2) i Dijous (4)
+  const isOfficialTrainingDay = selectedTeam === 'senior'
+    ? (dateObj.getDay() === 2 || dateObj.getDay() === 4) // Dimarts (2) i Dijous (4)
+    : (dateObj.getDay() === 2 || dateObj.getDay() === 3 || dateObj.getDay() === 4); // Dimarts (2), Dimecres (3) i Dijous (4)
   const dayNameFormatted = formatDateToCa(dateStr);
 
   // Handle saving time change on existing session
@@ -221,7 +224,11 @@ export const DayPlanningModal: React.FC<DayPlanningModalProps> = ({
                   </span>
                 ) : isOfficialTrainingDay ? (
                   <span className="text-[10px] font-mono font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30 px-2 py-0.5 rounded">
-                    Dia d'Entrenament Oficial (Dimarts / Dijous)
+                    {selectedTeam === 'senior'
+                      ? "Dia d'Entrenament Oficial (Dimarts / Dijous)"
+                      : isWednesday
+                        ? "Dia d'Entrenament Oficial Júnior (Dimecres 20:00 - 21:00)"
+                        : "Dia d'Entrenament Oficial Júnior (Dimarts / Dijous 19:30)"}
                   </span>
                 ) : (
                   <span className="text-[10px] font-mono font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30 px-2 py-0.5 rounded">
@@ -341,7 +348,7 @@ export const DayPlanningModal: React.FC<DayPlanningModalProps> = ({
 
                   {/* Quick Time Buttons */}
                   <div className="flex items-center gap-1">
-                    {['17:30', '18:30', '19:30', '21:00'].map((preset) => (
+                    {['17:30', '19:30', '20:00', '21:00'].map((preset) => (
                       <button
                         key={preset}
                         type="button"
@@ -465,7 +472,7 @@ export const DayPlanningModal: React.FC<DayPlanningModalProps> = ({
                             className="bg-white border border-slate-300 font-mono text-xs font-black px-2.5 py-1.5 rounded-lg text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500"
                           />
                           <div className="flex items-center gap-1">
-                            {['17:30', '19:30', '21:00'].map((preset) => (
+                            {['17:30', '19:30', '20:00', '21:00'].map((preset) => (
                               <button
                                 key={preset}
                                 type="button"
@@ -599,7 +606,7 @@ export const DayPlanningModal: React.FC<DayPlanningModalProps> = ({
                         />
                       </div>
                       <div className="flex items-center gap-1 self-end pb-1">
-                        {['17:30', '19:30', '21:00'].map((preset) => (
+                        {['17:30', '19:30', '20:00', '21:00'].map((preset) => (
                           <button
                             key={preset}
                             type="button"

@@ -54,6 +54,7 @@ import {
   RECOVERED_WEEKLY_PLAN, 
   RECOVERED_SENIOR_WEEKLY_PLAN, 
   RECOVERED_WEEKLY_PLANS, 
+  RECOVERED_JUNIOR_WEDNESDAY_SESSIONS,
   countTotalDrillsInWeeklyPlans 
 } from './data/defaultWeeklyPlans';
 
@@ -78,6 +79,11 @@ export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr:
   dia8: { label: 'S8', dateStr: 'Dimarts 22 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Defensa d’Ajudes Col·lectives' },
   dia9: { label: 'S9', dateStr: 'Dijous 24 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Presió a Tot Camp' },
   dia10: { label: 'S10', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
+  dia11: { label: 'S11', dateStr: 'Dimecres 2 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Fonaments i Espaiat (20:00 - 21:00)' },
+  dia12: { label: 'S12', dateStr: 'Dimecres 9 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Transició Dinàmica & Sortida de Pressió (20:00 - 21:00)' },
+  dia13: { label: 'S13', dateStr: 'Dimecres 16 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Defensa Shell i Moviment de Pilota (20:00 - 21:00)' },
+  dia14: { label: 'S14', dateStr: 'Dimecres 23 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Ritme de Contraatac i 5v5 (20:00 - 21:00)' },
+  dia15: { label: 'S15', dateStr: 'Dimecres 30 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Ajustos Tàctics & Roda de Tir (20:00 - 21:00)' },
 };
 
 export interface SeasonMonthDef {
@@ -114,6 +120,11 @@ export const DEFAULT_SESSION_DATES: Record<string, string> = {
   dia8: '2026-09-24',
   dia9: '2026-09-29',
   dia10: '2026-10-01',
+  dia11: '2026-09-02',
+  dia12: '2026-09-09',
+  dia13: '2026-09-16',
+  dia14: '2026-09-23',
+  dia15: '2026-09-30',
 };
 
 export const LEGACY_MATCH_INDEX_DATES: Record<string, string> = {
@@ -299,7 +310,48 @@ export function sanitizeWeeklyPlan(plan: any): WeeklyPlan {
     dia8: sanitizePlanSession('dia8', plan.dia8, team),
     dia9: sanitizePlanSession('dia9', plan.dia9, team),
     dia10: sanitizePlanSession('dia10', plan.dia10, team),
+    dia11: sanitizePlanSession('dia11', plan.dia11, team),
+    dia12: sanitizePlanSession('dia12', plan.dia12, team),
+    dia13: sanitizePlanSession('dia13', plan.dia13, team),
+    dia14: sanitizePlanSession('dia14', plan.dia14, team),
+    dia15: sanitizePlanSession('dia15', plan.dia15, team),
   };
+}
+
+export function ensureJuniorWednesdayTrainings(plans: WeeklyPlan[]): WeeklyPlan[] {
+  return plans.map(plan => {
+    const isJunior = plan.team === 'junior_a' || (!plan.team && !plan.id?.includes('senior'));
+    if (!isJunior) return plan;
+
+    const wednesdaySessionsList = [
+      { id: 'dia11', date: '2026-09-02', session: RECOVERED_SESSIONS.dia11 },
+      { id: 'dia12', date: '2026-09-09', session: RECOVERED_SESSIONS.dia12 },
+      { id: 'dia13', date: '2026-09-16', session: RECOVERED_SESSIONS.dia13 },
+      { id: 'dia14', date: '2026-09-23', session: RECOVERED_SESSIONS.dia14 },
+      { id: 'dia15', date: '2026-09-30', session: RECOVERED_SESSIONS.dia15 },
+    ];
+
+    const updatedPlan: any = { ...plan };
+    const sessionsObj: Record<string, TrainingSession> = { ...(updatedPlan.sessions || {}) };
+
+    wednesdaySessionsList.forEach(({ id, date, session }) => {
+      // Check if session for this date exists anywhere in plan
+      const existingInTop = Object.values(updatedPlan).some((val: any) => 
+        val && typeof val === 'object' && val.scheduledTime && typeof val.scheduledTime === 'string' && val.scheduledTime.startsWith(date)
+      );
+      const existingInSessions = Object.values(sessionsObj).some((val: any) =>
+        val && typeof val === 'object' && val.scheduledTime && typeof val.scheduledTime === 'string' && val.scheduledTime.startsWith(date)
+      );
+
+      if (!existingInTop && !existingInSessions && session) {
+        updatedPlan[id] = session;
+        sessionsObj[id] = session;
+      }
+    });
+
+    updatedPlan.sessions = sessionsObj;
+    return updatedPlan;
+  });
 }
 
 export function ensureAllTeamsPresent(plans: WeeklyPlan[]): WeeklyPlan[] {
@@ -313,7 +365,7 @@ export function ensureAllTeamsPresent(plans: WeeklyPlan[]): WeeklyPlan[] {
   if (!hasSenior) {
     result.push(sanitizeWeeklyPlan(RECOVERED_SENIOR_WEEKLY_PLAN));
   }
-  return result;
+  return ensureJuniorWednesdayTrainings(result);
 }
 
 const isMobileDevice = () => {
@@ -522,7 +574,7 @@ export default function App() {
     const fallbackDict = selectedTeam === 'senior' ? RECOVERED_SENIOR_SESSIONS : DEFAULT_SESSIONS;
     const fallbackPlan = activePlan || teamPlans[0] || {};
     
-    // Start with dia1..dia10
+    // Start with dia1..dia15
     const result: Record<string, TrainingSession> = {
       dia1: fallbackPlan.dia1 || fallbackDict.dia1,
       dia2: fallbackPlan.dia2 || fallbackDict.dia2,
@@ -534,6 +586,11 @@ export default function App() {
       dia8: fallbackPlan.dia8 || fallbackDict.dia8,
       dia9: fallbackPlan.dia9 || fallbackDict.dia9,
       dia10: fallbackPlan.dia10 || fallbackDict.dia10,
+      dia11: fallbackPlan.dia11 || fallbackDict.dia11,
+      dia12: fallbackPlan.dia12 || fallbackDict.dia12,
+      dia13: fallbackPlan.dia13 || fallbackDict.dia13,
+      dia14: fallbackPlan.dia14 || fallbackDict.dia14,
+      dia15: fallbackPlan.dia15 || fallbackDict.dia15,
     };
 
     // Any sessions in fallbackPlan.sessions dictionary
@@ -2163,9 +2220,14 @@ export default function App() {
       .filter(n => !isNaN(n));
     const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
     const newId = `dia${nextNum}`;
-    const defaultTime = time || (selectedTeam === 'senior' ? '21:00' : '19:30');
     const dateLabel = formatDateToCa(dateStr);
-    const title = customTitle || `Sessió ${nextNum}: ${dateLabel} (${selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})`;
+    const dateObj = new Date(dateStr + 'T12:00:00');
+    const isWednesday = dateObj.getDay() === 3;
+    const defaultTime = time || (selectedTeam === 'senior' ? '21:00' : (isWednesday ? '20:00' : '19:30'));
+    const defaultDuration = (selectedTeam !== 'senior' && isWednesday) ? 60 : 75;
+    const title = customTitle || (isWednesday && selectedTeam !== 'senior'
+      ? `Sessió ${nextNum}: ${dateLabel} - Entrenament Dimecres (20:00 - 21:00)`
+      : `Sessió ${nextNum}: ${dateLabel} (${selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})`);
 
     const newSession: TrainingSession = {
       id: newId,
@@ -2174,7 +2236,7 @@ export default function App() {
       scheduledTime: `${dateStr}T${defaultTime}`,
       totalDuration: templateDrills && templateDrills.length > 0
         ? templateDrills.reduce((acc: number, d: any) => acc + (d.duration || 10), 0)
-        : 75,
+        : defaultDuration,
       drills: templateDrills && templateDrills.length > 0 ? templateDrills : [],
       team: selectedTeam
     };
@@ -2202,9 +2264,9 @@ export default function App() {
   const handleAutoGenerateMonthSessions = (monthDef: SeasonMonthDef) => {
     const monthDays = getMonthCalendarDays(monthDef.year, monthDef.monthIndex);
     // Training day indices: 0=Dil, 1=Dim, 2=Dmc, 3=Dij, 4=Div, 5=Dis, 6=Diu
-    // Tant el Júnior A com el Sènior entrenen Dimarts (1) i Dijous (3)
-    const trainingDayIndices = [1, 3];
-    const defaultTime = selectedTeam === 'senior' ? '21:00' : '19:30';
+    // Sènior: Dimarts (1) i Dijous (3) a les 21:00
+    // Júnior A: Dimarts (1) i Dijous (3) a les 19:30, i tots els Dimecres (2) de 20:00 a 21:00
+    const trainingDayIndices = selectedTeam === 'senior' ? [1, 3] : [1, 2, 3];
 
     const currentSessions = { ...sessions };
     const existingNums = Object.keys(currentSessions)
@@ -2225,12 +2287,19 @@ export default function App() {
         if (!hasSession) {
           const newId = `dia${nextNum}`;
           const dateLabel = formatDateToCa(d.dateStr);
+          const isWednesday = d.dayOfWeekIndex === 2;
+          const sessionTime = selectedTeam === 'senior' ? '21:00' : (isWednesday ? '20:00' : '19:30');
+          const sessionDuration = (selectedTeam !== 'senior' && isWednesday) ? 60 : 75;
+          const sessionTitle = isWednesday && selectedTeam !== 'senior'
+            ? `Sessió ${nextNum}: ${dateLabel} - Entrenament Dimecres (20:00 - 21:00)`
+            : `Sessió ${nextNum}: ${dateLabel} (${selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})`;
+
           const newSession: TrainingSession = {
             id: newId,
-            name: `Sessió ${nextNum}: ${dateLabel} (${selectedTeam === 'senior' ? 'Sènior' : 'Júnior A'})`,
+            name: sessionTitle,
             dayOfWeek: dateLabel.split(' ')[0] || 'Entrenament',
-            scheduledTime: `${d.dateStr}T${defaultTime}`,
-            totalDuration: 75,
+            scheduledTime: `${d.dateStr}T${sessionTime}`,
+            totalDuration: sessionDuration,
             drills: [],
             team: selectedTeam
           };
@@ -2698,6 +2767,11 @@ export default function App() {
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/80">
                   {(Object.values(sessions) as TrainingSession[])
                     .sort((a, b) => {
+                      if (a.scheduledTime && b.scheduledTime) {
+                        return a.scheduledTime.localeCompare(b.scheduledTime);
+                      }
+                      if (a.scheduledTime && !b.scheduledTime) return -1;
+                      if (!a.scheduledTime && b.scheduledTime) return 1;
                       const aNum = parseInt(a.id.replace('dia', ''), 10) || 0;
                       const bNum = parseInt(b.id.replace('dia', ''), 10) || 0;
                       return aNum - bNum;
@@ -2930,7 +3004,7 @@ export default function App() {
                               type="button"
                               onClick={() => handleAutoGenerateMonthSessions(currentSeasonMonth)}
                               className="py-1 px-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-extrabold rounded-md text-[10px] uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-xs"
-                              title={`Generar automàticament sessions per a ${currentSeasonMonth.name} (Dimarts i Dijous ${selectedTeam === 'senior' ? 'a les 21:00' : 'a les 19:30'})`}
+                              title={`Generar automàticament sessions per a ${currentSeasonMonth.name} (${selectedTeam === 'senior' ? 'Dimarts i Dijous a les 21:00' : 'Dimarts i Dijous a les 19:30, Dimecres de 20:00 a 21:00'})`}
                             >
                               <Sparkles size={12} />
                               <span>Auto-planificar Mes ⚡</span>
@@ -2954,9 +3028,9 @@ export default function App() {
                         <div className="grid grid-cols-7 gap-1 md:gap-1.5">
                           {[
                             { label: 'Dil', isTrain: false, isMatch: false },
-                            { label: 'Dim (Entr)', isTrain: true, isMatch: false },
-                            { label: 'Dmc', isTrain: false, isMatch: false },
-                            { label: 'Dij (Entr)', isTrain: true, isMatch: false },
+                            { label: selectedTeam === 'senior' ? 'Dim (Entr 21h)' : 'Dim (Entr 19:30)', isTrain: true, isMatch: false },
+                            { label: selectedTeam === 'senior' ? 'Dmc' : 'Dmc (Entr 20-21h)', isTrain: selectedTeam !== 'senior', isMatch: false },
+                            { label: selectedTeam === 'senior' ? 'Dij (Entr 21h)' : 'Dij (Entr 19:30)', isTrain: true, isMatch: false },
                             { label: 'Div', isTrain: false, isMatch: false },
                             { label: 'Dis (Partit)', isTrain: false, isMatch: true },
                             { label: 'Diu (Partit)', isTrain: false, isMatch: true },

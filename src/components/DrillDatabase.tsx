@@ -33,6 +33,11 @@ export const CALENDAR_SESSION_METADATA: Record<string, { label: string; dateStr:
   dia8: { label: 'S8', dateStr: 'Dijous 24 de Setembre', dayOfWeek: 'Dijous', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
   dia9: { label: 'S9', dateStr: 'Dimarts 29 de Setembre', dayOfWeek: 'Dimarts', defaultTitle: 'Presió a Tot Camp' },
   dia10: { label: 'S10', dateStr: 'Dijous 1 d’Octubre', dayOfWeek: 'Dijous', defaultTitle: 'Roda de Tir Prepartit i Ajustos' },
+  dia11: { label: 'S11', dateStr: 'Dimecres 2 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Fonaments i Espaiat (20:00 - 21:00)' },
+  dia12: { label: 'S12', dateStr: 'Dimecres 9 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Transició Dinàmica & Sortida de Pressió (20:00 - 21:00)' },
+  dia13: { label: 'S13', dateStr: 'Dimecres 16 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Defensa Shell i Moviment de Pilota (20:00 - 21:00)' },
+  dia14: { label: 'S14', dateStr: 'Dimecres 23 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Ritme de Contraatac i 5v5 (20:00 - 21:00)' },
+  dia15: { label: 'S15', dateStr: 'Dimecres 30 de Setembre', dayOfWeek: 'Dimecres', defaultTitle: 'Ajustos Tàctics & Roda de Tir (20:00 - 21:00)' },
 };
 
 export function formatSessionOptionName(sessId: string, sess?: Partial<TrainingSession>): { title: string; subtitle: string } {
