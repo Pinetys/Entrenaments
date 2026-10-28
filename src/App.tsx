@@ -264,6 +264,54 @@ export function formatDateCaInput(dateStr: string): string {
   return dateStr;
 }
 
+export function getTodayDateStr(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function getTodayMonthKey(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+export function findSessionForTodayOrClosest(sessionsMap: Record<string, TrainingSession>): string {
+  const todayStr = getTodayDateStr();
+  const sessionList = Object.values(sessionsMap).filter(s => s && s.id);
+  if (sessionList.length === 0) return 'dia1';
+
+  // 1. Direct match for today's scheduled training
+  const exactToday = sessionList.find(s => s.scheduledTime && s.scheduledTime.startsWith(todayStr));
+  if (exactToday) return exactToday.id;
+
+  // 2. Map all sessions to valid date
+  const datedSessions = sessionList
+    .map(s => {
+      let date = '';
+      if (s.scheduledTime) {
+        date = s.scheduledTime.split('T')[0];
+      } else if (DEFAULT_SESSION_DATES[s.id]) {
+        date = DEFAULT_SESSION_DATES[s.id];
+      }
+      return { id: s.id, date };
+    })
+    .filter(item => Boolean(item.date))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (datedSessions.length === 0) return 'dia1';
+
+  // Find the first upcoming session on or after today
+  const upcoming = datedSessions.find(s => s.date >= todayStr);
+  if (upcoming) return upcoming.id;
+
+  // Otherwise, return the latest past session
+  return datedSessions[datedSessions.length - 1].id;
+}
+
 export const DEFAULT_SESSIONS: Record<string, TrainingSession> = RECOVERED_SESSIONS;
 
 export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSession>, team: TeamType = 'junior_a'): TrainingSession {
@@ -281,41 +329,66 @@ export function sanitizePlanSession(sessId: string, sess?: Partial<TrainingSessi
   let rawName = (sess && sess.name) ? sess.name : fallback.name;
   let dayOfWeek = meta ? meta.dayOfWeek : (sess?.dayOfWeek || fallback.dayOfWeek);
 
+  // Preserve user drills: If the session has a drills array (even empty or custom), do NOT overwrite with fallback!
+  const drills = Array.isArray(sess?.drills) ? sess.drills : fallback.drills;
+
   return {
     id: sessId,
     name: rawName,
     dayOfWeek: dayOfWeek,
     team: team,
-    totalDuration: (sess?.drills && sess.drills.length > 0) 
-      ? sess.drills.reduce((acc, d) => acc + (d.duration || 10), 0)
-      : fallback.totalDuration,
-    drills: (sess?.drills && sess.drills.length > 0) ? sess.drills : fallback.drills,
+    totalDuration: (drills && drills.length > 0) 
+      ? drills.reduce((acc, d) => acc + (d.duration || 10), 0)
+      : (sess?.totalDuration ?? fallback.totalDuration ?? 0),
+    drills: drills,
     scheduledTime: sess?.scheduledTime || fallback.scheduledTime
   };
 }
 
 export function sanitizeWeeklyPlan(plan: any): WeeklyPlan {
+  if (!plan) return plan;
   const team: TeamType = plan.team || (plan.id?.includes('senior') || plan.name?.toLowerCase().includes('senior') || plan.name?.toLowerCase().includes('sènior') ? 'senior' : 'junior_a');
-  return {
+
+  // Accumulate all sessions: from plan.sessions dictionary and from top-level keys
+  const sessionsDict: Record<string, TrainingSession> = {};
+
+  // 1. Gather all existing sessions from plan.sessions
+  if (plan.sessions && typeof plan.sessions === 'object') {
+    Object.entries(plan.sessions).forEach(([id, s]) => {
+      if (s && typeof s === 'object') {
+        sessionsDict[id] = sanitizePlanSession(id, s as any, team);
+      }
+    });
+  }
+
+  // 2. Gather any top-level sessions like dia1..dia15, dia16, sess-..., etc.
+  Object.entries(plan).forEach(([k, v]) => {
+    if ((k.startsWith('dia') || k.startsWith('sess-')) && v && typeof v === 'object' && ('drills' in (v as any) || 'name' in (v as any))) {
+      sessionsDict[k] = sanitizePlanSession(k, v as any, team);
+    }
+  });
+
+  // 3. Ensure base sessions dia1..dia15 exist in sessionsDict
+  for (let i = 1; i <= 15; i++) {
+    const id = `dia${i}`;
+    if (!sessionsDict[id]) {
+      sessionsDict[id] = sanitizePlanSession(id, plan[id] || plan.sessions?.[id], team);
+    }
+  }
+
+  const updatedPlan: any = {
     ...plan,
     team,
     startDate: plan.startDate === '2026-09-03' ? '2026-08-31' : (plan.startDate || '2026-08-31'),
-    dia1: sanitizePlanSession('dia1', plan.dia1, team),
-    dia2: sanitizePlanSession('dia2', plan.dia2, team),
-    dia3: sanitizePlanSession('dia3', plan.dia3, team),
-    dia4: sanitizePlanSession('dia4', plan.dia4, team),
-    dia5: sanitizePlanSession('dia5', plan.dia5, team),
-    dia6: sanitizePlanSession('dia6', plan.dia6, team),
-    dia7: sanitizePlanSession('dia7', plan.dia7, team),
-    dia8: sanitizePlanSession('dia8', plan.dia8, team),
-    dia9: sanitizePlanSession('dia9', plan.dia9, team),
-    dia10: sanitizePlanSession('dia10', plan.dia10, team),
-    dia11: sanitizePlanSession('dia11', plan.dia11, team),
-    dia12: sanitizePlanSession('dia12', plan.dia12, team),
-    dia13: sanitizePlanSession('dia13', plan.dia13, team),
-    dia14: sanitizePlanSession('dia14', plan.dia14, team),
-    dia15: sanitizePlanSession('dia15', plan.dia15, team),
+    sessions: sessionsDict
   };
+
+  // Keep top-level keys synchronized as well for backwards compatibility
+  Object.entries(sessionsDict).forEach(([k, v]) => {
+    updatedPlan[k] = v;
+  });
+
+  return updatedPlan;
 }
 
 export function ensureJuniorWednesdayTrainings(plans: WeeklyPlan[]): WeeklyPlan[] {
@@ -465,6 +538,7 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const lastSavedTimeStrRef = useRef<string | null>(null);
   const lastSavedDataJsonRef = useRef<string | null>(null);
+  const lastLocalModificationTimestamp = useRef<number>(Date.now());
   const isInitialMountRef = useRef<boolean>(true);
 
   useEffect(() => {
@@ -558,14 +632,29 @@ export default function App() {
     }));
 
     const plansForTeam = weeklyPlans.filter(p => newTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
+    let effectiveTargetPlan = plansForTeam[0];
     if (plansForTeam.length > 0) {
       setSelectedWeeklyPlanId(plansForTeam[0].id);
     } else {
       const fallbackNewPlan = newTeam === 'senior' ? sanitizeWeeklyPlan(RECOVERED_SENIOR_WEEKLY_PLAN) : sanitizeWeeklyPlan(RECOVERED_WEEKLY_PLAN);
+      effectiveTargetPlan = fallbackNewPlan;
       setWeeklyPlans(prev => [...prev, fallbackNewPlan]);
       setSelectedWeeklyPlanId(fallbackNewPlan.id);
     }
-    setSelectedSessionId('dia1');
+
+    // Automatically synchronize to current date for the selected team
+    if (effectiveTargetPlan) {
+      const allSess = { ...(effectiveTargetPlan.sessions || {}), ...effectiveTargetPlan };
+      const sessMap: Record<string, TrainingSession> = {};
+      Object.entries(allSess).forEach(([k, v]) => {
+        if (v && typeof v === 'object' && ('drills' in (v as any) || 'name' in (v as any))) {
+          sessMap[k] = v as TrainingSession;
+        }
+      });
+      setSelectedSessionId(findSessionForTodayOrClosest(sessMap));
+    } else {
+      setSelectedSessionId('dia1');
+    }
     triggerToast(newTeam === 'senior' ? '🏀 Equip canviat a SÈNIOR' : '🏀 Equip canviat a JÚNIOR A');
   };
 
@@ -574,40 +663,27 @@ export default function App() {
     const fallbackDict = selectedTeam === 'senior' ? RECOVERED_SENIOR_SESSIONS : DEFAULT_SESSIONS;
     const fallbackPlan = activePlan || teamPlans[0] || {};
     
-    // Start with dia1..dia15
-    const result: Record<string, TrainingSession> = {
-      dia1: fallbackPlan.dia1 || fallbackDict.dia1,
-      dia2: fallbackPlan.dia2 || fallbackDict.dia2,
-      dia3: fallbackPlan.dia3 || fallbackDict.dia3,
-      dia4: fallbackPlan.dia4 || fallbackDict.dia4,
-      dia5: fallbackPlan.dia5 || fallbackDict.dia5,
-      dia6: fallbackPlan.dia6 || fallbackDict.dia6,
-      dia7: fallbackPlan.dia7 || fallbackDict.dia7,
-      dia8: fallbackPlan.dia8 || fallbackDict.dia8,
-      dia9: fallbackPlan.dia9 || fallbackDict.dia9,
-      dia10: fallbackPlan.dia10 || fallbackDict.dia10,
-      dia11: fallbackPlan.dia11 || fallbackDict.dia11,
-      dia12: fallbackPlan.dia12 || fallbackDict.dia12,
-      dia13: fallbackPlan.dia13 || fallbackDict.dia13,
-      dia14: fallbackPlan.dia14 || fallbackDict.dia14,
-      dia15: fallbackPlan.dia15 || fallbackDict.dia15,
-    };
+    const result: Record<string, TrainingSession> = {};
 
-    // Any sessions in fallbackPlan.sessions dictionary
+    // 1. Base dia1..dia15
+    for (let i = 1; i <= 15; i++) {
+      const id = `dia${i}`;
+      result[id] = fallbackPlan[id] || fallbackPlan.sessions?.[id] || fallbackDict[id];
+    }
+
+    // 2. Any sessions in fallbackPlan.sessions dictionary (takes full priority for custom plans/imports)
     if (fallbackPlan.sessions && typeof fallbackPlan.sessions === 'object') {
       Object.entries(fallbackPlan.sessions).forEach(([id, s]) => {
-        if (s && typeof s === 'object' && 'drills' in (s as any)) {
+        if (s && typeof s === 'object' && ('drills' in (s as any) || 'name' in (s as any))) {
           result[id] = s as TrainingSession;
         }
       });
     }
 
-    // Any top-level keys like dia11, dia12, sess-..., etc.
+    // 3. Any top-level keys like dia16, sess-..., etc.
     Object.entries(fallbackPlan).forEach(([k, v]) => {
-      if (k.startsWith('dia') || k.startsWith('sess-')) {
-        if (v && typeof v === 'object' && 'drills' in (v as any) && !result[k]) {
-          result[k] = v as TrainingSession;
-        }
+      if ((k.startsWith('dia') || k.startsWith('sess-')) && v && typeof v === 'object' && ('drills' in (v as any) || 'name' in (v as any))) {
+        result[k] = v as TrainingSession;
       }
     });
 
@@ -617,8 +693,19 @@ export default function App() {
   // Custom setSessions wrapper that writes modifications directly into the active slice of weeklyPlans
   const setSessions = (newSessionsValOrFn: any) => {
     setWeeklyPlans(prevPlans => {
+      let targetPlanId = selectedWeeklyPlanId;
+      const hasDirectMatch = prevPlans.some(p => p.id === targetPlanId || p.id === activePlan.id);
+      if (!hasDirectMatch) {
+        const teamPlan = prevPlans.find(p => selectedTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
+        if (teamPlan) {
+          targetPlanId = teamPlan.id;
+        } else if (prevPlans.length > 0) {
+          targetPlanId = prevPlans[0].id;
+        }
+      }
+
       const updated = prevPlans.map(plan => {
-        if (plan.id === activePlan.id || plan.id === selectedWeeklyPlanId) {
+        if (plan.id === targetPlanId || plan.id === activePlan.id || (!hasDirectMatch && plan.id === targetPlanId)) {
           const currentFullSessions = { ...sessions };
           const resolved = typeof newSessionsValOrFn === 'function' 
             ? newSessionsValOrFn(currentFullSessions) 
@@ -642,15 +729,17 @@ export default function App() {
         return plan;
       });
 
+      lastLocalModificationTimestamp.current = Date.now();
+
       // Synchronously write to localStorage immediately to avoid data loss on fast reloads
       try {
         const nowIso = new Date().toISOString();
         const cur = latestStateRef.current;
         const normalized = {
-          drills: cur.drills || drills,
+          drills: cur.drills && cur.drills.length > 0 ? cur.drills : drills,
           weeklyPlans: updated,
           selectedTeam: selectedTeam,
-          selectedWeeklyPlanId: cur.selectedWeeklyPlanId || selectedWeeklyPlanId || 'plan-default',
+          selectedWeeklyPlanId: targetPlanId,
           selectedSessionId: cur.selectedSessionId || selectedSessionId || 'dia1',
           completions: cur.completions || completions,
           favoriteDrillIds: cur.favoriteDrillIds || favoriteDrillIds,
@@ -659,15 +748,26 @@ export default function App() {
           sessionTemplates: cur.sessionTemplates || sessionTemplates,
           baremosConfig: cur.baremosConfig || baremosConfig
         };
+        latestStateRef.current = normalized;
         const stateWithTimestamp = { ...normalized, updatedAt: nowIso };
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateWithTimestamp));
+        if (countTotalDrillsInWeeklyPlans(updated) > 0) {
+          localStorage.setItem('basket_planner_permanent_backup', JSON.stringify(stateWithTimestamp));
+        }
       } catch (e) {}
 
       return updated;
     });
   };
 
-  const [selectedSessionId, setSelectedSessionId] = useState<string>('dia1');
+  const [selectedSessionId, setSelectedSessionId] = useState<string>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlSession = params.get('session');
+      if (urlSession) return urlSession;
+    } catch (e) {}
+    return 'dia1';
+  });
   const [activeView, setActiveView] = useState<string>(() => {
     try {
       // Direct mobile UA and size-responsive detection so phones load mobile views natively & quickly
@@ -718,8 +818,13 @@ export default function App() {
   const [showPlayerRosterModal, setShowPlayerRosterModal] = useState<boolean>(false);
 
   const syncStateToCloudImmediately = (overrideState?: any) => {
+    lastLocalModificationTimestamp.current = Date.now();
     const newState = buildNormalizedState(overrideState);
     const nowIso = new Date().toISOString();
+    latestStateRef.current = newState;
+    lastSavedTimeStrRef.current = nowIso;
+    lastSavedDataJsonRef.current = JSON.stringify(newState);
+
     const newStateWithTime = { ...newState, updatedAt: nowIso };
     const newStateStr = JSON.stringify(newStateWithTime);
     try {
@@ -729,12 +834,11 @@ export default function App() {
       }
     } catch (e) {}
 
-    if (!syncCode || !hasLoadedFromCloud) return;
+    if (!syncCode) return;
 
     saveToCloud(syncCode, newState).then(savedTime => {
       setLastSynced(new Date(savedTime));
       lastSavedTimeStrRef.current = savedTime;
-      lastSavedDataJsonRef.current = JSON.stringify(newState);
       setSyncError(null);
     }).catch(err => {
       console.warn('Instant cloud sync failed:', err);
@@ -1063,7 +1167,16 @@ export default function App() {
   // Mobile direct photo pairing code state
   const [mobilePairingCode, setMobilePairingCode] = useState<string | null>(null);
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(true);
-  const [selectedSeasonMonthKey, setSelectedSeasonMonthKey] = useState<string>('2026-09');
+  const [selectedSeasonMonthKey, setSelectedSeasonMonthKey] = useState<string>(() => {
+    const todayKey = getTodayMonthKey();
+    if (SEASON_MONTHS.some(m => m.key === todayKey)) {
+      return todayKey;
+    }
+    const todayStr = getTodayDateStr();
+    if (todayStr < '2026-09-01') return '2026-09';
+    if (todayStr > '2027-06-30') return '2027-06';
+    return '2026-09';
+  });
   const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'season'>('month');
   const [planningDateStr, setPlanningDateStr] = useState<string | null>(null);
 
@@ -1145,11 +1258,16 @@ export default function App() {
     }, 4500);
   };
 
-  // Helper to re-fetch and apply cloud state seamlessly
+  // Helper to re-fetch and apply cloud state seamlessly without wiping user work
   const refreshFromCloud = async (forceCode?: string) => {
     const codeToQuery = forceCode || syncCode || DEFAULT_SYNC_CODE;
     if (!codeToQuery) return;
     
+    // Guard against race conditions: If user modified state or imported JSON within last 15s, do NOT overwrite with cloud!
+    if (Date.now() - lastLocalModificationTimestamp.current < 15000) {
+      return;
+    }
+
     try {
       const cloudData = await loadFromCloud(codeToQuery);
       if (cloudData) {
@@ -1157,10 +1275,23 @@ export default function App() {
           return;
         }
 
-        const mergedDrills = filterUserOnlyDrills([
-          ...(cloudData.drills || []),
-          ...latestStateRef.current.drills
-        ]);
+        // Guard against older cloud data overwriting fresh local changes
+        const localUpdatedTime = (latestStateRef.current as any)?.updatedAt;
+        if (localUpdatedTime && cloudData.updatedAt) {
+          const cloudTime = new Date(cloudData.updatedAt).getTime();
+          const localTime = new Date(localUpdatedTime).getTime();
+          if (localTime > cloudTime) {
+            // Local is newer! Push local to cloud instead of letting cloud overwrite local work
+            saveToCloud(codeToQuery, latestStateRef.current).catch(console.warn);
+            return;
+          }
+        }
+
+        // Safely merge drills without ever dropping locally created or imported drills
+        const drillMap = new Map<string, Drill>();
+        (cloudData.drills || []).forEach(d => { if (d && d.id) drillMap.set(d.id, d); });
+        latestStateRef.current.drills.forEach(d => { if (d && d.id) drillMap.set(d.id, d); });
+        const mergedDrills = Array.from(drillMap.values());
 
         const cloudDrillCount = countTotalDrillsInWeeklyPlans(cloudData.weeklyPlans);
         const localDrillCount = countTotalDrillsInWeeklyPlans(latestStateRef.current.weeklyPlans);
@@ -1172,7 +1303,31 @@ export default function App() {
           console.log('[Sync] Cloud document had 0 drills while local has drills. Pushing local state to cloud.');
           saveToCloud(codeToQuery, buildNormalizedState({ drills: mergedDrills })).catch(console.warn);
         } else if (cloudData.weeklyPlans && cloudData.weeklyPlans.length > 0) {
-          setWeeklyPlans(ensureAllTeamsPresent(cloudData.weeklyPlans.map(sanitizeWeeklyPlan)));
+          // Merge weekly plans preserving any local sessions that don't exist in cloud
+          setWeeklyPlans(prevPlans => {
+            const sanitizedCloudPlans = ensureAllTeamsPresent(cloudData.weeklyPlans.map(sanitizeWeeklyPlan));
+            return sanitizedCloudPlans.map(cp => {
+              const matchingLocal = prevPlans.find(lp => lp.id === cp.id || lp.team === cp.team);
+              if (!matchingLocal) return cp;
+              
+              const mergedSessions: Record<string, TrainingSession> = { ...(cp.sessions || {}) };
+              if (matchingLocal.sessions) {
+                Object.entries(matchingLocal.sessions).forEach(([sId, sObj]) => {
+                  if (!mergedSessions[sId] && sObj && typeof sObj === 'object' && 'drills' in (sObj as any)) {
+                    mergedSessions[sId] = sObj as TrainingSession;
+                  }
+                });
+              }
+              const resPlan: any = {
+                ...cp,
+                sessions: mergedSessions
+              };
+              Object.entries(mergedSessions).forEach(([k, v]) => {
+                resPlan[k] = v;
+              });
+              return resPlan as WeeklyPlan;
+            });
+          });
         }
 
         if (cloudData.selectedTeam) setSelectedTeam(cloudData.selectedTeam);
@@ -1356,6 +1511,24 @@ export default function App() {
         });
     } else {
       setHasLoadedFromCloud(true);
+    }
+  }, []);
+
+  // Automatically synchronize calendar & active session to current date upon opening the app
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlSession = params.get('session');
+
+    const todayMonth = getTodayMonthKey();
+    if (SEASON_MONTHS.some(m => m.key === todayMonth)) {
+      setSelectedSeasonMonthKey(todayMonth);
+    }
+
+    if (!urlSession) {
+      const todayOrClosest = findSessionForTodayOrClosest(sessions);
+      if (todayOrClosest) {
+        setSelectedSessionId(todayOrClosest);
+      }
     }
   }, []);
 
@@ -2345,33 +2518,130 @@ export default function App() {
     }
   };
 
-  // Upload configuration
+  // Upload and restore full configuration package safely
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileReader = new FileReader();
     if (e.target.files && e.target.files[0]) {
-      fileReader.readAsText(e.target.files[0], "UTF-8");
+      const file = e.target.files[0];
+      fileReader.readAsText(file, "UTF-8");
       fileReader.onload = (event) => {
         try {
           const parsed = JSON.parse(event.target?.result as string);
-          if (parsed && (parsed.drills || parsed.sessions || parsed.weeklyPlans)) {
-            if (parsed.drills) setDrills(filterUserOnlyDrills(parsed.drills));
-            if (parsed.sessions) setSessions(parsed.sessions);
-            if (parsed.weeklyPlans && Array.isArray(parsed.weeklyPlans)) setWeeklyPlans(ensureAllTeamsPresent(parsed.weeklyPlans.map(sanitizeWeeklyPlan)));
-            if (parsed.selectedTeam) setSelectedTeam(parsed.selectedTeam);
-            if (parsed.players && Array.isArray(parsed.players) && parsed.players.length > 0) setPlayers(parsed.players);
-            if (parsed.sessionTemplates && Array.isArray(parsed.sessionTemplates)) setSessionTemplates(parsed.sessionTemplates);
-            if (parsed.baremosConfig && Array.isArray(parsed.baremosConfig) && parsed.baremosConfig.length > 0) setBaremosConfig(parsed.baremosConfig);
-            if (parsed.coachProfile) setCoachProfile(parsed.coachProfile);
-            if (parsed.favoriteDrillIds) setFavoriteDrillIds(parsed.favoriteDrillIds);
-            if (parsed.completions) setCompletions(parsed.completions);
-            
-            syncStateToCloudImmediately(parsed);
-            triggerToast('✅ Còpia de seguretat restaurada i sincronitzada amb èxit!');
-          } else {
+          if (!parsed || (!parsed.drills && !parsed.sessions && !parsed.weeklyPlans)) {
             triggerToast('⚠️ El fitxer escollit no té el format de planificació correcte.');
+            return;
           }
+
+          // 1. Process and merge drills safely
+          let mergedDrills = [...drills];
+          if (parsed.drills && Array.isArray(parsed.drills)) {
+            const drillMap = new Map<string, Drill>();
+            // Base library
+            drills.forEach(d => { if (d && d.id) drillMap.set(d.id, d); });
+            // Imported drills (preserves user-created exercises)
+            parsed.drills.forEach((d: Drill) => { if (d && d.id) drillMap.set(d.id, d); });
+            mergedDrills = Array.from(drillMap.values());
+            setDrills(mergedDrills);
+          }
+
+          // 2. Process weeklyPlans
+          let importedPlans = weeklyPlans;
+          if (parsed.weeklyPlans && Array.isArray(parsed.weeklyPlans) && parsed.weeklyPlans.length > 0) {
+            importedPlans = ensureAllTeamsPresent(parsed.weeklyPlans.map(sanitizeWeeklyPlan));
+            setWeeklyPlans(importedPlans);
+          } else if (parsed.sessions && typeof parsed.sessions === 'object') {
+            setSessions(parsed.sessions);
+          }
+
+          // 3. Team selection & plan selection
+          const targetTeam: TeamType = parsed.selectedTeam || (importedPlans[0]?.team ?? selectedTeam);
+          setSelectedTeam(targetTeam);
+
+          const matchingTeamPlans = importedPlans.filter(p => targetTeam === 'senior' ? p.team === 'senior' : p.team !== 'senior');
+          const targetPlanId = parsed.selectedWeeklyPlanId && importedPlans.some(p => p.id === parsed.selectedWeeklyPlanId)
+            ? parsed.selectedWeeklyPlanId
+            : (matchingTeamPlans[0]?.id || importedPlans[0]?.id || 'plan-default');
+          setSelectedWeeklyPlanId(targetPlanId);
+
+          // 4. Other state fields
+          if (parsed.players && Array.isArray(parsed.players) && parsed.players.length > 0) {
+            setPlayers(parsed.players);
+          }
+          if (parsed.sessionTemplates && Array.isArray(parsed.sessionTemplates)) {
+            setSessionTemplates(parsed.sessionTemplates);
+          }
+          if (parsed.baremosConfig && Array.isArray(parsed.baremosConfig) && parsed.baremosConfig.length > 0) {
+            setBaremosConfig(parsed.baremosConfig);
+          }
+          if (parsed.coachProfile) {
+            setCoachProfile(parsed.coachProfile);
+          }
+          if (parsed.favoriteDrillIds && Array.isArray(parsed.favoriteDrillIds)) {
+            setFavoriteDrillIds(parsed.favoriteDrillIds);
+          }
+          if (parsed.completions && Array.isArray(parsed.completions)) {
+            setCompletions(parsed.completions);
+          }
+
+          // 5. Select active session (prioritize parsed selection or sync to today's date)
+          const effectivePlan = importedPlans.find(p => p.id === targetPlanId) || matchingTeamPlans[0] || importedPlans[0];
+          const planSessionsMap: Record<string, TrainingSession> = {};
+          if (effectivePlan) {
+            const allPlanSess = { ...(effectivePlan.sessions || {}), ...effectivePlan };
+            Object.entries(allPlanSess).forEach(([k, v]) => {
+              if (v && typeof v === 'object' && ('drills' in (v as any) || 'name' in (v as any))) {
+                planSessionsMap[k] = v as TrainingSession;
+              }
+            });
+          }
+          const targetSessionId = parsed.selectedSessionId || findSessionForTodayOrClosest(planSessionsMap);
+          setSelectedSessionId(targetSessionId);
+
+          // 6. Synchronous state update & snapshot persistence
+          const nowIso = new Date().toISOString();
+          const fullImportedState = {
+            drills: mergedDrills,
+            weeklyPlans: importedPlans,
+            selectedTeam: targetTeam,
+            selectedWeeklyPlanId: targetPlanId,
+            selectedSessionId: targetSessionId,
+            completions: parsed.completions || completions,
+            favoriteDrillIds: parsed.favoriteDrillIds || favoriteDrillIds,
+            coachProfile: parsed.coachProfile || coachProfile,
+            players: (parsed.players && parsed.players.length > 0) ? parsed.players : players,
+            sessionTemplates: parsed.sessionTemplates || sessionTemplates,
+            baremosConfig: parsed.baremosConfig || baremosConfig,
+            updatedAt: nowIso
+          };
+
+          latestStateRef.current = fullImportedState;
+          lastLocalModificationTimestamp.current = Date.now();
+          lastSavedTimeStrRef.current = nowIso;
+          lastSavedDataJsonRef.current = JSON.stringify(fullImportedState);
+
+          try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(fullImportedState));
+            localStorage.setItem('basket_planner_permanent_backup', JSON.stringify(fullImportedState));
+          } catch (e) {}
+
+          // 7. Synchronize to cloud immediately
+          if (syncCode) {
+            setIsSyncing(true);
+            saveToCloud(syncCode, fullImportedState)
+              .then(savedTime => {
+                setLastSynced(new Date(savedTime));
+                lastSavedTimeStrRef.current = savedTime;
+              })
+              .catch(err => console.warn('Instant cloud save after import failed:', err))
+              .finally(() => setIsSyncing(false));
+          }
+
+          triggerToast(`✅ S'ha restaurat la planificació (${mergedDrills.length} exercicis, ${importedPlans.length} plans)!`);
         } catch (error) {
+          console.error('Import JSON error:', error);
           triggerToast('💥 Error de lectura o descodificació del fitxer JSON.');
+        } finally {
+          e.target.value = '';
         }
       };
     }
@@ -3009,6 +3279,25 @@ export default function App() {
                               <Sparkles size={12} />
                               <span>Auto-planificar Mes ⚡</span>
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const todayKey = getTodayMonthKey();
+                                if (SEASON_MONTHS.some(m => m.key === todayKey)) {
+                                  setSelectedSeasonMonthKey(todayKey);
+                                }
+                                const todaySessId = findSessionForTodayOrClosest(sessions);
+                                if (todaySessId) {
+                                  setSelectedSessionId(todaySessId);
+                                }
+                                triggerToast('📅 Calendari i sessió centrats al dia d’avui!');
+                              }}
+                              className="py-1 px-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold rounded-md text-[10px] uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-xs"
+                              title="Sincronitzar el calendari i sessió al dia d’avui"
+                            >
+                              <Clock size={12} className="text-orange-400" />
+                              <span>Anar a Avui 📍</span>
+                            </button>
                           </div>
                           <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
                             <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-700">
@@ -3055,9 +3344,11 @@ export default function App() {
                             const session = findSessionForDate(day.dateStr);
                             const matchItem = findMatchForDate(day.dateStr);
                             const hasMatchData = Boolean(matchItem);
+                            const todayStr = getTodayDateStr();
+                            const isToday = day.dateStr === todayStr;
 
                             let bgStyle = day.isCurrentMonth ? "bg-slate-50 text-slate-700 hover:bg-slate-100" : "bg-slate-100/50 text-slate-400 opacity-60";
-                            let borderStyle = "border border-slate-200";
+                            let borderStyle = isToday ? "border-2 border-red-500 ring-2 ring-red-100" : "border border-slate-200";
                             let content = null;
 
                             if (session) {
@@ -3069,8 +3360,8 @@ export default function App() {
                                 ? "bg-orange-500 text-white shadow-xs relative scale-[1.01] z-5" 
                                 : "bg-orange-50/90 text-slate-800 hover:bg-orange-100/95";
                               borderStyle = isSelected 
-                                ? "border border-orange-600 font-extrabold ring-2 ring-orange-200" 
-                                : "border border-orange-300";
+                                ? (isToday ? "border-2 border-red-500 ring-2 ring-orange-300 font-extrabold" : "border border-orange-600 font-extrabold ring-2 ring-orange-200")
+                                : (isToday ? "border-2 border-red-500 ring-2 ring-red-200" : "border border-orange-300");
                               
                               content = (
                                 <div className="mt-0.5 flex flex-col items-center gap-0.5">
@@ -3092,8 +3383,8 @@ export default function App() {
                                 ? "bg-amber-500 text-white shadow-xs font-bold scale-[1.01] hover:bg-amber-600"
                                 : "bg-amber-50/80 hover:bg-amber-100/95 text-amber-900";
                               borderStyle = hasMatchData
-                                ? "border border-amber-600 ring-2 ring-amber-300 font-extrabold"
-                                : "border border-amber-300 border-dashed";
+                                ? (isToday ? "border-2 border-red-500 ring-2 ring-amber-300 font-extrabold" : "border border-amber-600 ring-2 ring-amber-300 font-extrabold")
+                                : (isToday ? "border-2 border-red-500 ring-2 ring-red-200" : "border border-amber-300 border-dashed");
                               content = (
                                 <div className="mt-0.5 flex flex-col items-center">
                                   <span className={`text-[7px] uppercase tracking-tight font-black truncate max-w-full px-1 py-0.5 rounded ${hasMatchData ? 'bg-amber-950 text-amber-100' : 'bg-amber-200/90 text-amber-950'}`}>
@@ -3125,17 +3416,24 @@ export default function App() {
                                 className={`group p-1 min-h-[44px] sm:min-h-[50px] rounded transition-all duration-150 flex flex-col justify-between cursor-pointer ${bgStyle} ${borderStyle}`}
                                 title={
                                   session 
-                                    ? `Sessió ${session.id.toUpperCase()}: ${session.name} (Clic per gestionar o editar)`
+                                    ? `Sessió ${session.id.toUpperCase()}: ${session.name}${isToday ? ' • AVUI' : ''} (Clic per gestionar o editar)`
                                     : matchItem 
-                                      ? `Partit: vs ${matchItem.opponent} (Clic per gestionar)`
+                                      ? `Partit: vs ${matchItem.opponent}${isToday ? ' • AVUI' : ''} (Clic per gestionar)`
                                       : isWeekend 
-                                        ? `Cap de setmana: Clic per planificar entrenament o anotar partit (${formatDateToCa(day.dateStr)})`
-                                        : `Dia lliure: Clic per planificar entrenament o partit (${formatDateToCa(day.dateStr)})`
+                                        ? `Cap de setmana${isToday ? ' • AVUI' : ''}: Clic per planificar entrenament o anotar partit (${formatDateToCa(day.dateStr)})`
+                                        : `Dia lliure${isToday ? ' • AVUI' : ''}: Clic per planificar entrenament o partit (${formatDateToCa(day.dateStr)})`
                                 }
                               >
-                                <span className={`text-[8px] font-black font-mono self-start ${day.isCurrentMonth ? '' : 'opacity-60'}`}>
-                                  {day.displayLabel}
-                                </span>
+                                <div className="flex items-center justify-between w-full">
+                                  <span className={`text-[8px] font-black font-mono ${day.isCurrentMonth ? '' : 'opacity-60'}`}>
+                                    {day.displayLabel}
+                                  </span>
+                                  {isToday && (
+                                    <span className="text-[6.5px] font-black uppercase tracking-tight bg-red-600 text-white px-1 py-0.2 rounded shadow-2xs animate-pulse">
+                                      AVUI
+                                    </span>
+                                  )}
+                                </div>
                                 {content}
                               </div>
                             );
