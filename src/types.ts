@@ -79,6 +79,28 @@ export interface TeamStats {
   blocks?: number;
 }
 
+export interface PlayerMatchStats {
+  playerId?: string;
+  number: number;
+  name: string;
+  minutes?: number;
+  points?: number;
+  rebounds?: number;
+  offRebounds?: number;
+  defRebounds?: number;
+  assists?: number;
+  turnovers?: number;
+  steals?: number;
+  fouls?: number;
+  blocks?: number;
+  ftMade?: number;
+  ftAttempted?: number;
+  fg2Made?: number;
+  fg2Attempted?: number;
+  fg3Made?: number;
+  fg3Attempted?: number;
+}
+
 export interface MatchAnnotation {
   id: string;
   team?: TeamType; // 'junior_a' | 'senior'
@@ -93,6 +115,7 @@ export interface MatchAnnotation {
   tacticalKeyPoints?: string[];
   tags?: string[];
   teamStats?: TeamStats;
+  playerStats?: PlayerMatchStats[];
   updatedAt?: string;
 }
 

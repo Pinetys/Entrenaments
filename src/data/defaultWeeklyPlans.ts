@@ -1,4 +1,4 @@
-import { WeeklyPlan, TrainingSession, Drill, Player } from '../types';
+import { WeeklyPlan, TrainingSession, Drill, Player, MatchAnnotation } from '../types';
 import { DEFAULT_JUNIOR_PLAYERS } from './defaultPlayers';
 
 export const RECOVERED_DRILLS_MAP: Record<string, Partial<Drill>> = {
@@ -376,6 +376,50 @@ export const RECOVERED_SENIOR_SESSIONS: Record<string, TrainingSession> = {
   }
 };
 
+export const DEFAULT_MANRESA_MATCH_ANNOTATION: MatchAnnotation = {
+  id: 'match-junior_a-manresa-1',
+  dateIndex: '2026-10-24',
+  team: 'junior_a',
+  matchDate: '24/10/2026',
+  opponent: 'CB Manresa Júnior A',
+  isHome: true,
+  ourScore: 64,
+  opponentScore: 68,
+  generalNotes: 'Partit d\'alta intensitat i ritme exigent contra el CB Manresa Júnior A. Vam competir amb caràcter fins al final, però vam pagar molt car el volum de pèrdues davant la seva pressió 1-2-1-1 (18 pèrdues de pilota, moltes en primera línia). Al rebot defensiu ens van castigar concedint 14 rebots ofensius, i en els tirs lliures vam fer un 55% (11/20) amb 5 errors clau en els últims 3 minuts sota fatiga.',
+  tacticalKeyPoints: [
+    '18 pèrdues de pilota davant la pressió alta 1-2-1-1 (cal millorar el passador central i la sortida rápida)',
+    '11/20 en Tirs Lliures (55%): fallats 5 tirs lliures decisius en el darrer quart sota pressió i cansament',
+    'Rebot defensiu: només 22 rebots defensius vs 14 rebots ofensius del Manresa (bloqueig de rebot feble)',
+    'Transició defensiva: balanç defensiu lent després de pèrdua (ens han anotat 14 punts al contraatac)'
+  ],
+  teamStats: {
+    fg2Made: 19,
+    fg2Missed: 23, // 19/42 (45.2%)
+    fg3Made: 5,
+    fg3Missed: 13, // 5/18 (27.8%)
+    ftMade: 11,
+    ftMissed: 9, // 11/20 (55.0%)
+    offRebounds: 8,
+    defRebounds: 22, // total 30
+    lostPasses: 18, // 18 pèrdues de pilota
+    steals: 7,
+    fouls: 19,
+    blocks: 3
+  },
+  playerStats: [
+    { playerId: 'player-1', number: 4, name: 'Marc Soler', minutes: 28, points: 11, rebounds: 3, offRebounds: 0, defRebounds: 3, assists: 6, turnovers: 5, steals: 2, fouls: 3, ftMade: 3, ftAttempted: 4, fg2Made: 1, fg2Attempted: 4, fg3Made: 2, fg3Attempted: 5 },
+    { playerId: 'player-2', number: 7, name: 'Adrià Font', minutes: 26, points: 15, rebounds: 2, offRebounds: 0, defRebounds: 2, assists: 2, turnovers: 3, steals: 1, fouls: 2, ftMade: 2, ftAttempted: 4, fg2Made: 2, fg2Attempted: 6, fg3Made: 3, fg3Attempted: 7 },
+    { playerId: 'player-3', number: 11, name: 'Pol Torres', minutes: 25, points: 10, rebounds: 6, offRebounds: 2, defRebounds: 4, assists: 1, turnovers: 3, steals: 1, fouls: 4, ftMade: 2, ftAttempted: 4, fg2Made: 4, fg2Attempted: 8, fg3Made: 0, fg3Attempted: 2 },
+    { playerId: 'player-4', number: 14, name: 'Pau Garcia', minutes: 22, points: 9, rebounds: 8, offRebounds: 2, defRebounds: 6, assists: 1, turnovers: 2, steals: 1, fouls: 3, ftMade: 1, ftAttempted: 2, fg2Made: 4, fg2Attempted: 9, fg3Made: 0, fg3Attempted: 1 },
+    { playerId: 'player-5', number: 18, name: 'Nil Vila', minutes: 21, points: 8, rebounds: 7, offRebounds: 3, defRebounds: 4, assists: 0, turnovers: 1, steals: 0, fouls: 4, ftMade: 2, ftAttempted: 4, fg2Made: 3, fg2Attempted: 7, fg3Made: 0, fg3Attempted: 0 },
+    { playerId: 'player-6', number: 5, name: 'Arnau Puig', minutes: 12, points: 3, rebounds: 1, offRebounds: 0, defRebounds: 1, assists: 2, turnovers: 2, steals: 1, fouls: 1, ftMade: 1, ftAttempted: 2, fg2Made: 1, fg2Attempted: 2, fg3Made: 0, fg3Attempted: 1 },
+    { playerId: 'player-7', number: 9, name: 'Roger Valls', minutes: 14, points: 4, rebounds: 1, offRebounds: 0, defRebounds: 1, assists: 0, turnovers: 1, steals: 1, fouls: 1, ftMade: 0, ftAttempted: 0, fg2Made: 2, fg2Attempted: 3, fg3Made: 0, fg3Attempted: 1 },
+    { playerId: 'player-8', number: 13, name: 'Biel Castro', minutes: 15, points: 2, rebounds: 3, offRebounds: 1, defRebounds: 2, assists: 1, turnovers: 1, steals: 0, fouls: 1, ftMade: 0, ftAttempted: 0, fg2Made: 1, fg2Attempted: 3, fg3Made: 0, fg3Attempted: 1 },
+    { playerId: 'player-9', number: 21, name: 'Jan Morales', minutes: 17, points: 2, rebounds: 4, offRebounds: 1, defRebounds: 3, assists: 0, turnovers: 0, steals: 0, fouls: 0, ftMade: 0, ftAttempted: 0, fg2Made: 1, fg2Attempted: 2, fg3Made: 0, fg3Attempted: 0 }
+  ],
+  updatedAt: '2026-10-24T20:30:00.000Z'
+};
+
 export const RECOVERED_WEEKLY_PLAN: WeeklyPlan = {
   id: 'plan-default',
   name: 'Planificació Mensual: Pretemporada & Temporada Regular (Júnior A)',
@@ -395,7 +439,10 @@ export const RECOVERED_WEEKLY_PLAN: WeeklyPlan = {
   dia12: RECOVERED_SESSIONS.dia12,
   dia13: RECOVERED_SESSIONS.dia13,
   dia14: RECOVERED_SESSIONS.dia14,
-  dia15: RECOVERED_SESSIONS.dia15
+  dia15: RECOVERED_SESSIONS.dia15,
+  matchAnnotations: {
+    '2026-10-24': DEFAULT_MANRESA_MATCH_ANNOTATION
+  }
 };
 
 export const RECOVERED_JUNIOR_WEDNESDAY_SESSIONS: Record<string, TrainingSession> = {

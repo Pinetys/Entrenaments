@@ -1,0 +1,21 @@
+{
+  "PINETY-JUNIOR-STATS": [
+    {
+      "opponent": "CB Manresa Júnior A",
+      "ourScore": 64,
+      "opponentScore": 68,
+      "matchDate": "24/10/2026",
+      "teamStats": {
+        "lostPasses": 18,
+        "ftMade": 11,
+        "ftMissed": 9,
+        "defRebounds": 22,
+        "offRebounds": 8,
+        "fg2Made": 19,
+        "fg2Missed": 23,
+        "fg3Made": 5,
+        "fg3Missed": 13
+      }
+    }
+  ]
+}

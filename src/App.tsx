@@ -31,7 +31,8 @@ import {
   CalendarDays,
   Plus,
   Trash2,
-  Copy
+  Copy,
+  BarChart3
 } from 'lucide-react';
 import coachPinetyLogo from './assets/images/coach_pinety_logo_1785329115241.jpg';
 import { Drill, TrainingSession, AppState, WeeklyPlan, SessionCompletion, SessionTemplate, MatchAnnotation, Player, TeamType } from './types';
@@ -45,9 +46,20 @@ import MobileCourtView from './components/MobileCourtView';
 import DrillManualBooklet from './components/DrillManualBooklet';
 import CoachProfileModal from './components/CoachProfileModal';
 import MatchAnnotationsModal from './components/MatchAnnotationsModal';
+import JuniorStatsModal from './components/JuniorStatsModal';
 import { DayPlanningModal } from './components/DayPlanningModal';
 import PlayerRosterModal, { DEFAULT_BAREMOS, BaremoItem } from './components/PlayerRosterModal';
-import { generateSyncCode, saveToCloud, loadFromCloud, subscribeToCloud, CoachProfile, DEFAULT_SYNC_CODE } from './lib/firebase';
+import { 
+  generateSyncCode, 
+  saveToCloud, 
+  loadFromCloud, 
+  subscribeToCloud, 
+  CoachProfile, 
+  DEFAULT_SYNC_CODE,
+  DEFAULT_STATS_SYNC_CODE,
+  subscribeToMatchStats,
+  loadMatchStatsFromCloud
+} from './lib/firebase';
 import { 
   RECOVERED_SESSIONS, 
   RECOVERED_SENIOR_SESSIONS, 
@@ -55,6 +67,7 @@ import {
   RECOVERED_SENIOR_WEEKLY_PLAN, 
   RECOVERED_WEEKLY_PLANS, 
   RECOVERED_JUNIOR_WEDNESDAY_SESSIONS,
+  DEFAULT_MANRESA_MATCH_ANNOTATION,
   countTotalDrillsInWeeklyPlans 
 } from './data/defaultWeeklyPlans';
 
@@ -423,6 +436,14 @@ export function ensureJuniorWednesdayTrainings(plans: WeeklyPlan[]): WeeklyPlan[
     });
 
     updatedPlan.sessions = sessionsObj;
+
+    // Ensure played match vs CB Manresa is registered
+    const existingMatches = { ...(updatedPlan.matchAnnotations || {}) };
+    if (!existingMatches['2026-10-24'] && !Object.values(existingMatches).some((m: any) => m?.opponent?.toLowerCase().includes('manresa'))) {
+      existingMatches['2026-10-24'] = DEFAULT_MANRESA_MATCH_ANNOTATION;
+    }
+    updatedPlan.matchAnnotations = existingMatches;
+
     return updatedPlan;
   });
 }
@@ -873,6 +894,46 @@ export default function App() {
   const [selectedMatchDateIndex, setSelectedMatchDateIndex] = useState<number | string>(5);
   const [selectedMatchDateStr, setSelectedMatchDateStr] = useState<string | undefined>(undefined);
   const [editingMatch, setEditingMatch] = useState<MatchAnnotation | null>(null);
+  const [showJuniorStatsModal, setShowJuniorStatsModal] = useState<boolean>(false);
+  const [liveStatsLastReceived, setLiveStatsLastReceived] = useState<Date | null>(null);
+
+  const handleManualRefreshStats = async () => {
+    try {
+      const incomingMatches = await loadMatchStatsFromCloud(DEFAULT_STATS_SYNC_CODE);
+      if (incomingMatches && incomingMatches.length > 0) {
+        setLiveStatsLastReceived(new Date());
+        setWeeklyPlans(prevPlans => {
+          let changed = false;
+          const updated = prevPlans.map(plan => {
+            if (plan.team === 'junior_a' || !plan.team || plan.id === 'plan-default') {
+              const annotations = { ...(plan.matchAnnotations || {}) };
+              incomingMatches.forEach(match => {
+                const key = (match.dateIndex || match.matchDate || match.id).toString();
+                annotations[key] = {
+                  ...match,
+                  team: 'junior_a'
+                };
+                changed = true;
+              });
+              if (changed) {
+                return { ...plan, matchAnnotations: annotations };
+              }
+            }
+            return plan;
+          });
+          if (changed) {
+            triggerToast(`🔄 S'han actualitzat ${incomingMatches.length} partits des del Núvol (Firestore)!`);
+            return updated;
+          }
+          return prevPlans;
+        });
+      } else {
+        triggerToast("ℹ️ El canal d'estadístiques del Núvol està al dia.");
+      }
+    } catch (e) {
+      console.warn("Manual stats refresh failed:", e);
+    }
+  };
 
   // Plan workout modal state for clicking on calendar days
   const [showPlanWorkoutModal, setShowPlanWorkoutModal] = useState<boolean>(false);
@@ -943,6 +1004,89 @@ export default function App() {
         return plan;
       });
     });
+  };
+
+  const handleCreateSessionFromMatch = (newSession: TrainingSession) => {
+    // 1. Update sessions in state
+    setSessions(prev => ({
+      ...prev,
+      [newSession.id]: newSession
+    }));
+
+    // 2. Persist in weeklyPlans
+    setWeeklyPlans(prevPlans => {
+      return prevPlans.map(plan => {
+        if (plan.id === activePlan.id || plan.id === selectedWeeklyPlanId) {
+          const nextPlan: any = { ...plan };
+          nextPlan.sessions = {
+            ...(nextPlan.sessions || {}),
+            [newSession.id]: newSession
+          };
+          nextPlan[newSession.id] = newSession;
+          return nextPlan;
+        }
+        return plan;
+      });
+    });
+
+    // 3. Select this new session and switch to planner view
+    setSelectedSessionId(newSession.id);
+    setShowMatchModal(false);
+    setShowJuniorStatsModal(false);
+    setActiveView('planner');
+    triggerToast(`⚡ Pla d'entrenament específic generat a partir del partit i llest per a pista!`);
+  };
+
+  const handleGeneratePlanFromJuniorStats = (match: MatchAnnotation) => {
+    // Structured 75-minute session directly resolving the match's diagnosis
+    const sessionDrills: { drillId: string; duration: number; notes: string }[] = [
+      {
+        drillId: 'drill-rueda-11',
+        duration: 10,
+        notes: "Escalfament d'alta intensitat: treball de passada en velocitat i concentració per reduir pèrdues no forçades."
+      },
+      {
+        drillId: 'drill-press-break',
+        duration: 18,
+        notes: "Solució directa a les 18 pèrdues de pilota: sortida de pressió 1-2-1-1 a tota pista amb 3 línies de passada i desmarcatge en flaix al centre."
+      },
+      {
+        drillId: 'drill-defensa-shell',
+        duration: 17,
+        notes: "Correcció del rebot defensiu i ajudes: tancar rebot col·lectiu (box-out) i comunicació defensiva per evitar segones opcions del rival."
+      },
+      {
+        drillId: 'drill-pnr-def',
+        duration: 8,
+        notes: "Millora del 55% en tirs lliures (11/20): sèries de tirs lliures sota situació de pressió i fatiga competitiva."
+      },
+      {
+        drillId: 'drill-junior-transicion-3x2',
+        duration: 15,
+        notes: "Balanç defensiu immediat post-tir o pèrdua: comunicació verbal, aturar el contraatac rival i recuperar l'home sol."
+      },
+      {
+        drillId: 'drill-rueda-tiro-competitiva',
+        duration: 7,
+        notes: "Roda de tir competitiva amb ritme real de partit per consolidar percentatges i confiança anotadora."
+      }
+    ];
+
+    const totalDur = sessionDrills.reduce((acc, d) => acc + d.duration, 0);
+    const newSessionId = `sess-post-match-${Date.now()}`;
+    const oppName = match.opponent || 'CB Manresa Júnior A';
+
+    const newSession: TrainingSession = {
+      id: newSessionId,
+      name: `⚡ Sessió Específica Post-Partit: ${oppName} (Sortida Pressió, Rebot Defensiu & Tirs Lliures)`,
+      dayOfWeek: 'Dimecres',
+      scheduledTime: '2026-10-28T20:00',
+      totalDuration: totalDur,
+      drills: sessionDrills,
+      team: 'junior_a'
+    };
+
+    handleCreateSessionFromMatch(newSession);
   };
 
   const findMatchForDate = (dateStr: string): MatchAnnotation | undefined => {
@@ -1568,6 +1712,62 @@ export default function App() {
       window.removeEventListener('online', handleOnline);
     };
   }, [hasLoadedFromCloud, syncCode]);
+
+  // Real-time automatic synchronization of Match Statistics from the Stats Applet (074a2bc9)
+  useEffect(() => {
+    const unsubscribe = subscribeToMatchStats(DEFAULT_STATS_SYNC_CODE, (incomingMatches) => {
+      if (!incomingMatches || incomingMatches.length === 0) return;
+
+      setLiveStatsLastReceived(new Date());
+
+      setWeeklyPlans(prevPlans => {
+        let changed = false;
+        const updated = prevPlans.map(plan => {
+          if (plan.team === 'junior_a' || !plan.team || plan.id === 'plan-default') {
+            const annotations = { ...(plan.matchAnnotations || {}) };
+            
+            incomingMatches.forEach(match => {
+              const key = (match.dateIndex || match.matchDate || match.id).toString();
+              const existing = annotations[key];
+              
+              const isDifferent = !existing || 
+                existing.ourScore !== match.ourScore || 
+                existing.opponentScore !== match.opponentScore ||
+                existing.opponent !== match.opponent ||
+                (match.updatedAt && (!existing.updatedAt || match.updatedAt > existing.updatedAt));
+
+              if (isDifferent) {
+                annotations[key] = {
+                  ...match,
+                  team: 'junior_a'
+                };
+                changed = true;
+              }
+            });
+
+            if (changed) {
+              return {
+                ...plan,
+                matchAnnotations: annotations
+              };
+            }
+          }
+          return plan;
+        });
+
+        if (changed) {
+          const newest = incomingMatches[0];
+          triggerToast(`⚡ Sincronització en viu: Dades del partit vs ${newest.opponent || 'rival'} rebudes en temps real!`);
+          return updated;
+        }
+        return prevPlans;
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Auto-save changes to cloud and always persist to localStorage immediately
   useEffect(() => {
@@ -2749,6 +2949,16 @@ export default function App() {
             {/* Mobile action grid */}
             <div className="grid grid-cols-2 gap-1.5 md:hidden w-full">
               <button
+                id="btn-header-junior-stats-mobile"
+                onClick={() => setShowJuniorStatsModal(true)}
+                title="Estadístiques Júnior A (App Connectada)"
+                className="col-span-2 py-2 px-3 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 hover:from-orange-500 hover:to-amber-500 active:scale-95 transition text-[11px] font-black rounded-md text-white flex items-center justify-center gap-1.5 uppercase tracking-wider shadow-sm cursor-pointer border border-orange-400/40"
+              >
+                <BarChart3 size={14} className="shrink-0 text-white" />
+                <span className="truncate">📊 Estadístiques Júnior A (App Connectada)</span>
+              </button>
+
+              <button
                 id="btn-header-sync-mobile"
                 onClick={handleOpenSyncModal}
                 title="Sincronització Núvol"
@@ -2799,6 +3009,16 @@ export default function App() {
 
             {/* Desktop Action Row */}
             <div className="hidden md:flex items-center gap-2 md:gap-3">
+              <button
+                id="btn-header-junior-stats"
+                onClick={() => setShowJuniorStatsModal(true)}
+                title="Estadístiques i Box-Score Júnior A de l'aplicació connectada"
+                className="py-1.5 md:py-2 px-3.5 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 hover:from-orange-500 hover:to-amber-500 active:scale-95 transition text-xs font-black rounded-md text-white flex items-center gap-1.5 shadow-sm cursor-pointer uppercase tracking-wider border border-orange-400/40"
+              >
+                <BarChart3 size={14} className="text-white shrink-0" />
+                <span>Estadístiques Júnior A 📊</span>
+              </button>
+
               <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wider bg-orange-50 px-2.5 py-1 rounded-sm">
                 Temporada 26/27
               </span>
@@ -2959,6 +3179,16 @@ export default function App() {
                 <Smartphone size={14} className="text-orange-500 animate-bounce" />
                 <span className="truncate">Modo Pista</span>
               </button>
+
+              <button
+                id="tab-junior-stats"
+                onClick={() => setShowJuniorStatsModal(true)}
+                className="flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all duration-150 cursor-pointer text-amber-900 bg-amber-50 hover:bg-amber-100/90 border border-amber-300/80 shadow-2xs"
+                title="Estadístiques i Box-Score Júnior A de l'aplicació connectada"
+              >
+                <BarChart3 size={14} className="text-amber-600 shrink-0" />
+                <span className="truncate">Estadístiques Júnior A</span>
+              </button>
             </div>
 
           </div>
@@ -2996,6 +3226,17 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-2 self-start lg:self-auto shrink-0 flex-wrap">
+                  <button
+                    type="button"
+                    id="btn-calendar-junior-stats"
+                    onClick={() => setShowJuniorStatsModal(true)}
+                    className="py-1.5 px-3 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 hover:from-orange-500 hover:to-amber-500 active:scale-95 text-white font-black rounded-md text-[10px] uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer shadow-xs border border-orange-400/40"
+                    title="Obrir Estadístiques de l'App del Júnior A"
+                  >
+                    <BarChart3 size={13} className="text-white" />
+                    <span>Estadístiques Júnior A 📊</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -3942,6 +4183,34 @@ export default function App() {
           onSaveAnnotation={handleSaveMatchAnnotation}
           onDeleteAnnotation={handleDeleteMatchAnnotation}
           triggerToast={triggerToast}
+          players={players}
+          onCreateSessionFromMatch={handleCreateSessionFromMatch}
+        />
+      )}
+
+      {/* JUNIOR A STATS MODAL (APP 074a2bc9-59ce-468c-af9e-bc747b6122da) */}
+      {showJuniorStatsModal && (
+        <JuniorStatsModal
+          isOpen={showJuniorStatsModal}
+          onClose={() => setShowJuniorStatsModal(false)}
+          juniorPlan={weeklyPlans.find(p => p.team === 'junior_a' || p.id === 'plan-default') || activePlan}
+          players={players}
+          allWeeklyPlans={weeklyPlans}
+          onGenerateSpecificPlan={handleGeneratePlanFromJuniorStats}
+          triggerToast={triggerToast}
+          onSaveAnnotation={handleSaveMatchAnnotation}
+          liveStatsLastReceived={liveStatsLastReceived}
+          statsChannelCode={DEFAULT_STATS_SYNC_CODE}
+          onManualRefreshStats={handleManualRefreshStats}
+          onOpenMatchNotes={(match) => {
+            setShowJuniorStatsModal(false);
+            if (match) {
+              setEditingMatch(match);
+              setSelectedMatchDateStr(match.matchDate);
+              setSelectedMatchDateIndex(match.dateIndex || 5);
+            }
+            setShowMatchModal(true);
+          }}
         />
       )}
 

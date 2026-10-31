@@ -4,5 +4,11 @@ service cloud.firestore {
     match /syncs/{syncCode} {
       allow read, write: if true;
     }
+    match /junior_matches/{matchId} {
+      allow read, write: if true;
+    }
+    match /live_stats/{statsId} {
+      allow read, write: if true;
+    }
   }
 }

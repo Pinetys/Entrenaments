@@ -13,6 +13,17 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 // Allow high limits for receipt of JSON payloads
 app.use(express.json({ limit: "15mb" }));
 
+// Enable CORS so external statistics apps (e.g. 074a2bc9-59ce-468c-af9e-bc747b6122da) can send live match data
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Endpoint for AI Coach Advice based on match annotations
 app.post("/api/ai/coach-advice", async (req, res) => {
   try {
@@ -196,6 +207,94 @@ app.get("/api/sync-state", (req, res) => {
   } catch (err: any) {
     console.error("[SyncState GET] Error:", err);
     res.status(500).json({ error: err.message || "Error al recuperar l'estat sincronitzat." });
+  }
+});
+
+// Live match statistics cache for automatic syncing with the Junior A stats app
+const matchStatsCache = new Map<string, any[]>();
+const MATCHES_CACHE_FILE = path.join(process.cwd(), ".matches_cache.json");
+
+// Load initial matches cache
+try {
+  if (fs.existsSync(MATCHES_CACHE_FILE)) {
+    const raw = fs.readFileSync(MATCHES_CACHE_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+    Object.keys(parsed).forEach(k => matchStatsCache.set(k, parsed[k]));
+  }
+} catch (e) {
+  console.warn("[MatchStats] Could not load matches cache:", e);
+}
+
+const persistMatchesCache = () => {
+  try {
+    const obj: Record<string, any> = {};
+    matchStatsCache.forEach((v, k) => { obj[k] = v; });
+    fs.writeFileSync(MATCHES_CACHE_FILE, JSON.stringify(obj, null, 2), "utf-8");
+  } catch (e) {}
+};
+
+// POST endpoint to receive match statistics automatically from external stats apps or webhooks
+app.post("/api/sync-match", (req, res) => {
+  try {
+    const body = req.body || {};
+    const channelCode = (body.channelCode || req.query.channelCode || "PINETY-JUNIOR-STATS").toString().trim().toUpperCase();
+    
+    // Support either { match: {...} }, { matches: [...] }, or match object sent directly
+    let incomingMatches: any[] = [];
+    if (Array.isArray(body.matches)) {
+      incomingMatches = body.matches;
+    } else if (body.match && typeof body.match === 'object') {
+      incomingMatches = [body.match];
+    } else if (body.opponent || body.teamStats || body.playerStats) {
+      incomingMatches = [body];
+    }
+
+    if (incomingMatches.length === 0) {
+      return res.status(400).json({ error: "Falten les dades del partit (match o matches)" });
+    }
+
+    const current = matchStatsCache.get(channelCode) || [];
+    
+    // Merge or prepend
+    const merged = [...incomingMatches];
+    current.forEach(cm => {
+      if (!merged.some(im => (im.id && im.id === cm.id) || (im.dateIndex && im.dateIndex === cm.dateIndex) || (im.opponent === cm.opponent && im.matchDate === cm.matchDate))) {
+        merged.push(cm);
+      }
+    });
+
+    matchStatsCache.set(channelCode, merged);
+    persistMatchesCache();
+    console.log(`[SyncMatch] Received and cached ${incomingMatches.length} match(es) for channel ${channelCode}`);
+
+    res.json({
+      success: true,
+      channelCode,
+      count: merged.length,
+      matches: merged,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err: any) {
+    console.error("[SyncMatch POST] Error:", err);
+    res.status(500).json({ error: err.message || "Error al desar les estadístiques del partit." });
+  }
+});
+
+// GET endpoint to retrieve match statistics
+app.get("/api/sync-match", (req, res) => {
+  try {
+    const channelCode = (req.query.channelCode || "PINETY-JUNIOR-STATS").toString().trim().toUpperCase();
+    const matches = matchStatsCache.get(channelCode) || [];
+    res.json({
+      success: true,
+      channelCode,
+      count: matches.length,
+      matches,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err: any) {
+    console.error("[SyncMatch GET] Error:", err);
+    res.status(500).json({ error: err.message || "Error al recuperar les estadístiques del partit." });
   }
 });
 

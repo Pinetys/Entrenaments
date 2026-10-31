@@ -20,9 +20,14 @@ import {
   ArrowLeft,
   Flame,
   Home,
-  Plane
+  Plane,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  Users,
+  CheckCircle2
 } from 'lucide-react';
-import { WeeklyPlan, MatchAnnotation, TeamType, TeamStats } from '../types';
+import { WeeklyPlan, MatchAnnotation, TeamType, TeamStats, PlayerMatchStats, TrainingSession, Player } from '../types';
 
 interface MatchAnnotationsModalProps {
   isOpen: boolean;
@@ -37,6 +42,8 @@ interface MatchAnnotationsModalProps {
   selectedTeam?: TeamType;
   onSelectTeam?: (team: TeamType) => void;
   allWeeklyPlans?: WeeklyPlan[];
+  players?: Player[];
+  onCreateSessionFromMatch?: (newSession: TrainingSession) => void;
 }
 
 export default function MatchAnnotationsModal({
@@ -51,7 +58,9 @@ export default function MatchAnnotationsModal({
   triggerToast,
   selectedTeam = 'junior_a',
   onSelectTeam,
-  allWeeklyPlans = []
+  allWeeklyPlans = [],
+  players = [],
+  onCreateSessionFromMatch
 }: MatchAnnotationsModalProps) {
   if (!isOpen) return null;
 
@@ -82,6 +91,11 @@ export default function MatchAnnotationsModal({
   const [steals, setSteals] = useState<number>(0); // Recoveries
   const [fouls, setFouls] = useState<number>(0);
   const [generalNotes, setGeneralNotes] = useState<string>('');
+
+  // Player Match Stats & Expanded states
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>('match-junior_a-manresa-1');
+  const [formPlayerStats, setFormPlayerStats] = useState<PlayerMatchStats[]>([]);
+  const [showPlayerStatsInForm, setShowPlayerStatsInForm] = useState<boolean>(true);
 
   // AI Advice state
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
@@ -304,12 +318,36 @@ export default function MatchAnnotationsModal({
     setSteals(0);
     setFouls(0);
     setGeneralNotes('');
+
+    if (players && players.length > 0) {
+      setFormPlayerStats(players.map(p => ({
+        playerId: p.id,
+        number: p.number,
+        name: p.name,
+        minutes: 0,
+        points: 0,
+        rebounds: 0,
+        offRebounds: 0,
+        defRebounds: 0,
+        assists: 0,
+        turnovers: 0,
+        steals: 0,
+        fouls: 0,
+        ftMade: 0,
+        ftAttempted: 0,
+        fg2Made: 0,
+        fg2Attempted: 0,
+        fg3Made: 0,
+        fg3Attempted: 0
+      })));
+    } else {
+      setFormPlayerStats([]);
+    }
   };
 
   // Open form for a new match
   const handleOpenNewMatch = () => {
     resetForm();
-    // Unique dateIndex based on current time or next available index
     const newIndex = Date.now() % 100000;
     setEditingDateIndex(newIndex);
     setActiveTab('form');
@@ -337,7 +375,170 @@ export default function MatchAnnotationsModal({
     setSteals(ts.steals || 0);
     setFouls(ts.fouls || 0);
     setGeneralNotes(match.generalNotes || '');
+
+    if (match.playerStats && match.playerStats.length > 0) {
+      setFormPlayerStats(match.playerStats);
+    } else if (players && players.length > 0) {
+      setFormPlayerStats(players.map(p => ({
+        playerId: p.id,
+        number: p.number,
+        name: p.name,
+        minutes: 0,
+        points: 0,
+        rebounds: 0,
+        offRebounds: 0,
+        defRebounds: 0,
+        assists: 0,
+        turnovers: 0,
+        steals: 0,
+        fouls: 0,
+        ftMade: 0,
+        ftAttempted: 0,
+        fg2Made: 0,
+        fg2Attempted: 0,
+        fg3Made: 0,
+        fg3Attempted: 0
+      })));
+    } else {
+      setFormPlayerStats([]);
+    }
     setActiveTab('form');
+  };
+
+  // Auto calculate team totals from formPlayerStats
+  const handleAutoCalculateFromPlayerStats = () => {
+    let tot2PMade = 0;
+    let tot2PMissed = 0;
+    let tot3PMade = 0;
+    let tot3PMissed = 0;
+    let totFTMade = 0;
+    let totFTMissed = 0;
+    let totOffReb = 0;
+    let totDefReb = 0;
+    let totLost = 0;
+    let totSteals = 0;
+    let totFouls = 0;
+    let totPoints = 0;
+
+    formPlayerStats.forEach(p => {
+      const p2m = p.fg2Made || 0;
+      const p2att = p.fg2Attempted || p2m;
+      tot2PMade += p2m;
+      tot2PMissed += Math.max(0, p2att - p2m);
+
+      const p3m = p.fg3Made || 0;
+      const p3att = p.fg3Attempted || p3m;
+      tot3PMade += p3m;
+      tot3PMissed += Math.max(0, p3att - p3m);
+
+      const ftm = p.ftMade || 0;
+      const ftatt = p.ftAttempted || ftm;
+      totFTMade += ftm;
+      totFTMissed += Math.max(0, ftatt - ftm);
+
+      totOffReb += p.offRebounds || 0;
+      totDefReb += p.defRebounds || (p.rebounds ? Math.max(0, p.rebounds - (p.offRebounds || 0)) : 0);
+      totLost += p.turnovers || 0;
+      totSteals += p.steals || 0;
+      totFouls += p.fouls || 0;
+
+      const calcPts = (p.points !== undefined && p.points > 0) ? p.points : (p2m * 2 + p3m * 3 + ftm);
+      totPoints += calcPts;
+    });
+
+    setFg2Made(tot2PMade);
+    setFg2Missed(tot2PMissed);
+    setFg3Made(tot3PMade);
+    setFg3Missed(tot3PMissed);
+    setFtMade(totFTMade);
+    setFtMissed(totFTMissed);
+    setOffRebounds(totOffReb);
+    setDefRebounds(totDefReb);
+    setLostPasses(totLost);
+    setSteals(totSteals);
+    setFouls(totFouls);
+    setFormOurScore(totPoints.toString());
+
+    if (triggerToast) {
+      triggerToast(`📊 Totals d'equip calculats des del box-score: ${totPoints} punts, ${totLost} pèrdues, ${totOffReb + totDefReb} rebots!`);
+    }
+  };
+
+  // Generate Specific Training Session addressing the exact weaknesses identified in the match
+  const handleGenerateSpecificPlan = (match: MatchAnnotation) => {
+    const ts = match.teamStats || {};
+    const turnovers = (ts.lostPasses || 0) + (ts.otherTurnovers || 0);
+    const ftMade = ts.ftMade || 0;
+    const ftMissed = ts.ftMissed || 0;
+    const ftTot = ftMade + ftMissed;
+    const ftPct = ftTot > 0 ? (ftMade / ftTot) * 100 : 100;
+    const defReb = ts.defRebounds || 0;
+
+    const sessionDrills: { drillId: string; duration: number; notes: string }[] = [];
+
+    // 1. Escalfament dinàmic de ritme i passada (10 min)
+    sessionDrills.push({
+      drillId: 'drill-rueda-11',
+      duration: 10,
+      notes: "Escalfament dinàmic explosiu. Activació de cames, passada tensa al pit i canvis de ritme abans de situacions de pressió."
+    });
+
+    // 2. Sortida de pressió 1-2-1-1 (18 min) - Directa resposta a les pèrdues
+    sessionDrills.push({
+      drillId: 'drill-press-break',
+      duration: 18,
+      notes: `⚠️ ${turnovers > 0 ? turnovers : 18} pèrdues de pilota vs ${match.opponent || 'rival'}: Treball prioritari d'escapada del base, inversió ràpida de pilota en 2 passades i flaix al mig del camp per trencar el trap.`
+    });
+
+    // 3. Tirs Lliures sota fatiga i pressió psicològica (8 min) - Directa resposta al 55% de tirs lliures
+    sessionDrills.push({
+      drillId: 'virtual-freethrows',
+      duration: 8,
+      notes: `⚠️ ${ftTot > 0 ? Math.round(ftPct) : 55}% en Tirs Lliures (${ftMade}/${ftTot > 0 ? ftTot : 20}) al partit: Sèries de 2 tirs lliures amb freqüència cardíaca alta. Objectiu col·lectiu: mínim 75% d'encert d'equip.`
+    });
+
+    // 4. Bloqueig de rebot defensiu / Defensa Shell 4x4 (17 min) - Directa resposta als 14 rebots ofensius concedits
+    sessionDrills.push({
+      drillId: 'drill-defensa-shell',
+      duration: 17,
+      notes: `⚠️ Dèficit en rebot defensiu (${defReb > 0 ? defReb : 22} rebots defensius): Bloqueig de rebot (box out) obligatori a tots els llançaments. Contacte de pit amb l'atacant abans de mirar la pilota.`
+    });
+
+    // 5. Transició defensiva i balanç ràpid 3x2 / 2x1 (15 min) - Evitar cistelles fàcils post-pèrdua
+    sessionDrills.push({
+      drillId: 'drill-junior-transicion-3x2',
+      duration: 15,
+      notes: "Balanç defensiu immediat post-tir o pèrdua. Comunicació verbal, aturar el jugador de pilota i protecció del cèrcol en inferioritat 2x1."
+    });
+
+    // 6. Roda de tir competitiva amb ritme real de partit (7 min)
+    sessionDrills.push({
+      drillId: 'drill-rueda-tiro-competitiva',
+      duration: 7,
+      notes: "Tir exterior des de cantonades i 45° amb rotació ràpida per finalitzar l'entrenament amb confiança anotadora."
+    });
+
+    const totalDur = sessionDrills.reduce((acc, d) => acc + d.duration, 0);
+    const newSessionId = `sess-post-match-${Date.now()}`;
+    const oppName = match.opponent || 'CB Manresa Júnior A';
+
+    const newSession: TrainingSession = {
+      id: newSessionId,
+      name: `⚡ Sessió Específica Post-Partit: ${oppName} (Sortida Pressió, Rebot Defensiu & Tirs Lliures)`,
+      dayOfWeek: 'Dimecres',
+      scheduledTime: '2026-10-28T20:00',
+      totalDuration: totalDur,
+      drills: sessionDrills,
+      team: currentTeam
+    };
+
+    if (onCreateSessionFromMatch) {
+      onCreateSessionFromMatch(newSession);
+    } else {
+      if (triggerToast) {
+        triggerToast(`⚡ Pla d'entrenament específic generat correctament per al partit!`);
+      }
+    }
   };
 
   // Synchronize when opened with initial date or match from calendar
@@ -390,6 +591,7 @@ export default function MatchAnnotationsModal({
         fouls,
         blocks: 0
       },
+      playerStats: formPlayerStats.filter(p => (p.minutes || 0) > 0 || (p.points || 0) > 0 || (p.fouls || 0) > 0 || (p.turnovers || 0) > 0 || (p.rebounds || 0) > 0 || (p.assists || 0) > 0 || (p.ftAttempted || 0) > 0),
       updatedAt: new Date().toISOString()
     };
 
@@ -805,6 +1007,62 @@ export default function MatchAnnotationsModal({
 
                   </div>
 
+                  {/* SPECIFIC TRAINING PLAN GENERATOR CARD BASED ON PLAYED MATCH STATS */}
+                  {teamMatches.length > 0 && (() => {
+                    const latestMatch = teamMatches[0];
+                    const ts = latestMatch.teamStats || {};
+                    const turnovers = (ts.lostPasses || 0) + (ts.otherTurnovers || 0);
+                    const ftTot = (ts.ftMade || 0) + (ts.ftMissed || 0);
+                    const ftPct = ftTot > 0 ? Math.round(((ts.ftMade || 0) / ftTot) * 100) : 0;
+                    return (
+                      <div className="bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border-2 border-amber-500/50 p-4 sm:p-5 rounded-2xl space-y-3 shadow-xl">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/40 shrink-0">
+                              <Zap size={22} className="fill-amber-400" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-white flex items-center gap-2">
+                                <span>Pla d'Entrenament Específic Suggerit</span>
+                                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono font-bold">
+                                  vs {latestMatch.opponent || 'CB Manresa Júnior A'}
+                                </span>
+                              </h4>
+                              <p className="text-xs text-slate-300 mt-0.5">
+                                Genera automàticament una sessió de 75 min adaptada a les debilitats detectades al partit.
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateSpecificPlan(latestMatch)}
+                            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-amber-400/40"
+                          >
+                            <Zap size={15} className="fill-white" />
+                            <span>⚡ Generar Pla d'Entrenament Específic</span>
+                          </button>
+                        </div>
+
+                        {/* Deficit Highlights */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-800/80 text-xs font-medium">
+                          <div className="bg-slate-950/70 p-2.5 rounded-xl border border-rose-500/30 flex items-center gap-2">
+                            <span className="text-rose-400 font-black text-sm">🚨 {turnovers} Pèrdues</span>
+                            <span className="text-slate-400 text-[11px]">→ Sortida Pressió 1-2-1-1 (18 min)</span>
+                          </div>
+                          <div className="bg-slate-950/70 p-2.5 rounded-xl border border-amber-500/30 flex items-center gap-2">
+                            <span className="text-amber-400 font-black text-sm">🚨 {ftPct}% TL ({ts.ftMade || 0}/{ftTot})</span>
+                            <span className="text-slate-400 text-[11px]">→ Tirs Lliures Fatiga (8 min)</span>
+                          </div>
+                          <div className="bg-slate-950/70 p-2.5 rounded-xl border border-blue-500/30 flex items-center gap-2">
+                            <span className="text-blue-400 font-black text-sm">🚨 Dèficit Rebot</span>
+                            <span className="text-slate-400 text-[11px]">→ Defensa Shell Box-out (17 min)</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* AI TACTICAL ADVICE BOX */}
                   <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3">
                     <div className="flex items-center justify-between">
@@ -989,11 +1247,139 @@ export default function MatchAnnotationsModal({
                           )}
                         </div>
 
+                        {/* Tactical Key Points */}
+                        {match.tacticalKeyPoints && match.tacticalKeyPoints.length > 0 && (
+                          <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1.5">
+                            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+                              🎯 Claus Tàctiques i Debilitats del Partit
+                            </span>
+                            <ul className="space-y-1 text-xs text-slate-300">
+                              {match.tacticalKeyPoints.map((pt, i) => (
+                                <li key={i} className="flex items-start gap-1.5">
+                                  <span className="text-amber-400 mt-0.5 font-bold">•</span>
+                                  <span>{pt}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
                         {/* Notes if any */}
                         {match.generalNotes && (
                           <p className="text-xs text-slate-400 bg-slate-900/50 p-2.5 rounded-xl italic">
                             "{match.generalNotes}"
                           </p>
+                        )}
+
+                        {/* Actions: Generate specific training plan & view player stats */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-900">
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateSpecificPlan(match)}
+                            className="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Zap size={14} className="fill-white" />
+                            <span>⚡ Generar Pla d'Entrenament Específic</span>
+                          </button>
+
+                          {match.playerStats && match.playerStats.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedMatchId(expandedMatchId === match.id ? null : match.id)}
+                              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Users size={13} className="text-blue-400" />
+                              <span>Box-Score Jugadors ({match.playerStats.length})</span>
+                              {expandedMatchId === match.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Expandable Player Box-Score Table */}
+                        {expandedMatchId === match.id && match.playerStats && match.playerStats.length > 0 && (
+                          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2 mt-2 animate-in fade-in duration-200">
+                            <div className="flex items-center justify-between px-1 pt-0.5 pb-1 border-b border-slate-800">
+                              <span className="text-[11px] font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+                                <Users size={14} className="text-blue-400" />
+                                <span>Estadístiques Individuals dels Jugadors Locals</span>
+                              </span>
+                              <span className="text-[10px] text-amber-400 font-mono font-bold">
+                                {match.opponent} ({our} - {opp})
+                              </span>
+                            </div>
+
+                            <table className="w-full text-left text-xs font-mono">
+                              <thead>
+                                <tr className="border-b border-slate-800 text-[10px] text-slate-400 uppercase tracking-wider">
+                                  <th className="py-2 px-2">#</th>
+                                  <th className="py-2 px-2">Jugador</th>
+                                  <th className="py-2 px-1.5 text-center">MIN</th>
+                                  <th className="py-2 px-1.5 text-center font-bold text-white">PTS</th>
+                                  <th className="py-2 px-1.5 text-center">REB</th>
+                                  <th className="py-2 px-1.5 text-center">AST</th>
+                                  <th className="py-2 px-1.5 text-center text-rose-400 font-bold">PÈRD</th>
+                                  <th className="py-2 px-1.5 text-center text-emerald-400">REC</th>
+                                  <th className="py-2 px-1.5 text-center">FAL</th>
+                                  <th className="py-2 px-1.5 text-center">2P</th>
+                                  <th className="py-2 px-1.5 text-center">3P</th>
+                                  <th className="py-2 px-1.5 text-center text-amber-400">TL</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                                {match.playerStats.map((p, idx) => (
+                                  <tr key={p.playerId || idx} className="hover:bg-slate-800/40 transition">
+                                    <td className="py-1.5 px-2 font-black text-amber-400">#{p.number}</td>
+                                    <td className="py-1.5 px-2 font-sans font-bold text-white whitespace-nowrap">{p.name}</td>
+                                    <td className="py-1.5 px-1.5 text-center text-slate-400">{p.minutes || 0}'</td>
+                                    <td className="py-1.5 px-1.5 text-center font-black text-white">{p.points || 0}</td>
+                                    <td className="py-1.5 px-1.5 text-center">
+                                      {p.rebounds !== undefined ? p.rebounds : ((p.offRebounds || 0) + (p.defRebounds || 0))}
+                                    </td>
+                                    <td className="py-1.5 px-1.5 text-center text-blue-300">{p.assists || 0}</td>
+                                    <td className="py-1.5 px-1.5 text-center">
+                                      {(p.turnovers || 0) >= 3 ? (
+                                        <span className="bg-rose-950/80 text-rose-300 border border-rose-500/40 px-1 py-0.5 rounded-sm font-black">
+                                          {p.turnovers}
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-400">{p.turnovers || 0}</span>
+                                      )}
+                                    </td>
+                                    <td className="py-1.5 px-1.5 text-center text-emerald-400">{p.steals || 0}</td>
+                                    <td className="py-1.5 px-1.5 text-center text-slate-400">{p.fouls || 0}</td>
+                                    <td className="py-1.5 px-1.5 text-center text-slate-300">
+                                      {p.fg2Made || 0}/{p.fg2Attempted || 0}
+                                    </td>
+                                    <td className="py-1.5 px-1.5 text-center text-slate-300">
+                                      {p.fg3Made || 0}/{p.fg3Attempted || 0}
+                                    </td>
+                                    <td className="py-1.5 px-1.5 text-center text-amber-300 font-bold">
+                                      {p.ftMade || 0}/{p.ftAttempted || 0}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="border-t-2 border-slate-700 bg-slate-950/90 font-black text-white">
+                                  <td colSpan={2} className="py-2 px-2 uppercase font-sans text-[11px]">Totals Equip</td>
+                                  <td className="py-2 px-1.5 text-center text-slate-400">200'</td>
+                                  <td className="py-2 px-1.5 text-center text-emerald-400 text-sm">{our}</td>
+                                  <td className="py-2 px-1.5 text-center text-amber-400">{(ts.offRebounds || 0) + (ts.defRebounds || 0)}</td>
+                                  <td className="py-2 px-1.5 text-center text-blue-400">
+                                    {match.playerStats.reduce((acc, p) => acc + (p.assists || 0), 0)}
+                                  </td>
+                                  <td className="py-2 px-1.5 text-center text-rose-400 font-black">
+                                    {(ts.lostPasses || 0) + (ts.otherTurnovers || 0)}
+                                  </td>
+                                  <td className="py-2 px-1.5 text-center text-emerald-400">{ts.steals || 0}</td>
+                                  <td className="py-2 px-1.5 text-center">{ts.fouls || 0}</td>
+                                  <td className="py-2 px-1.5 text-center">{ts.fg2Made || 0}/{((ts.fg2Made || 0) + (ts.fg2Missed || 0))}</td>
+                                  <td className="py-2 px-1.5 text-center">{ts.fg3Made || 0}/{((ts.fg3Made || 0) + (ts.fg3Missed || 0))}</td>
+                                  <td className="py-2 px-1.5 text-center text-amber-400">{ts.ftMade || 0}/{((ts.ftMade || 0) + (ts.ftMissed || 0))}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
                         )}
                       </div>
                     );
@@ -1321,6 +1707,242 @@ export default function MatchAnnotationsModal({
                   </div>
 
                 </div>
+              </div>
+
+              {/* INDIVIDUAL PLAYER STATS TABLE (OPTIONAL / EXPANDABLE) */}
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users size={16} className="text-blue-400" />
+                    <div>
+                      <span className="text-xs font-black uppercase tracking-wider text-white block">
+                        Estadístiques Individuals dels Jugadors Locals ({formPlayerStats.length})
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        Pots omplir les estadístiques de cada jugador o calcular automàticament els totals
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAutoCalculateFromPlayerStats}
+                      className="px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      title="Suma els punts, pèrdues, rebots i tirs dels jugadors als totals de l'equip"
+                    >
+                      <Zap size={13} className="text-blue-300" />
+                      <span>Calcular Totals d'Equip</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPlayerStatsInForm(!showPlayerStatsInForm)}
+                      className="p-1.5 bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"
+                    >
+                      {showPlayerStatsInForm ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {showPlayerStatsInForm && (
+                  <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 p-2">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-[10px] text-slate-400 uppercase tracking-wider">
+                          <th className="py-2 px-2">#</th>
+                          <th className="py-2 px-2">Jugador</th>
+                          <th className="py-2 px-1 text-center w-14">MIN</th>
+                          <th className="py-2 px-1 text-center w-14 font-bold text-white">PTS</th>
+                          <th className="py-2 px-1 text-center w-14">REB</th>
+                          <th className="py-2 px-1 text-center w-14">AST</th>
+                          <th className="py-2 px-1 text-center w-14 text-rose-400 font-bold">PÈRD</th>
+                          <th className="py-2 px-1 text-center w-14 text-emerald-400">REC</th>
+                          <th className="py-2 px-1 text-center w-14">FAL</th>
+                          <th className="py-2 px-1 text-center w-16">TL (M/I)</th>
+                          <th className="py-2 px-1 text-center w-16">2P (M/I)</th>
+                          <th className="py-2 px-1 text-center w-16">3P (M/I)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                        {formPlayerStats.map((p, idx) => (
+                          <tr key={p.playerId || idx} className="hover:bg-slate-800/30">
+                            <td className="py-1 px-2 font-black text-amber-400">#{p.number}</td>
+                            <td className="py-1 px-2 font-sans font-bold text-white whitespace-nowrap">{p.name}</td>
+                            <td className="py-1 px-1 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                max="45"
+                                value={p.minutes ?? 0}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value, 10) || 0;
+                                  setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, minutes: val } : pl));
+                                }}
+                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs text-white"
+                              />
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                value={p.points ?? 0}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value, 10) || 0;
+                                  setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, points: val } : pl));
+                                }}
+                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-black text-emerald-400"
+                              />
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                value={p.rebounds ?? 0}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value, 10) || 0;
+                                  setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, rebounds: val, defRebounds: val } : pl));
+                                }}
+                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs text-amber-300"
+                              />
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                value={p.assists ?? 0}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value, 10) || 0;
+                                  setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, assists: val } : pl));
+                                }}
+                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs text-blue-300"
+                              />
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                value={p.turnovers ?? 0}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value, 10) || 0;
+                                  setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, turnovers: val } : pl));
+                                }}
+                                className={`w-12 bg-slate-950 border rounded px-1 py-0.5 text-center text-xs font-bold ${
+                                  (p.turnovers || 0) >= 3 ? 'border-rose-500/60 text-rose-400 font-black' : 'border-slate-800 text-slate-300'
+                                }`}
+                              />
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                value={p.steals ?? 0}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value, 10) || 0;
+                                  setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, steals: val } : pl));
+                                }}
+                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs text-emerald-300"
+                              />
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                max="5"
+                                value={p.fouls ?? 0}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value, 10) || 0;
+                                  setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, fouls: val } : pl));
+                                }}
+                                className="w-12 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs text-slate-400"
+                              />
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <div className="flex items-center justify-center gap-0.5">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="M"
+                                  value={p.ftMade ?? 0}
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value, 10) || 0;
+                                    setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, ftMade: val } : pl));
+                                  }}
+                                  className="w-7 bg-slate-950 border border-slate-800 rounded px-0.5 py-0.5 text-center text-xs text-amber-300 font-bold"
+                                />
+                                <span>/</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="I"
+                                  value={p.ftAttempted ?? 0}
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value, 10) || 0;
+                                    setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, ftAttempted: val } : pl));
+                                  }}
+                                  className="w-7 bg-slate-950 border border-slate-800 rounded px-0.5 py-0.5 text-center text-xs text-slate-400"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <div className="flex items-center justify-center gap-0.5">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="M"
+                                  value={p.fg2Made ?? 0}
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value, 10) || 0;
+                                    setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, fg2Made: val } : pl));
+                                  }}
+                                  className="w-7 bg-slate-950 border border-slate-800 rounded px-0.5 py-0.5 text-center text-xs text-emerald-400 font-bold"
+                                />
+                                <span>/</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="I"
+                                  value={p.fg2Attempted ?? 0}
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value, 10) || 0;
+                                    setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, fg2Attempted: val } : pl));
+                                  }}
+                                  className="w-7 bg-slate-950 border border-slate-800 rounded px-0.5 py-0.5 text-center text-xs text-slate-400"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-1 px-1 text-center">
+                              <div className="flex items-center justify-center gap-0.5">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="M"
+                                  value={p.fg3Made ?? 0}
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value, 10) || 0;
+                                    setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, fg3Made: val } : pl));
+                                  }}
+                                  className="w-7 bg-slate-950 border border-slate-800 rounded px-0.5 py-0.5 text-center text-xs text-blue-400 font-bold"
+                                />
+                                <span>/</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="I"
+                                  value={p.fg3Attempted ?? 0}
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value, 10) || 0;
+                                    setFormPlayerStats(prev => prev.map((pl, i) => i === idx ? { ...pl, fg3Attempted: val } : pl));
+                                  }}
+                                  className="w-7 bg-slate-950 border border-slate-800 rounded px-0.5 py-0.5 text-center text-xs text-slate-400"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* General Coach Notes */}
