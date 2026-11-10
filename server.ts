@@ -298,6 +298,99 @@ app.get("/api/sync-match", (req, res) => {
   }
 });
 
+// GET endpoint to sync match statistics directly from a GitHub repository
+app.get("/api/github/sync-stats", async (req, res) => {
+  try {
+    const repo = (req.query.repo as string || "Pinetys/Entrenaments").trim();
+    const branch = (req.query.branch as string || "main").trim();
+    const channelCode = (req.query.channelCode as string || "PINETY-JUNIOR-STATS").trim().toUpperCase();
+    const customFilePath = req.query.filePath ? (req.query.filePath as string).trim() : null;
+
+    const candidateFiles = customFilePath 
+      ? [customFilePath] 
+      : [".matches_cache.json", "matches.json", "junior_matches.json", "stats.json", "junior_stats.json", "data/matches.json"];
+
+    let rawData: any = null;
+    let foundFile: string | null = null;
+
+    for (const fileName of candidateFiles) {
+      const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${fileName}?t=${Date.now()}`;
+      try {
+        const response = await fetch(rawUrl, {
+          headers: {
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "CoachPinety-GitHubSync"
+          }
+        });
+        if (response.ok) {
+          const text = await response.text();
+          try {
+            rawData = JSON.parse(text);
+            foundFile = fileName;
+            break;
+          } catch (e) {
+            console.warn(`[GitHubSync] Could not parse JSON from ${fileName}:`, e);
+          }
+        }
+      } catch (fetchErr) {
+        // try next candidate file
+      }
+    }
+
+    if (!rawData || !foundFile) {
+      return res.status(404).json({
+        error: `No s'ha trobat cap fitxer de partits a GitHub (${repo} @ ${branch}). S'han buscat: ${candidateFiles.join(', ')}`,
+        repo,
+        branch,
+        searchedFiles: candidateFiles
+      });
+    }
+
+    // Parse matches from rawData
+    let extractedMatches: any[] = [];
+    if (Array.isArray(rawData)) {
+      extractedMatches = rawData;
+    } else if (rawData[channelCode] && Array.isArray(rawData[channelCode])) {
+      extractedMatches = rawData[channelCode];
+    } else if (rawData.matches && Array.isArray(rawData.matches)) {
+      extractedMatches = rawData.matches;
+    } else if (typeof rawData === 'object') {
+      const allArrayValues = Object.values(rawData).filter(v => Array.isArray(v)) as any[][];
+      if (allArrayValues.length > 0) {
+        extractedMatches = allArrayValues.flat();
+      } else if (rawData.opponent || rawData.teamStats) {
+        extractedMatches = [rawData];
+      }
+    }
+
+    // Merge into local cache
+    const current = matchStatsCache.get(channelCode) || [];
+    const merged = [...extractedMatches];
+    current.forEach(cm => {
+      if (!merged.some(im => (im.id && im.id === cm.id) || (im.dateIndex && im.dateIndex === cm.dateIndex) || (im.opponent === cm.opponent && im.matchDate === cm.matchDate))) {
+        merged.push(cm);
+      }
+    });
+    matchStatsCache.set(channelCode, merged);
+    persistMatchesCache();
+
+    console.log(`[GitHubSync] Successfully synced ${extractedMatches.length} match(es) from GitHub ${repo}/${foundFile}`);
+
+    res.json({
+      success: true,
+      repo,
+      branch,
+      fileFound: foundFile,
+      count: extractedMatches.length,
+      matches: extractedMatches,
+      syncedAt: new Date().toISOString()
+    });
+  } catch (err: any) {
+    console.error("[GitHubSync GET] Error:", err);
+    res.status(500).json({ error: err.message || "Error al sincronitzar des de GitHub." });
+  }
+});
+
 // Shared sessions mapping for ultra-short QR Codes
 const sharedSessions = new Map<string, { payload: string; timestamp: number }>();
 

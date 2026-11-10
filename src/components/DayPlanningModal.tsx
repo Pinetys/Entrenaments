@@ -84,8 +84,17 @@ export const DayPlanningModal: React.FC<DayPlanningModalProps> = ({
   // State for creating a new session
   const [activeTab, setActiveTab] = useState<'create' | 'assign'>('create');
   
-  // Calculate next session number
-  const existingNums = Object.keys(sessions)
+  // Calculate next session number including activePlan keys to avoid collisions
+  const allSessKeys = new Set<string>(Object.keys(sessions));
+  if (activePlan?.sessions) {
+    Object.keys(activePlan.sessions).forEach(k => allSessKeys.add(k));
+  }
+  if (activePlan) {
+    Object.keys(activePlan).forEach(k => {
+      if (k.startsWith('dia')) allSessKeys.add(k);
+    });
+  }
+  const existingNums = Array.from(allSessKeys)
     .map(k => {
       const match = k.match(/dia(\d+)/);
       return match ? parseInt(match[1], 10) : 0;

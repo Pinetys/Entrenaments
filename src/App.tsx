@@ -727,7 +727,31 @@ export default function App() {
 
       const updated = prevPlans.map(plan => {
         if (plan.id === targetPlanId || plan.id === activePlan.id || (!hasDirectMatch && plan.id === targetPlanId)) {
-          const currentFullSessions = { ...sessions };
+          // Construct current sessions authoritatively from the latest plan state to prevent stale closure data loss
+          const planSessions: Record<string, TrainingSession> = {};
+          const fallbackDict = (plan.team === 'senior' || selectedTeam === 'senior') ? RECOVERED_SENIOR_SESSIONS : DEFAULT_SESSIONS;
+          
+          for (let i = 1; i <= 15; i++) {
+            const id = `dia${i}`;
+            const s = (plan as any)[id] || plan.sessions?.[id] || fallbackDict[id];
+            if (s) planSessions[id] = s;
+          }
+
+          if (plan.sessions && typeof plan.sessions === 'object') {
+            Object.entries(plan.sessions).forEach(([id, s]) => {
+              if (s && typeof s === 'object' && ('drills' in (s as any) || 'name' in (s as any))) {
+                planSessions[id] = s as TrainingSession;
+              }
+            });
+          }
+
+          Object.entries(plan).forEach(([k, v]) => {
+            if ((k.startsWith('dia') || k.startsWith('sess-')) && v && typeof v === 'object' && ('drills' in (v as any) || 'name' in (v as any))) {
+              planSessions[k] = v as TrainingSession;
+            }
+          });
+
+          const currentFullSessions = { ...planSessions };
           const resolved = typeof newSessionsValOrFn === 'function' 
             ? newSessionsValOrFn(currentFullSessions) 
             : newSessionsValOrFn;
@@ -774,6 +798,18 @@ export default function App() {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateWithTimestamp));
         if (countTotalDrillsInWeeklyPlans(updated) > 0) {
           localStorage.setItem('basket_planner_permanent_backup', JSON.stringify(stateWithTimestamp));
+        }
+
+        // Immediately push updated weekly plans to cloud so sequential session updates sync to mobile without getting cancelled by debounce
+        if (syncCode) {
+          saveToCloud(syncCode, normalized).then(savedTime => {
+            setLastSynced(new Date(savedTime));
+            lastSavedTimeStrRef.current = savedTime;
+            lastSavedDataJsonRef.current = JSON.stringify(normalized);
+            setSyncError(null);
+          }).catch(err => {
+            console.warn('[SessionSync] Cloud push after session update failed:', err);
+          });
         }
       } catch (e) {}
 
@@ -2585,7 +2621,23 @@ export default function App() {
   };
 
   const handleCreateSessionOnDate = (dateStr: string, customTitle?: string, templateDrills?: any[], time?: string): TrainingSession => {
-    const existingNums = Object.keys(sessions)
+    const allKnownKeys = new Set<string>(Object.keys(sessions));
+    (latestStateRef.current.weeklyPlans || weeklyPlans || []).forEach(p => {
+      if (p.sessions) Object.keys(p.sessions).forEach(k => allKnownKeys.add(k));
+      Object.keys(p).forEach(k => {
+        if (k.startsWith('dia')) allKnownKeys.add(k);
+      });
+    });
+    if (activePlan?.sessions) {
+      Object.keys(activePlan.sessions).forEach(k => allKnownKeys.add(k));
+    }
+    if (activePlan) {
+      Object.keys(activePlan).forEach(k => {
+        if (k.startsWith('dia')) allKnownKeys.add(k);
+      });
+    }
+
+    const existingNums = Array.from(allKnownKeys)
       .map(k => {
         const match = k.match(/dia(\d+)/);
         return match ? parseInt(match[1], 10) : 0;

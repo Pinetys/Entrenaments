@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   ExternalLink, 
@@ -25,10 +25,22 @@ import {
   Code2,
   Globe,
   Send,
-  Sparkles
+  Sparkles,
+  Github,
+  GitBranch,
+  Settings
 } from 'lucide-react';
 import { WeeklyPlan, MatchAnnotation, PlayerMatchStats, TrainingSession, Player } from '../types';
 import { DEFAULT_STATS_SYNC_CODE, saveMatchStatsToCloud, loadMatchStatsFromCloud } from '../lib/firebase';
+import { 
+  getGitHubSyncConfig, 
+  saveGitHubSyncConfig, 
+  fetchMatchesFromGitHub, 
+  GitHubSyncConfig,
+  DEFAULT_GITHUB_REPO,
+  DEFAULT_GITHUB_BRANCH,
+  DEFAULT_GITHUB_FILE
+} from '../lib/githubSync';
 
 export const JUNIOR_STATS_APP_URL = "https://aistudio.google.com/apps/074a2bc9-59ce-468c-af9e-bc747b6122da?showPreview=true&showAssistant=true";
 export const JUNIOR_STATS_APP_ID = "074a2bc9-59ce-468c-af9e-bc747b6122da";
@@ -76,6 +88,69 @@ export default function JuniorStatsModal({
   const [showDevHelpModal, setShowDevHelpModal] = useState<boolean>(false);
   const [isTestingSync, setIsTestingSync] = useState<boolean>(false);
   const [copiedSnippet, setCopiedSnippet] = useState<boolean>(false);
+
+  // GitHub Repository Sync state & settings
+  const [githubConfig, setGithubConfig] = useState<GitHubSyncConfig>(getGitHubSyncConfig);
+  const [isSyncingGitHub, setIsSyncingGitHub] = useState<boolean>(false);
+  const [githubSyncError, setGithubSyncError] = useState<string | null>(null);
+  const [githubSyncSuccess, setGithubSyncSuccess] = useState<{ fileFound: string; count: number; syncedAt: string } | null>(null);
+  const [showGitHubConfigModal, setShowGitHubConfigModal] = useState<boolean>(false);
+  const [editRepo, setEditRepo] = useState<string>(githubConfig.repo);
+  const [editBranch, setEditBranch] = useState<string>(githubConfig.branch);
+  const [editFile, setEditFile] = useState<string>(githubConfig.filePath);
+  const [editAutoSync, setEditAutoSync] = useState<boolean>(githubConfig.autoSyncOnOpen);
+
+  const handleSyncFromGitHub = async (showToast = true) => {
+    setIsSyncingGitHub(true);
+    setGithubSyncError(null);
+    try {
+      const res = await fetchMatchesFromGitHub(githubConfig);
+      if (res.matches && res.matches.length > 0 && onSaveAnnotation) {
+        res.matches.forEach((m, idx) => {
+          onSaveAnnotation(m.dateIndex !== undefined ? m.dateIndex : idx, m, 'junior_a');
+        });
+        if (!selectedMatchId && res.matches[0]) {
+          setSelectedMatchId(res.matches[0].id || res.matches[0].dateIndex?.toString() || null);
+        }
+      }
+      setGithubSyncSuccess({
+        fileFound: res.fileFound,
+        count: res.count,
+        syncedAt: res.syncedAt
+      });
+      setGithubConfig(getGitHubSyncConfig());
+      if (showToast && triggerToast) {
+        triggerToast(`🐙 S'han sincronitzat ${res.count} partit(s) des de GitHub (${res.repo}/${res.fileFound})!`);
+      }
+    } catch (err: any) {
+      console.warn('GitHub Sync error:', err);
+      setGithubSyncError(err.message || 'Error en sincronitzar des de GitHub');
+      if (showToast && triggerToast) {
+        triggerToast(`⚠️ Error al sincronitzar des de GitHub: ${err.message}`);
+      }
+    } finally {
+      setIsSyncingGitHub(false);
+    }
+  };
+
+  // Auto-sync from GitHub when opening the statistics view
+  useEffect(() => {
+    if (isOpen && githubConfig.autoSyncOnOpen) {
+      handleSyncFromGitHub(false);
+    }
+  }, [isOpen]);
+
+  const handleSaveGitHubConfig = () => {
+    const updated = saveGitHubSyncConfig({
+      repo: editRepo,
+      branch: editBranch,
+      filePath: editFile,
+      autoSyncOnOpen: editAutoSync
+    });
+    setGithubConfig(updated);
+    setShowGitHubConfigModal(false);
+    handleSyncFromGitHub(true);
+  };
 
   // Extract all Junior A matches from plan annotations
   const juniorMatches = React.useMemo(() => {
@@ -272,32 +347,48 @@ export default function JuniorStatsModal({
                 <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black uppercase px-2 py-0.5 rounded-md">
                   Nivell A
                 </span>
+                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1 font-mono">
+                  <Github size={11} /> GitHub Sync
+                </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Dades sincronitzades de partit i seguiment individual de la plantilla local
+                Dades sincronitzades en directe des del repositori <strong className="text-slate-200 font-mono">{githubConfig.repo}</strong>
               </p>
             </div>
           </div>
 
-          {/* EXTERNAL APPLICATION LINK PILL & CLOSE */}
-          <div className="flex items-center gap-2">
+          {/* GITHUB REPO LINK, APP LINK & CLOSE */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <a
+              id="link-open-github-repo"
+              href={`https://github.com/${githubConfig.repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md cursor-pointer border border-slate-700 hover:border-slate-600"
+              title="Obrir el repositori de GitHub de l'equip"
+            >
+              <Github size={14} className="text-white" />
+              <span>GitHub ({githubConfig.repo.split('/')[1] || githubConfig.repo})</span>
+              <ArrowUpRight size={13} className="text-slate-400" />
+            </a>
+
             <a
               id="link-open-stats-app"
               href={JUNIOR_STATS_APP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md cursor-pointer border border-blue-400/40"
-              title="Obrir l'aplicació d'estadístiques d'acta en una pestanya nova"
+              className="px-2.5 py-1.5 bg-blue-600/30 hover:bg-blue-600 text-blue-200 hover:text-white active:scale-95 font-bold text-xs rounded-xl transition flex items-center gap-1 cursor-pointer border border-blue-500/30"
+              title="Obrir l'aplicació d'estadístiques a AI Studio"
             >
-              <span>Obrir App Estadístiques</span>
-              <ArrowUpRight size={14} />
+              <span className="hidden md:inline">App AI Studio</span>
+              <ArrowUpRight size={12} />
             </a>
 
             <button
               type="button"
               onClick={handleCopyLink}
               className="p-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-xl transition cursor-pointer border border-slate-700"
-              title="Copiar enllaç de l'aplicació"
+              title="Copiar enllaç"
             >
               {copiedLink ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
             </button>
@@ -312,24 +403,29 @@ export default function JuniorStatsModal({
           </div>
         </div>
 
-        {/* LIVE AUTOMATIC SYNC STATUS BELT */}
-        <div className="bg-gradient-to-r from-emerald-950/70 via-slate-900 to-emerald-950/70 border-b border-emerald-500/30 px-5 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shrink-0">
+        {/* GITHUB PRIMARY SYNC STATUS BELT */}
+        <div className="bg-gradient-to-r from-emerald-950/80 via-slate-900 to-slate-950 border-b border-emerald-500/30 px-5 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shrink-0">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="flex items-center gap-1.5 font-bold text-emerald-300 bg-emerald-900/60 border border-emerald-500/40 px-2.5 py-0.5 rounded-full text-[11px] shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              <Wifi size={12} className="text-emerald-400" />
-              <span>Sincronització Automàtica en Viu (Firestore)</span>
+              <Github size={12} className="text-emerald-400" />
+              <span>Sincronitzat amb GitHub</span>
             </span>
+
             <span className="text-slate-300 text-[11px] flex items-center gap-1">
-              Canal: <code className="bg-slate-950 px-2 py-0.5 rounded text-amber-400 font-mono font-bold border border-slate-800">{channelCode}</code>
+              Repositori: <code className="bg-slate-950 px-2 py-0.5 rounded text-amber-400 font-mono font-bold border border-slate-800">{githubConfig.repo}</code>
+              <span className="text-slate-500 font-mono">({githubConfig.branch})</span>
             </span>
-            {liveStatsLastReceived ? (
-              <span className="text-[11px] text-emerald-400/90 hidden md:inline">
-                • Darrera recepció en directe: {liveStatsLastReceived.toLocaleTimeString('ca-ES')}
+
+            {githubSyncSuccess?.fileFound && (
+              <span className="text-[10px] text-emerald-400/90 font-mono bg-slate-950/60 px-2 py-0.5 rounded border border-slate-800 hidden md:inline">
+                📁 {githubSyncSuccess.fileFound} ({githubSyncSuccess.count} partit{githubSyncSuccess.count !== 1 ? 's' : ''})
               </span>
-            ) : (
-              <span className="text-[11px] text-slate-400 hidden md:inline">
-                • Escoltant canvis de partits en temps real
+            )}
+
+            {githubConfig.lastSynced && (
+              <span className="text-[10px] text-slate-400 hidden lg:inline">
+                • Darrera sincr: {new Date(githubConfig.lastSynced).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
           </div>
@@ -337,23 +433,40 @@ export default function JuniorStatsModal({
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={handleManualRefresh}
-              disabled={isRefreshingCloud}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer border border-slate-700 disabled:opacity-50"
-              title="Comprovar immediatament si hi ha nous partits al Núvol"
+              id="btn-sync-github-now"
+              onClick={() => handleSyncFromGitHub(true)}
+              disabled={isSyncingGitHub}
+              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-lg text-[11px] font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              title="Sincronitzar ara amb l'últim commit de GitHub"
             >
-              <RefreshCw size={12} className={isRefreshingCloud ? "animate-spin text-amber-400" : "text-emerald-400"} />
-              <span>Comprovar Núvol</span>
+              <RefreshCw size={12} className={isSyncingGitHub ? "animate-spin text-white" : ""} />
+              <span>{isSyncingGitHub ? 'Sincronitzant...' : 'Sincronitzar GitHub'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEditRepo(githubConfig.repo);
+                setEditBranch(githubConfig.branch);
+                setEditFile(githubConfig.filePath);
+                setEditAutoSync(githubConfig.autoSyncOnOpen);
+                setShowGitHubConfigModal(true);
+              }}
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer border border-slate-700"
+              title="Configurar repositori i fitxers de GitHub"
+            >
+              <Settings size={12} className="text-slate-400" />
+              <span>Ajustos</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowDevHelpModal(true)}
-              className="px-2.5 py-1 bg-emerald-900/50 hover:bg-emerald-800/80 active:scale-95 text-emerald-200 hover:text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-600/40"
-              title="Veure instruccions i codi per connectar l'app d'actes"
+              className="px-2 py-1 bg-slate-800/80 hover:bg-slate-700 active:scale-95 text-slate-400 hover:text-slate-200 rounded-lg text-[11px] font-medium transition flex items-center gap-1 cursor-pointer border border-slate-750"
+              title="Veure instruccions de webhook o AI Studio"
             >
-              <Code2 size={12} className="text-emerald-300" />
-              <span>Com connectar l'App ⚡</span>
+              <Code2 size={12} />
+              <span>Webhook</span>
             </button>
           </div>
         </div>
@@ -1156,6 +1269,184 @@ fetch("${window.location.origin}/api/sync-match", {
               >
                 Tancar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIGURACIÓ GITHUB */}
+      {showGitHubConfigModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-xs select-none">
+          <div className="bg-slate-900 border border-slate-700 text-slate-100 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                  <Github size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                    Configurar Repositori de GitHub
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Sincronització directa de partits des de GitHub
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGitHubConfigModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              {/* Repo input */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 block">
+                  Repositori GitHub (usuari/repositori):
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={editRepo}
+                    onChange={(e) => setEditRepo(e.target.value)}
+                    placeholder="Pinetys/Entrenaments"
+                    className="w-full bg-slate-950 border border-slate-750 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Exemple: <code className="text-amber-400 font-mono">Pinetys/Entrenaments</code>
+                </p>
+              </div>
+
+              {/* Branch & File grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300 block">
+                    Branca (Branch):
+                  </label>
+                  <input
+                    type="text"
+                    value={editBranch}
+                    onChange={(e) => setEditBranch(e.target.value)}
+                    placeholder="main"
+                    className="w-full bg-slate-950 border border-slate-750 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300 block">
+                    Nom del fitxer de dades:
+                  </label>
+                  <input
+                    type="text"
+                    value={editFile}
+                    onChange={(e) => setEditFile(e.target.value)}
+                    placeholder=".matches_cache.json"
+                    className="w-full bg-slate-950 border border-slate-750 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Auto-sync checkbox */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="chk-auto-sync"
+                  checked={editAutoSync}
+                  onChange={(e) => setEditAutoSync(e.target.checked)}
+                  className="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                />
+                <label htmlFor="chk-auto-sync" className="text-xs text-slate-300 font-medium cursor-pointer">
+                  Sincronitzar automàticament des de GitHub en obrir les estadístiques
+                </label>
+              </div>
+
+              {/* Info card */}
+              <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl space-y-2 text-[11px] text-slate-300">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                  <Sparkles size={13} />
+                  <span>Com funciona la càrrega des de GitHub?</span>
+                </div>
+                <p className="text-slate-400 leading-relaxed">
+                  Cada cop que facis <strong>Push</strong> a GitHub a la branca <code className="text-amber-400 font-mono">{editBranch}</code>, Coach Pinety llegirà el fitxer <code className="text-amber-400 font-mono">{editFile}</code> (o <code className="text-amber-400 font-mono">matches.json</code>) i carregarà els nous partits i estadístiques directament.
+                </p>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sample = JSON.stringify({
+                        "PINETY-JUNIOR-STATS": [
+                          {
+                            "opponent": "CB Manresa Júnior A",
+                            "ourScore": 64,
+                            "opponentScore": 68,
+                            "matchDate": "24/10/2026",
+                            "teamStats": {
+                              "lostPasses": 18,
+                              "ftMade": 11,
+                              "ftMissed": 9,
+                              "defRebounds": 22,
+                              "offRebounds": 8,
+                              "fg2Made": 19,
+                              "fg2Missed": 23,
+                              "fg3Made": 5,
+                              "fg3Missed": 13
+                            }
+                          }
+                        ]
+                      }, null, 2);
+                      navigator.clipboard.writeText(sample);
+                      if (triggerToast) triggerToast("📋 Plantilla JSON copiada! Pots enganxar-la al teu fitxer de GitHub.");
+                    }}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg text-[10px] font-mono transition flex items-center gap-1 cursor-pointer border border-slate-700"
+                  >
+                    <Copy size={11} />
+                    <span>Copiar plantilla JSON per a GitHub</span>
+                  </button>
+                </div>
+              </div>
+
+              {githubSyncError && (
+                <div className="bg-rose-950/50 border border-rose-500/40 p-2.5 rounded-xl text-xs text-rose-300 flex items-center gap-2">
+                  <AlertTriangle size={14} className="shrink-0 text-rose-400" />
+                  <span>{githubSyncError}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditRepo(DEFAULT_GITHUB_REPO);
+                  setEditBranch(DEFAULT_GITHUB_BRANCH);
+                  setEditFile(DEFAULT_GITHUB_FILE);
+                }}
+                className="text-[11px] text-slate-400 hover:text-slate-200 underline cursor-pointer"
+              >
+                Restablir per defecte
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGitHubConfigModal(false)}
+                  className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel·lar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveGitHubConfig}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-md flex items-center gap-1.5"
+                >
+                  <Check size={14} />
+                  <span>Desar i Sincronitzar</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -35,12 +35,14 @@ import {
   CalendarDays,
   Sun,
   Lock,
-  Unlock
+  Unlock,
+  FileText
 } from 'lucide-react';
 import { Drill, TrainingSession, BoardState, SessionCompletion } from '../types';
 import TacticalBoard from './TacticalBoard';
 import { getEnhancedSessionDrills } from './SessionPlanner';
 import PerformanceSummaryModal from './PerformanceSummaryModal';
+import SimplifiedSessionPdfModal from './SimplifiedSessionPdfModal';
 import NoSleep from 'nosleep.js';
 
 let sharedAudioCtx: AudioContext | null = null;
@@ -210,6 +212,7 @@ export default function MobileCourtView({
 
   // Resumen de Rendimiento (Post-Entrenament) Modal state
   const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
+  const [showSimplifiedPdfModal, setShowSimplifiedPdfModal] = useState(false);
 
   // Network connection status for completely offline Modo Pista support
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -1228,7 +1231,17 @@ export default function MobileCourtView({
             <span className="text-xs font-semibold text-slate-200 truncate block">{session.name}</span>
           </div>
           
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              id="btn-mobile-pdf-a4"
+              onClick={() => setShowSimplifiedPdfModal(true)}
+              className="text-[10px] px-2 py-1 font-bold rounded-lg bg-blue-900/50 hover:bg-blue-800 text-blue-200 hover:text-white transition flex items-center gap-1 cursor-pointer border border-blue-500/40"
+              title="Generar fitxa PDF A4 simplificada de la sessió"
+            >
+              <FileText size={12} className="text-blue-400" />
+              <span>PDF A4</span>
+            </button>
+
             {onNavigateView && (
               <button
                 id="btn-mobile-open-library"
@@ -1244,13 +1257,13 @@ export default function MobileCourtView({
         </div>
       )}
 
-      {/* S1-S10 HORIZONTAL SESSION SELECTOR STRIP (Hidden during 75' Session) */}
+      {/* HORIZONTAL SESSION SELECTOR STRIP (Hidden during 75' Session) */}
       {allSessions && !sessionTimerRunning && (
         <div id="mobile-sessions-strip" className="px-3 py-2 bg-slate-950 border-b border-slate-800/90 shrink-0">
           <div className="flex items-center justify-between mb-1 px-0.5">
             <span className="text-[9px] font-extrabold text-orange-400 uppercase tracking-widest flex items-center gap-1">
               <CalendarDays size={11} className="text-orange-400" />
-              Sessions Planificades (S1 - S10)
+              Sessions Planificades ({Object.keys(allSessions).length})
             </span>
             <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-400">
               <span className="text-slate-400 font-sans">Toca per canviar:</span>
@@ -1258,32 +1271,20 @@ export default function MobileCourtView({
           </div>
           
           <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-800">
-            {(allSessions
-              ? Object.values(allSessions)
-                  .sort((a, b) => {
-                    const numA = parseInt(a.id.replace('dia', ''), 10) || 0;
-                    const numB = parseInt(b.id.replace('dia', ''), 10) || 0;
-                    return numA - numB;
-                  })
-                  .map(s => {
-                    const num = s.id.replace('dia', '');
-                    const label = `S${num}`;
-                    const timePart = s.scheduledTime ? s.scheduledTime.split('T')[0].slice(5) : '';
-                    return { id: s.id, label, defaultTitle: timePart || `S${num}` };
-                  })
-              : [
-                  { id: 'dia1', label: 'S1', defaultTitle: 'Dim 1 Set' },
-                  { id: 'dia2', label: 'S2', defaultTitle: 'Dij 3 Set' },
-                  { id: 'dia3', label: 'S3', defaultTitle: 'Dim 8 Set' },
-                  { id: 'dia4', label: 'S4', defaultTitle: 'Dij 10 Set' },
-                  { id: 'dia5', label: 'S5', defaultTitle: 'Dim 15 Set' },
-                  { id: 'dia6', label: 'S6', defaultTitle: 'Dij 17 Set' },
-                  { id: 'dia7', label: 'S7', defaultTitle: 'Dim 22 Set' },
-                  { id: 'dia8', label: 'S8', defaultTitle: 'Dij 24 Set' },
-                  { id: 'dia9', label: 'S9', defaultTitle: 'Dim 29 Set' },
-                  { id: 'dia10', label: 'S10', defaultTitle: 'Dij 1 Oct' },
-                ]
-            ).map(s => {
+            {Object.values(allSessions)
+              .sort((a, b) => {
+                const numA = parseInt(a.id.replace('dia', ''), 10) || 0;
+                const numB = parseInt(b.id.replace('dia', ''), 10) || 0;
+                if (numA !== numB) return numA - numB;
+                return (a.scheduledTime || '').localeCompare(b.scheduledTime || '');
+              })
+              .map(s => {
+                const isDia = s.id.startsWith('dia');
+                const num = isDia ? s.id.replace('dia', '') : s.id;
+                const label = isDia ? `S${num}` : `S.${s.id.slice(0, 4)}`;
+                const timePart = s.scheduledTime ? s.scheduledTime.split('T')[0].slice(5) : '';
+                return { id: s.id, label, defaultTitle: timePart || (isDia ? `S${num}` : s.name) };
+              }).map(s => {
               const currentSess = allSessions[s.id];
               const drillCount = currentSess?.drills?.length || 0;
               const isSelected = (selectedSessionId || session.id) === s.id;
@@ -2288,6 +2289,16 @@ export default function MobileCourtView({
           isCompleted={isSessionCompleted}
         />
       )}
+
+      {/* Simplified A4 Session PDF Modal */}
+      <SimplifiedSessionPdfModal
+        isOpen={showSimplifiedPdfModal}
+        onClose={() => setShowSimplifiedPdfModal(false)}
+        session={session}
+        drills={drills}
+        teamLabel={selectedTeam === 'senior' ? 'Sènior Masculí • FCBQ' : 'Júnior A Masculí • Nivell A (FCBQ)'}
+        triggerToast={triggerLocalToast}
+      />
 
     </div>
   );

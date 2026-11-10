@@ -26,13 +26,15 @@ import {
   Copy,
   Save,
   Activity,
-  Gauge
+  Gauge,
+  FileText
 } from 'lucide-react';
 import { Drill, TrainingSession, DrillCategory, SessionCompletion, WeeklyPlan, SessionTemplate } from '../types';
 import { getDrillColorProfile } from '../lib/drillColors';
 import TacticalBoard from './TacticalBoard';
 import SessionTemplatesModal from './SessionTemplatesModal';
 import PerformanceSummaryModal from './PerformanceSummaryModal';
+import SimplifiedSessionPdfModal from './SimplifiedSessionPdfModal';
 
 const EMPTY_BOARD = { paths: [], pins: [] };
 const NOOP_CHANGE = () => {};
@@ -222,6 +224,7 @@ export default function SessionPlanner({
 
   // State for show print preview mode
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [showSimplifiedPdfModal, setShowSimplifiedPdfModal] = useState(false);
 
   // State for Performance Summary Modal (Post-Training RPE)
   const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
@@ -670,13 +673,23 @@ export default function SessionPlanner({
               </button>
 
               <button
+                id="btn-pdf-simplified-a4"
+                type="button"
+                onClick={() => setShowSimplifiedPdfModal(true)}
+                className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs active:scale-95"
+                title="Generar document PDF simplificat en format A4 (noms, durada i anotacions)"
+              >
+                <FileText size={13} /> PDF A4 Simplificat
+              </button>
+
+              <button
                 id="btn-pdf-session-active"
                 type="button"
                 onClick={() => setShowPrintPreview(true)}
-                className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-black rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition shadow-xs"
-                title="Imprimir o descarregar PDF de la sessió"
+                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded-md text-[11px] tracking-wider uppercase flex items-center gap-1 cursor-pointer transition border border-slate-250"
+                title="Dossier tàctic complet amb pissarres"
               >
-                <Printer size={13} /> PDF
+                <Printer size={13} /> Dossier PDF
               </button>
 
               {session.drills.length > 0 && (
@@ -1832,6 +1845,17 @@ export default function SessionPlanner({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => {
+                    setShowPrintPreview(false);
+                    setShowSimplifiedPdfModal(true);
+                  }}
+                  className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-sm transition active:scale-95 cursor-pointer uppercase tracking-wider text-[10px] flex items-center gap-1"
+                  title="Canviar a la Fitxa Simplificada A4 (Noms, durada i anotacions)"
+                >
+                  <FileText size={12} /> Fitxa A4 Simplificada
+                </button>
+                <button
+                  type="button"
                   className="py-1.5 px-3 bg-slate-905 hover:bg-slate-800 text-slate-800 font-black text-xs rounded-xl shadow-sm transition active:scale-95 cursor-pointer uppercase tracking-wider text-[10px]"
                   title="Consell per desar en PDF"
                   onClick={() => alert("💡 CONSELL PER GUARDAR EN PDF:\n\nAl menú de col·locació de la teva impressora de sistema, selecciona 'Anomena com a PDF' o 'Anomena en PDF' com a destí. Pots escollir format 'Sense Marges' o 'Escala 100%' per mantenir l'elegància del disseny adaptat.")}
@@ -2036,6 +2060,18 @@ export default function SessionPlanner({
           </div>
         </div>
       )}
+
+      {/* SIMPLIFIED A4 PDF DOCUMENT MODAL */}
+      <SimplifiedSessionPdfModal
+        isOpen={showSimplifiedPdfModal}
+        onClose={() => setShowSimplifiedPdfModal(false)}
+        session={session}
+        drills={drills}
+        activePlan={activePlan}
+        teamLabel={session.team === 'senior' ? 'Sènior Masculí • FCBQ' : 'Júnior A Masculí • Nivell A (FCBQ)'}
+        onOpenDetailedDossier={() => setShowPrintPreview(true)}
+        triggerToast={triggerToast}
+      />
 
       {/* CUSTOM CONFIRMATION DIALOG FOR DRILL DELETION */}
       {drillToDelete && (
